@@ -40,7 +40,19 @@ const ProfileScreen = ({ navigation }: any) => {
 
                 <View style={styles.menuContainer}>
                     {MENU_OPTIONS.map((item, index) => (
-                        <TouchableOpacity key={index} style={styles.menuItem}>
+                        <TouchableOpacity 
+                            key={index} 
+                            style={styles.menuItem}
+                            onPress={() => {
+                                if (
+                                    item.title === 'Personal Information' || 
+                                    item.title === 'Restaurant Settings' || 
+                                    item.title === 'Default Restaurant'
+                                ) {
+                                    navigation.navigate('PersonalDetails');
+                                }
+                            }}
+                        >
                             <View style={styles.menuIconContainer}>
                                 <Text style={styles.menuIcon}>{item.icon}</Text>
                             </View>

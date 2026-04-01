@@ -15,6 +15,7 @@ import MenuScreen from '../screens/Restaurant/MenuScreen';
 import QRCodeScreen from '../screens/Main/QRCodeScreen';
 import WalletScreen from '../screens/Wallet/WalletScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
+import PersonalDetailsScreen from '../screens/Profile/PersonalDetailsScreen';
 import RestaurantDashboardScreen from '../screens/RestaurantOwner/RestaurantDashboardScreen';
 
 const Stack = createNativeStackNavigator();
@@ -134,6 +135,7 @@ const AppNavigator = () => {
                 {/* Screens outside Tab Navigation */}
                 <Stack.Screen name="Restaurants" component={RestaurantListScreen} />
                 <Stack.Screen name="Menu" component={MenuScreen} />
+                <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

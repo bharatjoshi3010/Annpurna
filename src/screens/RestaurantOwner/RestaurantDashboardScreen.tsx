@@ -25,8 +25,19 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
             <View style={styles.header}>
-                <Text style={Typography.h1}>{displayName}</Text>
-                <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
+                <View style={styles.titleRow}>
+                    <View>
+                        <Text style={Typography.h1}>{displayName}</Text>
+                        <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
+                    </View>
+                    <TouchableOpacity 
+                        style={styles.profileIndicator}
+                        onPress={() => navigation.navigate('PersonalDetails')}
+                    >
+                        <Text style={styles.profileEmoji}>👤</Text>
+                        <Text style={styles.viewProfileText}>View Profile</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.statsContainer}>
@@ -92,6 +103,28 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: Spacing.xl,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    profileIndicator: {
+        alignItems: 'center',
+        padding: 8,
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.sm,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    profileEmoji: {
+        fontSize: 18,
+    },
+    viewProfileText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: Colors.primary,
+        marginTop: 2,
     },
     subtitle: {
         ...Typography.body,
