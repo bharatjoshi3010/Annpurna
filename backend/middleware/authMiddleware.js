@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const Student = require('../models/Student');
-const Restaurant = require('../models/Restaurant');
+import jwt from 'jsonwebtoken';
+import Student from '../models/Student.js';
+import Restaurant from '../models/Restaurant.js';
 
 const protect = async (req, res, next) => {
     let token;
@@ -33,4 +33,4 @@ const protect = async (req, res, next) => {
     }
 };
 
-module.exports = { protect };
+export { protect };

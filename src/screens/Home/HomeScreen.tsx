@@ -42,7 +42,7 @@ const HomeScreen = ({ navigation }: any) => {
                         type="Breakfast"
                         time="08:00 AM - 10:00 AM"
                         status="taken"
-                        restaurant="Sunrise Café"
+                        restaurant={user?.location || 'Campus Canteen'}
                         onPress={() => { }}
                     />
 
@@ -50,7 +50,7 @@ const HomeScreen = ({ navigation }: any) => {
                         type="Lunch"
                         time="12:30 PM - 02:30 PM"
                         status="booked"
-                        restaurant="The Green Plate"
+                        restaurant={user?.location || 'Campus Canteen'}
                         onPress={() => navigation.navigate('Menu', { mealType: 'Lunch' })}
                     />
 

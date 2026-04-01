@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const restaurantSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -30,4 +30,4 @@ restaurantSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
-module.exports = Restaurant;
+export default Restaurant;

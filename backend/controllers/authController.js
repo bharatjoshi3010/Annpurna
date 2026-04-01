@@ -1,6 +1,6 @@
-const Student = require('../models/Student');
-const Restaurant = require('../models/Restaurant');
-const generateToken = require('../utils/generateToken');
+import Student from '../models/Student.js';
+import Restaurant from '../models/Restaurant.js';
+import generateToken from '../utils/generateToken.js';
 
 // @desc    Register a new user (Student or Restaurant)
 // @route   POST /api/auth/register
@@ -237,4 +237,4 @@ const getAllRestaurants = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants };
+export { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants };

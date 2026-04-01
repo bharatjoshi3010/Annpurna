@@ -6,10 +6,10 @@ import WalletCard from '../../components/WalletCard';
 import { useAuth } from '../../context/AuthContext';
 
 const TRANSACTIONS = [
-    { id: '1', title: 'Meal at The Green Plate', amount: -150, date: 'Mar 12, 12:45 PM', type: 'debit' },
+    { id: '1', title: 'Meal at Restaurant', amount: -150, date: 'Mar 12, 12:45 PM', type: 'debit' },
     { id: '2', title: 'Wallet Recharge', amount: 1000, date: 'Mar 10, 09:20 AM', type: 'credit' },
-    { id: '3', title: 'Meal at Sunrise Café', amount: -120, date: 'Mar 09, 08:30 AM', type: 'debit' },
-    { id: '4', title: 'Meal at Spicy Junction', amount: -110, date: 'Mar 08, 07:45 PM', type: 'debit' },
+    { id: '3', title: 'Meal at Restaurant', amount: -120, date: 'Mar 09, 08:30 AM', type: 'debit' },
+    { id: '4', title: 'Meal at Restaurant', amount: -110, date: 'Mar 08, 07:45 PM', type: 'debit' },
     { id: '5', title: 'Weekly Plan Cashback', amount: 50, date: 'Mar 07, 10:00 AM', type: 'credit' },
 ];
 

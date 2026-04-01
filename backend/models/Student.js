@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const studentSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -31,4 +31,4 @@ studentSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 const Student = mongoose.model('Student', studentSchema);
-module.exports = Student;
+export default Student;
