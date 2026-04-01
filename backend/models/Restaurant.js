@@ -20,14 +20,16 @@ const restaurantSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 restaurantSchema.pre('save', async function (next) {
+    //pre('save') means: “Run this function before saving a document in DB”
     if (!this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    next();
 });
 
 restaurantSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
-};
+};    //It checks if the entered password matches the stored (hashed) password.
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 export default Restaurant;

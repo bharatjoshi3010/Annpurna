@@ -8,7 +8,17 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
+
+            //    "Bearer abc123"
+
+            //     → ["Bearer", "abc123"]
+
+            //     Takes the token (abc123)
+
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+
+            // Role-Based User Fetching
 
             if (decoded.role === 'student') {
                 req.user = await Student.findById(decoded.id).select('-password');

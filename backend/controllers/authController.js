@@ -6,7 +6,7 @@ import generateToken from '../utils/generateToken.js';
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { 
+    const {
         email, password, role,
         name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
         ownerName, restaurantName, openingYear, maxCapacity
@@ -34,13 +34,13 @@ const registerUser = async (req, res) => {
 
         let user;
         if (role === 'student') {
-            user = await Student.create({ 
-                email, password, role, 
+            user = await Student.create({
+                email, password, role,
                 name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
                 isProfileComplete: (name && address && phoneNumber && localGuardianName && localGuardianPhone && hometownAddress) ? true : false
             });
         } else {
-            user = await Restaurant.create({ 
+            user = await Restaurant.create({
                 email, password, role,
                 ownerName, restaurantName, openingYear, address, phoneNumber, maxCapacity,
                 isProfileComplete: (ownerName && restaurantName && openingYear && address && phoneNumber && maxCapacity) ? true : false
@@ -48,9 +48,9 @@ const registerUser = async (req, res) => {
         }
 
         if (user) {
-            const userData = user.toObject();
-            delete userData.password;
-            userData.token = generateToken(user._id, user.role);
+            const userData = user.toObject();   //Converts the Mongoose document (user) into a plain JavaScript object.
+            delete userData.password;           //Removes the password field from the response.
+            userData.token = generateToken(user._id, user.role); //Generates a JWT token for the user.
             res.status(201).json(userData);
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -236,5 +236,18 @@ const getAllRestaurants = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+// Restaurant.find({})
+// Fetches all documents from the Restaurant collection.
+// {} means no filter → get everything.
+// await
+// Waits until the database query is completed.
+// .select('-password')
+// Excludes the password field from the result.
+// -password means “don’t include this field”.
+// Final result:
+// restaurants = array of all restaurant data without passwords
+
 
 export { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants };
