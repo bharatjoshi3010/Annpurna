@@ -4,14 +4,17 @@ const bcrypt = require('bcryptjs');
 const restaurantSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    ownerName: { type: String },
-    restaurantName: { type: String },
-    address: { type: String },
+    ownerName: { type: String, required: true },
+    restaurantName: { type: String, required: true },
+    openingYear: { type: Number, required: true },
+    address: { type: String, required: true },
     location: { type: String },
-    phoneNumber: { type: String },
+    phoneNumber: { type: String, required: true },
     fssaiLicense: { type: String },
     specifications: { type: String },
-    maxCapacity: { type: Number },
+    maxCapacity: { type: Number, required: true },
+    walletBalance: { type: Number, default: 0 },
+    kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'restaurant' }
 }, { timestamps: true });

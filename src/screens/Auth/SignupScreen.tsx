@@ -20,10 +20,47 @@ const SignupScreen = ({ navigation }: any) => {
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(false);
 
+    // Common fields
+    const [address, setAddress] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+
+    // Student fields
+    const [name, setName] = useState('');
+    const [localGuardianName, setLocalGuardianName] = useState('');
+    const [localGuardianPhone, setLocalGuardianPhone] = useState('');
+    const [hometownAddress, setHometownAddress] = useState('');
+
+    // Restaurant fields
+    const [ownerName, setOwnerName] = useState('');
+    const [restaurantName, setRestaurantName] = useState('');
+    const [openingYear, setOpeningYear] = useState('');
+    const [maxCapacity, setMaxCapacity] = useState('');
+
     const handleSignup = async () => {
         if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+            Alert.alert('Error', 'Please fill in core fields');
             return;
+        }
+
+        const payload: any = { email, password, role, address, phoneNumber };
+        if (role === 'student') {
+            if (!name || !localGuardianName || !localGuardianPhone || !hometownAddress || !address || !phoneNumber) {
+                Alert.alert('Error', 'Please fill in all student details');
+                return;
+            }
+            payload.name = name;
+            payload.localGuardianName = localGuardianName;
+            payload.localGuardianPhone = localGuardianPhone;
+            payload.hometownAddress = hometownAddress;
+        } else {
+            if (!ownerName || !restaurantName || !openingYear || !maxCapacity || !address || !phoneNumber) {
+                Alert.alert('Error', 'Please fill in all restaurant details');
+                return;
+            }
+            payload.ownerName = ownerName;
+            payload.restaurantName = restaurantName;
+            payload.openingYear = openingYear;
+            payload.maxCapacity = maxCapacity;
         }
 
         setLoading(true);
@@ -32,13 +69,12 @@ const SignupScreen = ({ navigation }: any) => {
             const response = await fetch(`${baseUrl}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, role }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                // Registration successful
                 if (role === 'restaurant') {
                     navigation.replace('RestaurantMain');
                 } else {
@@ -104,6 +140,110 @@ const SignupScreen = ({ navigation }: any) => {
                             secureTextEntry
                         />
                     </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Phone Number</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter phone number"
+                            value={phoneNumber}
+                            onChangeText={setPhoneNumber}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Address</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter current address"
+                            value={address}
+                            onChangeText={setAddress}
+                        />
+                    </View>
+
+                    {role === 'student' ? (
+                        <>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Full Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Enter your name"
+                                    value={name}
+                                    onChangeText={setName}
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Local Guardian Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Guardian's Name"
+                                    value={localGuardianName}
+                                    onChangeText={setLocalGuardianName}
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Local Guardian Phone</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Guardian's Phone"
+                                    value={localGuardianPhone}
+                                    onChangeText={setLocalGuardianPhone}
+                                    keyboardType="phone-pad"
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Hometown Address</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Hometown address"
+                                    value={hometownAddress}
+                                    onChangeText={setHometownAddress}
+                                />
+                            </View>
+                        </>
+                    ) : (
+                        <>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Owner Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Enter owner name"
+                                    value={ownerName}
+                                    onChangeText={setOwnerName}
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Restaurant Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Enter restaurant name"
+                                    value={restaurantName}
+                                    onChangeText={setRestaurantName}
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Opening Year</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. 2010"
+                                    value={openingYear}
+                                    onChangeText={setOpeningYear}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Max Capacity</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. 50"
+                                    value={maxCapacity}
+                                    onChangeText={setMaxCapacity}
+                                    keyboardType="numeric"
+                                />
+                            </View>
+                        </>
+                    )}
 
                     {loading ? (
                         <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.md }} />

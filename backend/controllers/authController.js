@@ -6,7 +6,11 @@ const generateToken = require('../utils/generateToken');
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { email, password, role } = req.body;
+    const { 
+        email, password, role,
+        name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
+        ownerName, restaurantName, openingYear, maxCapacity
+    } = req.body;
 
     if (!email || !password || !role) {
         return res.status(400).json({ message: 'Please provide email, password, and role' });
@@ -30,9 +34,17 @@ const registerUser = async (req, res) => {
 
         let user;
         if (role === 'student') {
-            user = await Student.create({ email, password, role });
+            user = await Student.create({ 
+                email, password, role, 
+                name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
+                isProfileComplete: (name && address && phoneNumber && localGuardianName && localGuardianPhone && hometownAddress) ? true : false
+            });
         } else {
-            user = await Restaurant.create({ email, password, role });
+            user = await Restaurant.create({ 
+                email, password, role,
+                ownerName, restaurantName, openingYear, address, phoneNumber, maxCapacity,
+                isProfileComplete: (ownerName && restaurantName && openingYear && address && phoneNumber && maxCapacity) ? true : false
+            });
         }
 
         if (user) {
@@ -94,7 +106,9 @@ const loginUser = async (req, res) => {
 const updateProfile = async (req, res) => {
     const {
         name, phoneNumber, college, location, budget, selectedPlan,
-        ownerName, restaurantName, address, fssaiLicense, specifications, maxCapacity
+        address, localGuardianName, localGuardianPhone, hometownAddress,
+        walletBalance, kycStatus,
+        ownerName, restaurantName, fssaiLicense, specifications, maxCapacity, openingYear
     } = req.body;
 
     try {
@@ -104,23 +118,41 @@ const updateProfile = async (req, res) => {
             user = await Student.findById(req.user._id);
             if (user) {
                 user.name = name || user.name;
+                user.address = address || user.address;
                 user.phoneNumber = phoneNumber || user.phoneNumber;
+                user.localGuardianName = localGuardianName || user.localGuardianName;
+                user.localGuardianPhone = localGuardianPhone || user.localGuardianPhone;
+                user.hometownAddress = hometownAddress || user.hometownAddress;
                 user.college = college || user.college;
                 user.location = location || user.location;
                 user.budget = budget || user.budget;
                 user.selectedPlan = selectedPlan || user.selectedPlan;
-                user.isProfileComplete = true; // Mark as complete once details are provided
+                user.walletBalance = walletBalance !== undefined ? walletBalance : user.walletBalance;
+                user.kycStatus = kycStatus || user.kycStatus;
+
+                // Check if ALL essential details for a student are filled
+                if (user.name && user.address && user.phoneNumber && user.localGuardianName && user.localGuardianPhone && user.hometownAddress) {
+                    user.isProfileComplete = true; // Mark as complete once details are provided
+                } else {
+                    user.isProfileComplete = false;
+                }
 
                 const updatedUser = await user.save();
                 res.json({
                     _id: updatedUser._id,
                     email: updatedUser.email,
                     name: updatedUser.name,
+                    address: updatedUser.address,
                     phoneNumber: updatedUser.phoneNumber,
+                    localGuardianName: updatedUser.localGuardianName,
+                    localGuardianPhone: updatedUser.localGuardianPhone,
+                    hometownAddress: updatedUser.hometownAddress,
                     college: updatedUser.college,
                     location: updatedUser.location,
                     budget: updatedUser.budget,
                     selectedPlan: updatedUser.selectedPlan,
+                    walletBalance: updatedUser.walletBalance,
+                    kycStatus: updatedUser.kycStatus,
                     isProfileComplete: updatedUser.isProfileComplete,
                     role: updatedUser.role,
                     token: generateToken(updatedUser._id, updatedUser.role),
@@ -133,13 +165,21 @@ const updateProfile = async (req, res) => {
             if (user) {
                 user.ownerName = ownerName || user.ownerName;
                 user.restaurantName = restaurantName || user.restaurantName;
+                user.openingYear = openingYear || user.openingYear;
                 user.address = address || user.address;
                 user.location = location || user.location;
                 user.phoneNumber = phoneNumber || user.phoneNumber;
                 user.fssaiLicense = fssaiLicense || user.fssaiLicense;
                 user.specifications = specifications || user.specifications;
                 user.maxCapacity = maxCapacity || user.maxCapacity;
-                user.isProfileComplete = true;
+                user.walletBalance = walletBalance !== undefined ? walletBalance : user.walletBalance;
+                user.kycStatus = kycStatus || user.kycStatus;
+
+                if (user.ownerName && user.restaurantName && user.openingYear && user.address && user.phoneNumber && user.maxCapacity && user.fssaiLicense) {
+                    user.isProfileComplete = true;
+                } else {
+                    user.isProfileComplete = false;
+                }
 
                 const updatedUser = await user.save();
                 res.json({
@@ -147,11 +187,15 @@ const updateProfile = async (req, res) => {
                     email: updatedUser.email,
                     ownerName: updatedUser.ownerName,
                     restaurantName: updatedUser.restaurantName,
+                    openingYear: updatedUser.openingYear,
                     address: updatedUser.address,
                     location: updatedUser.location,
+                    phoneNumber: updatedUser.phoneNumber,
                     fssaiLicense: updatedUser.fssaiLicense,
                     specifications: updatedUser.specifications,
                     maxCapacity: updatedUser.maxCapacity,
+                    walletBalance: updatedUser.walletBalance,
+                    kycStatus: updatedUser.kycStatus,
                     isProfileComplete: updatedUser.isProfileComplete,
                     role: updatedUser.role,
                     token: generateToken(updatedUser._id, updatedUser.role),
