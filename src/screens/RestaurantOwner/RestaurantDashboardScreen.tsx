@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
+import { useAuth } from '../../context/AuthContext';
 
 const StatCard = ({ title, value, color }: { title: string, value: string | number, color: string }) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
@@ -10,6 +11,9 @@ const StatCard = ({ title, value, color }: { title: string, value: string | numb
 );
 
 const RestaurantDashboardScreen = ({ navigation }: any) => {
+    const { user } = useAuth();
+    const displayName = user?.restaurantName || user?.ownerName || 'Restaurant';
+
     // Mock Data
     const stats = {
         totalComing: 120,
@@ -21,8 +25,8 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
             <View style={styles.header}>
-                <Text style={Typography.h1}>Restaurant Dashboard</Text>
-                <Text style={styles.subtitle}>Today's Meal Overview</Text>
+                <Text style={Typography.h1}>{displayName}</Text>
+                <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
             </View>
 
             <View style={styles.statsContainer}>

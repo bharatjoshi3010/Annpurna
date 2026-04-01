@@ -3,6 +3,7 @@ import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './navigation/AppNavigator';
 import { Colors } from './styles/theme';
+import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
   return (
@@ -12,7 +13,9 @@ const App = () => {
         backgroundColor={Colors.background}
         translucent={false}
       />
-      <AppNavigator />
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 };

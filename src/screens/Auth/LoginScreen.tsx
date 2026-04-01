@@ -13,12 +13,15 @@ import {
 } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginScreen = ({ navigation }: any) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(false);
+    
+    const { setUser } = useAuth();
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -42,6 +45,8 @@ const LoginScreen = ({ navigation }: any) => {
                     Alert.alert('Incomplete Profile', 'Your profile is missing required details. You cannot sign in without them. Please register again or contact support.');
                     return;
                 }
+                
+                setUser(data);
                 
                 if (role === 'restaurant') {
                     navigation.replace('RestaurantMain');

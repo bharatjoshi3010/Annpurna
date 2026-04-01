@@ -13,12 +13,15 @@ import {
 } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
+import { useAuth } from '../../context/AuthContext';
 
 const SignupScreen = ({ navigation }: any) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(false);
+    
+    const { setUser } = useAuth();
 
     // Common fields
     const [address, setAddress] = useState('');
@@ -75,6 +78,7 @@ const SignupScreen = ({ navigation }: any) => {
             const data = await response.json();
 
             if (response.ok) {
+                setUser(data);
                 if (role === 'restaurant') {
                     navigation.replace('RestaurantMain');
                 } else {

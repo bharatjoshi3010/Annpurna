@@ -2,13 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
+import { useAuth } from '../../context/AuthContext';
 
 const ProfileScreen = ({ navigation }: any) => {
+    const { user } = useAuth();
+
+    // Determine the values to display
+    const displayName = user?.name || user?.restaurantName || 'Guest';
+    const displayEmail = user?.email || 'guest@example.com';
+    const avatarLetter = displayName ? displayName.charAt(0).toUpperCase() : '?';
+
     const MENU_OPTIONS = [
         { title: 'Personal Information', icon: '👤' },
-        { title: 'My Subscriptions', icon: '💳', subtitle: 'Premium Monthly' },
+        { title: 'My Subscriptions', icon: '💳', subtitle: user?.role === 'student' ? (user?.selectedPlan || 'No active plan') : 'Manage Plans' },
         { title: 'Meal History', icon: '🍽️' },
-        { title: 'Default Restaurant', icon: '🏪', subtitle: 'The Green Plate' },
+        { title: user?.role === 'restaurant' ? 'Restaurant Settings' : 'Default Restaurant', icon: '🏪', subtitle: user?.role === 'restaurant' ? (user?.restaurantName || 'Set Info') : (user?.location || 'Not set') },
         { title: 'Notifications', icon: '🔔' },
         { title: 'Settings', icon: '⚙️' },
         { title: 'Help & Support', icon: '❓' },
@@ -21,10 +29,10 @@ const ProfileScreen = ({ navigation }: any) => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
-                        <Text style={styles.avatarText}>B</Text>
+                        <Text style={styles.avatarText}>{avatarLetter}</Text>
                     </View>
-                    <Text style={styles.userName}>Bharat</Text>
-                    <Text style={styles.userEmail}>bharat@example.com</Text>
+                    <Text style={styles.userName}>{displayName}</Text>
+                    <Text style={styles.userEmail}>{displayEmail}</Text>
                     <TouchableOpacity style={styles.editButton}>
                         <Text style={styles.editButtonText}>Edit Profile</Text>
                     </TouchableOpacity>

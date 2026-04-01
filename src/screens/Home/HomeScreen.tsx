@@ -4,14 +4,20 @@ import { Colors, Spacing, Typography } from '../../styles/theme';
 import WalletCard from '../../components/WalletCard';
 import MealSlotCard from '../../components/MealSlotCard';
 import AppButton from '../../components/AppButton';
+import { useAuth } from '../../context/AuthContext';
 
 const HomeScreen = ({ navigation }: any) => {
+    const { user } = useAuth();
+    
+    // Fallback to "Guest" or a field based on role. Student has 'name', Restaurant has 'ownerName'.
+    const displayName = user?.name || user?.ownerName || 'Guest';
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.welcomeText}>Hello, Bharat!</Text>
+                        <Text style={styles.welcomeText}>Hello, {displayName}!</Text>
                         <Text style={Typography.body}>Time for your next meal?</Text>
                     </View>
                     <TouchableOpacity
@@ -23,7 +29,7 @@ const HomeScreen = ({ navigation }: any) => {
                 </View>
 
                 <WalletCard
-                    balance={1250.50}
+                    balance={user?.walletBalance || 0}
                     onRecharge={() => navigation.navigate('Wallet')}
                 />
 
@@ -90,8 +96,8 @@ const HomeScreen = ({ navigation }: any) => {
                 <View style={styles.subscriptionInfo}>
                     <Text style={styles.subLabel}>Current Plan</Text>
                     <View style={styles.subCard}>
-                        <Text style={styles.subTitle}>Premium Monthly Pass</Text>
-                        <Text style={styles.subExpiry}>Expires in 12 days</Text>
+                        <Text style={styles.subTitle}>{user?.selectedPlan || 'No Active Plan'}</Text>
+                        <Text style={styles.subExpiry}>{user?.selectedPlan ? 'Monthly Subscription active' : 'Choose a plan to get started'}</Text>
                     </View>
                 </View>
             </ScrollView>
@@ -177,7 +183,6 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     subCard: {
-        backgroundColor: Colors.white,
         padding: Spacing.md,
         borderRadius: 12,
         borderWidth: 1,

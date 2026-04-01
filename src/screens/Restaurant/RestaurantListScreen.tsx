@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { Colors, Spacing, Typography } from '../../styles/theme';
 import Header from '../../components/Header';
 import RestaurantCard from '../../components/RestaurantCard';
@@ -13,11 +13,33 @@ const RESTAURANTS = [
 ];
 
 const RestaurantListScreen = ({ navigation }: any) => {
+    const [restaurants, setRestaurants] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [selectedId, setSelectedId] = useState('2');
+    const [selectedId, setSelectedId] = useState('');
 
-    const filteredRestaurants = RESTAURANTS.filter(r =>
-        r.name.toLowerCase().includes(search.toLowerCase())
+    useEffect(() => {
+        fetchRestaurants();
+    }, []);
+
+    const fetchRestaurants = async () => {
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/auth/restaurants`);
+            const data = await response.json();
+            if (response.ok) {
+                setRestaurants(data);
+                if (data.length > 0) setSelectedId(data[0]._id);
+            }
+        } catch (error) {
+            console.error('Error fetching restaurants:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredRestaurants = (restaurants.length > 0 ? restaurants : RESTAURANTS).filter(r =>
+        (r.restaurantName || r.name).toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -33,25 +55,29 @@ const RestaurantListScreen = ({ navigation }: any) => {
                 />
             </View>
 
-            <FlatList
-                data={filteredRestaurants}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <RestaurantCard
-                        name={item.name}
-                        cuisine={item.cuisine}
-                        rating={item.rating}
-                        isSelected={item.id === selectedId}
-                        onPress={() => setSelectedId(item.id)}
-                    />
-                )}
-                contentContainerStyle={styles.listContent}
-                ListHeaderComponent={
-                    <View style={styles.listHeader}>
-                        <Text style={Typography.body}>Choose where you want to have your next meal.</Text>
-                    </View>
-                }
-            />
+            {loading ? (
+                <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.xl }} />
+            ) : (
+                <FlatList
+                    data={filteredRestaurants}
+                    keyExtractor={(item) => item._id || item.id}
+                    renderItem={({ item }) => (
+                        <RestaurantCard
+                            name={item.restaurantName || item.name}
+                            cuisine={item.specifications || item.cuisine || 'Multi-cuisine'}
+                            rating={item.rating || 4.5}
+                            isSelected={(item._id || item.id) === selectedId}
+                            onPress={() => setSelectedId(item._id || item.id)}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContent}
+                    ListHeaderComponent={
+                        <View style={styles.listHeader}>
+                            <Text style={Typography.body}>Choose where you want to have your next meal.</Text>
+                        </View>
+                    }
+                />
+            )}
         </SafeAreaView>
     );
 };

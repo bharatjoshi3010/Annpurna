@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import WalletCard from '../../components/WalletCard';
+import { useAuth } from '../../context/AuthContext';
 
 const TRANSACTIONS = [
     { id: '1', title: 'Meal at The Green Plate', amount: -150, date: 'Mar 12, 12:45 PM', type: 'debit' },
@@ -13,13 +14,15 @@ const TRANSACTIONS = [
 ];
 
 const WalletScreen = ({ navigation }: any) => {
+    const { user } = useAuth();
+
     return (
         <SafeAreaView style={styles.container}>
             <Header title="My Wallet" />
 
             <View style={styles.content}>
                 <WalletCard
-                    balance={1250.50}
+                    balance={user?.walletBalance || 0}
                     onRecharge={() => { }}
                 />
 

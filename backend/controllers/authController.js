@@ -48,13 +48,10 @@ const registerUser = async (req, res) => {
         }
 
         if (user) {
-            res.status(201).json({
-                _id: user._id,
-                email: user.email,
-                role: user.role,
-                isProfileComplete: user.isProfileComplete,
-                token: generateToken(user._id, user.role),
-            });
+            const userData = user.toObject();
+            delete userData.password;
+            userData.token = generateToken(user._id, user.role);
+            res.status(201).json(userData);
         } else {
             res.status(400).json({ message: 'Invalid user data' });
         }
@@ -85,13 +82,10 @@ const loginUser = async (req, res) => {
         }
 
         if (user && (await user.matchPassword(password))) {
-            res.json({
-                _id: user._id,
-                email: user.email,
-                role: user.role,
-                isProfileComplete: user.isProfileComplete,
-                token: generateToken(user._id, user.role),
-            });
+            const userData = user.toObject();
+            delete userData.password;
+            userData.token = generateToken(user._id, user.role);
+            res.json(userData);
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
         }
@@ -231,4 +225,16 @@ const getProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, updateProfile, getProfile };
+// @desc    Get all restaurants
+// @route   GET /api/auth/restaurants
+// @access  Public
+const getAllRestaurants = async (req, res) => {
+    try {
+        const restaurants = await Restaurant.find({}).select('-password');
+        res.json(restaurants);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants };
