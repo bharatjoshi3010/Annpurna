@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
+import KYCWarning from '../../components/KYCWarning';
 
 const StatCard = ({ title, value, color }: { title: string, value: string | number, color: string }) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
@@ -24,6 +25,7 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <KYCWarning />
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <View>

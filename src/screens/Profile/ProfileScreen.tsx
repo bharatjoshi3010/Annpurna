@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Ima
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
+import KYCWarning from '../../components/KYCWarning';
 
 const ProfileScreen = ({ navigation }: any) => {
     const { user } = useAuth();
@@ -27,6 +28,9 @@ const ProfileScreen = ({ navigation }: any) => {
             <Header title="Profile" />
 
             <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={{ paddingHorizontal: Spacing.md, paddingTop: Spacing.md }}>
+                    <KYCWarning />
+                </View>
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
                         <Text style={styles.avatarText}>{avatarLetter}</Text>

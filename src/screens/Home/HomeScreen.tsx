@@ -5,6 +5,7 @@ import WalletCard from '../../components/WalletCard';
 import MealSlotCard from '../../components/MealSlotCard';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
+import KYCWarning from '../../components/KYCWarning';
 
 const HomeScreen = ({ navigation }: any) => {
     const { user } = useAuth();
@@ -15,6 +16,7 @@ const HomeScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                <KYCWarning />
                 <View style={styles.header}>
                     <View>
                         <Text style={styles.welcomeText}>Hello, {displayName}!</Text>

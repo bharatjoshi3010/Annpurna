@@ -33,6 +33,10 @@ export const updateStudent = async (req, res) => {
             // You can add a 'flagged' field here if needed, or piggyback on kycStatus ('rejected')
 
             const updatedStudent = await student.save();
+            
+            // Emit real-time update
+            req.io.to(updatedStudent._id.toString()).emit('kycUpdate', updatedStudent);
+            
             res.json(updatedStudent);
         } else {
             res.status(404).json({ message: 'Student not found' });
@@ -84,6 +88,10 @@ export const updateRestaurant = async (req, res) => {
             restaurant.kycStatus = req.body.kycStatus || restaurant.kycStatus;
 
             const updatedRestaurant = await restaurant.save();
+            
+            // Emit real-time update
+            req.io.to(updatedRestaurant._id.toString()).emit('kycUpdate', updatedRestaurant);
+
             res.json(updatedRestaurant);
         } else {
             res.status(404).json({ message: 'Restaurant not found' });
