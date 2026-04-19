@@ -19,12 +19,11 @@ const restaurantSchema = new mongoose.Schema({
     role: { type: String, default: 'restaurant' }
 }, { timestamps: true });
 
-restaurantSchema.pre('save', async function (next) {
+restaurantSchema.pre('save', async function () {
     //pre('save') means: “Run this function before saving a document in DB”
-    if (!this.isModified('password')) return next();
+    if (!this.isModified('password')) return;
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
 });
 
 restaurantSchema.methods.matchPassword = async function (enteredPassword) {
