@@ -5,12 +5,13 @@ import { Colors, Spacing, BorderRadius, Typography } from '../styles/theme';
 interface MealSlotCardProps {
     type: 'Breakfast' | 'Lunch' | 'Dinner';
     time: string;
-    status: 'available' | 'booked' | 'skipped' | 'taken';
+    status: 'available' | 'booked' | 'skipped' | 'taken' | 'missed';
     restaurant?: string;
     onPress: () => void;
+    statusText?: string;
 }
 
-const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress }) => {
+const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText }) => {
     const getStatusColor = () => {
         switch (status) {
             case 'booked':
@@ -18,6 +19,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaur
             case 'taken':
                 return Colors.success;
             case 'skipped':
+            case 'missed':
                 return Colors.error;
             default:
                 return Colors.textLight;
@@ -33,7 +35,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaur
                     <Text style={Typography.caption}>{time}</Text>
                 </View>
                 <View style={styles.rightContent}>
-                    {restaurant ? (
+                    {restaurant && restaurant !== 'Not selected' ? (
                         <Text style={styles.restaurantName} numberOfLines={1}>
                             {restaurant}
                         </Text>
@@ -42,7 +44,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaur
                     )}
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
                         <Text style={[styles.statusText, { color: getStatusColor() }]}>
-                            {status.toUpperCase()}
+                            {statusText ? statusText.toUpperCase() : status.toUpperCase()}
                         </Text>
                     </View>
                 </View>

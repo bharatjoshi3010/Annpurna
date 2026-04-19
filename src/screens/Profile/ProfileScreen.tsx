@@ -54,6 +54,8 @@ const ProfileScreen = ({ navigation }: any) => {
                                     item.title === 'Default Restaurant'
                                 ) {
                                     navigation.navigate('PersonalDetails');
+                                } else if (item.title === 'Meal History') {
+                                    navigation.navigate('MealHistory');
                                 }
                             }}
                         >

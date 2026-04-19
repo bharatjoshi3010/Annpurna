@@ -6,6 +6,8 @@ import { Server } from 'socket.io';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import mealRoutes from './routes/mealRoutes.js';
+import menuRoutes from './routes/menuRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -55,6 +57,8 @@ app.use((req, res, next) => {
 // Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/meals', mealRoutes);
+app.use('/api/menu', menuRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

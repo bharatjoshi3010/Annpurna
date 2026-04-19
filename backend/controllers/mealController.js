@@ -1,0 +1,180 @@
+import Booking from '../models/Booking.js';
+import Student from '../models/Student.js';
+import Restaurant from '../models/Restaurant.js';
+
+const MEAL_TIMES = {
+    Breakfast: { endHour: 10, endMinute: 30 }, // Ends 10:30 AM
+    Lunch: { endHour: 15, endMinute: 30 },     // Ends 3:30 PM
+    Dinner: { endHour: 22, endMinute: 30 }     // Ends 10:30 PM
+};
+
+const isMealPast = (mealType) => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const config = MEAL_TIMES[mealType];
+    const endMinutes = config.endHour * 60 + config.endMinute;
+    return currentMinutes >= endMinutes;
+};
+
+export const bookMeal = async (req, res) => {
+    try {
+        const { studentId, restaurantId, mealType } = req.body;
+
+        // Verify student and restaurant exist
+        const student = await Student.findById(studentId);
+        const restaurant = await Restaurant.findById(restaurantId);
+
+        if (!student || !restaurant) {
+            return res.status(404).json({ message: 'Student or Restaurant not found' });
+        }
+
+        // Time Check
+        if (isMealPast(mealType)) {
+            const config = MEAL_TIMES[mealType];
+            return res.status(400).json({ 
+                message: `Booking Closed: ${mealType} ended at ${config.endHour}:${config.endMinute || '00'}` 
+            });
+        }
+
+        // Get today's start and end date
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        // Check if already booked for this meal today
+        const existingBooking = await Booking.findOne({
+            student: studentId,
+            mealType,
+            date: { $gte: start, $lte: end }
+        });
+
+        if (existingBooking) {
+            if (existingBooking.status === 'consumed') {
+                return res.status(400).json({ message: 'Meal already consumed' });
+            }
+            // Update existing booking to a new restaurant if they change their mind
+            existingBooking.restaurant = restaurantId;
+            await existingBooking.save();
+            
+            const populatedBooking = await Booking.findById(existingBooking._id)
+                .populate('student', 'name email phoneNumber')
+                .populate('restaurant', 'restaurantName address location');
+            
+            req.io.to(restaurantId).emit('newBooking', populatedBooking);
+            return res.json(populatedBooking);
+        }
+
+        const booking = await Booking.create({
+            student: studentId,
+            restaurant: restaurantId,
+            mealType,
+            date: new Date()
+        });
+
+        const populatedBooking = await Booking.findById(booking._id)
+            .populate('student', 'name email phoneNumber')
+            .populate('restaurant', 'restaurantName address location');
+
+        req.io.to(restaurantId).emit('newBooking', populatedBooking);
+        res.status(201).json(populatedBooking);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const markConsumed = async (req, res) => {
+    try {
+        const { bookingId } = req.body;
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        booking.status = 'consumed';
+        await booking.save();
+
+        res.json({ message: 'Meal marked as consumed', booking });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getStudentMealStatus = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        const currentHour = new Date().getHours();
+        const bookings = await Booking.find({
+            student: studentId,
+            date: { $gte: start, $lte: end }
+        }).populate('restaurant', 'restaurantName');
+
+        const mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
+        const status = mealTypes.map(type => {
+            const booking = bookings.find(b => b.mealType === type);
+            const past = isMealPast(type);
+
+            if (booking) {
+                if (booking.status === 'consumed') {
+                    return { mealType: type, status: 'Consumed', restaurantName: booking.restaurant.restaurantName, restaurantId: booking.restaurant._id };
+                }
+                if (past) {
+                    return { mealType: type, status: 'Not Consumed', restaurantName: booking.restaurant.restaurantName, restaurantId: booking.restaurant._id };
+                }
+                return { mealType: type, status: booking.restaurant.restaurantName, bookingId: booking._id, restaurantId: booking.restaurant._id };
+            } else {
+                if (past) {
+                    return { mealType: type, status: 'Not Consumed' };
+                }
+                return { mealType: type, status: 'Select' };
+            }
+        });
+
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getIncomingStudents = async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+        
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        const bookings = await Booking.find({
+            restaurant: restaurantId,
+            date: { $gte: start, $lte: end },
+            status: 'booked'
+        }).populate('student', 'name email phoneNumber');
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getStudentBookings = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+
+        const bookings = await Booking.find({
+            student: studentId
+        })
+        .populate('restaurant', 'restaurantName address location')
+        .sort({ date: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

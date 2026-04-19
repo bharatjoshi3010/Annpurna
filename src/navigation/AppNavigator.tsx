@@ -17,6 +17,8 @@ import WalletScreen from '../screens/Wallet/WalletScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import PersonalDetailsScreen from '../screens/Profile/PersonalDetailsScreen';
 import RestaurantDashboardScreen from '../screens/RestaurantOwner/RestaurantDashboardScreen';
+import ManageMenuScreen from '../screens/RestaurantOwner/MenuManagement/ManageMenuScreen';
+import MealHistoryScreen from '../screens/MealHistory/MealHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -136,6 +138,8 @@ const AppNavigator = () => {
                 <Stack.Screen name="Restaurants" component={RestaurantListScreen} />
                 <Stack.Screen name="Menu" component={MenuScreen} />
                 <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+                <Stack.Screen name="MealHistory" component={MealHistoryScreen} />
+                <Stack.Screen name="ManageMenu" component={ManageMenuScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

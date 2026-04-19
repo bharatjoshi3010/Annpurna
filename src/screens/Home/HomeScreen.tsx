@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, Typography } from '../../styles/theme';
 import WalletCard from '../../components/WalletCard';
 import MealSlotCard from '../../components/MealSlotCard';
@@ -9,13 +10,77 @@ import KYCWarning from '../../components/KYCWarning';
 
 const HomeScreen = ({ navigation }: any) => {
     const { user } = useAuth();
+    const [mealStatuses, setMealStatuses] = useState<any[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
     
+    const fetchMealStatuses = async () => {
+        if (!user?._id) return;
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/meals/status/${user._id}`);
+            const data = await response.json();
+            if (response.ok) {
+                setMealStatuses(data);
+            }
+        } catch (error) {
+            console.error('Error fetching meal statuses:', error);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchMealStatuses();
+        }, [user?._id])
+    );
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchMealStatuses();
+        setRefreshing(false);
+    };
+
     // Fallback to "Guest" or a field based on role. Student has 'name', Restaurant has 'ownerName'.
     const displayName = user?.name || user?.ownerName || 'Guest';
 
+    const renderMealSlot = (type: string, time: string) => {
+        const mealStatus = mealStatuses.find(s => s.mealType === type);
+        const status = mealStatus?.status || 'Select';
+        const restaurantName = mealStatus?.restaurantName || (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
+        
+        return (
+            <MealSlotCard
+                type={type}
+                time={time}
+                status={status === 'Consumed' ? 'taken' : (status === 'Not Consumed' ? 'missed' : (status === 'Select' ? 'available' : 'booked'))}
+                restaurant={restaurantName}
+                onPress={() => {
+                    if (status === 'Select') {
+                        navigation.navigate('Restaurants', { mealType: type });
+                    } else if (status === 'Consumed' || status === 'Not Consumed') {
+                        // Maybe show history or details?
+                    } else {
+                        // Already booked, show menu or change
+                        navigation.navigate('Menu', { 
+                            mealType: type, 
+                            restaurantId: mealStatus?.restaurantId,
+                            restaurantName: mealStatus?.restaurantName || status
+                        });
+                    }
+                }}
+                statusText={status} // Pass the status text to be displayed
+            />
+        );
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false} 
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+                }
+            >
                 <KYCWarning />
                 <View style={styles.header}>
                     <View>
@@ -40,28 +105,9 @@ const HomeScreen = ({ navigation }: any) => {
                         <Text style={Typography.h2}>Today's Meals</Text>
                     </View>
 
-                    <MealSlotCard
-                        type="Breakfast"
-                        time="08:00 AM - 10:00 AM"
-                        status="taken"
-                        restaurant={user?.location || 'Campus Canteen'}
-                        onPress={() => { }}
-                    />
-
-                    <MealSlotCard
-                        type="Lunch"
-                        time="12:30 PM - 02:30 PM"
-                        status="booked"
-                        restaurant={user?.location || 'Campus Canteen'}
-                        onPress={() => navigation.navigate('Menu', { mealType: 'Lunch' })}
-                    />
-
-                    <MealSlotCard
-                        type="Dinner"
-                        time="07:30 PM - 09:30 PM"
-                        status="available"
-                        onPress={() => navigation.navigate('Restaurants')}
-                    />
+                    {renderMealSlot('Breakfast', '08:00 AM - 10:30 AM')}
+                    {renderMealSlot('Lunch', '12:30 PM - 03:30 PM')}
+                    {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
                 </View>
 
                 <View style={styles.quickActions}>

@@ -1,8 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
+import { io } from 'socket.io-client';
+
+const SOCKET_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 
 const StatCard = ({ title, value, color }: { title: string, value: string | number, color: string }) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
@@ -13,14 +16,72 @@ const StatCard = ({ title, value, color }: { title: string, value: string | numb
 
 const RestaurantDashboardScreen = ({ navigation }: any) => {
     const { user } = useAuth();
+    const [incomingStudents, setIncomingStudents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const displayName = user?.restaurantName || user?.ownerName || 'Restaurant';
 
-    // Mock Data
+    useEffect(() => {
+        fetchIncomingStudents();
+
+        const socket = io(SOCKET_URL);
+        socket.on('connect', () => {
+            socket.emit('join', user._id.toString());
+        });
+
+        socket.on('newBooking', (booking) => {
+            setIncomingStudents(prev => {
+                // Check if already in list (update/replace)
+                const exists = prev.find(b => b.student._id === booking.student._id);
+                if (exists) {
+                    return prev.map(b => b.student._id === booking.student._id ? booking : b);
+                }
+                return [booking, ...prev];
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    const fetchIncomingStudents = async () => {
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/meals/incoming/${user._id}`);
+            const data = await response.json();
+            if (response.ok) {
+                setIncomingStudents(data);
+            }
+        } catch (error) {
+            console.error('Error fetching incoming students:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMarkConsumed = async (bookingId: string) => {
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/meals/consume`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId })
+            });
+            if (response.ok) {
+                setIncomingStudents(prev => 
+                    prev.map(b => b._id === bookingId ? { ...b, status: 'consumed' } : b)
+                );
+            }
+        } catch (error) {
+            console.error('Error marking as consumed:', error);
+        }
+    };
+
     const stats = {
-        totalComing: 120,
-        completed: 45,
-        remaining: 65,
-        canceled: 10,
+        totalComing: incomingStudents.length,
+        completed: incomingStudents.filter(b => b.status === 'consumed').length,
+        remaining: incomingStudents.filter(b => b.status === 'booked').length,
+        canceled: incomingStudents.filter(b => b.status === 'cancelled').length,
     };
 
     return (
@@ -54,13 +115,16 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
             <View style={styles.section}>
                 <Text style={Typography.h2}>Quick Actions</Text>
 
-                <TouchableOpacity style={styles.actionCard}>
+                <TouchableOpacity 
+                    style={styles.actionCard}
+                    onPress={() => navigation.navigate('ManageMenu')}
+                >
                     <View style={styles.actionIconContainer}>
                         <Text style={styles.actionIcon}>📋</Text>
                     </View>
                     <View>
-                        <Text style={styles.actionTitle}>List Specific Item</Text>
-                        <Text style={styles.actionSubtitle}>Update today's special menu</Text>
+                        <Text style={styles.actionTitle}>Manage Menu</Text>
+                        <Text style={styles.actionSubtitle}>Weekly routine & daily specials</Text>
                     </View>
                 </TouchableOpacity>
 
@@ -76,19 +140,45 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
             </View>
 
             <View style={styles.section}>
-                <Text style={Typography.h2}>Recent Meal Scans</Text>
-                <View style={styles.scanItem}>
-                    <Text style={styles.scanName}>Rahul Kumar</Text>
-                    <Text style={styles.scanTime}>Just now</Text>
+                <View style={styles.sectionHeaderRow}>
+                    <Text style={Typography.h2}>Incoming Students</Text>
+                    {loading && <ActivityIndicator size="small" color={Colors.primary} />}
                 </View>
-                <View style={styles.scanItem}>
-                    <Text style={styles.scanName}>Anjali Sharma</Text>
-                    <Text style={styles.scanTime}>5 mins ago</Text>
-                </View>
-                <View style={[styles.scanItem, { borderBottomWidth: 0 }]}>
-                    <Text style={styles.scanName}>Vikram Singh</Text>
-                    <Text style={styles.scanTime}>12 mins ago</Text>
-                </View>
+
+                {incomingStudents.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No students expected yet for this meal slot.</Text>
+                    </View>
+                ) : (
+                    incomingStudents.map((booking, index) => (
+                        <View key={booking._id} style={[styles.scanItem, index === incomingStudents.length - 1 && { borderBottomWidth: 0 }]}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.scanName}>{booking.student?.name || 'Anonymous Student'}</Text>
+                                <Text style={styles.scanSub}>{booking.mealType} • {booking.student?.phoneNumber}</Text>
+                            </View>
+                            {booking.status === 'booked' ? (
+                                <TouchableOpacity 
+                                    style={styles.confirmButton}
+                                    onPress={() => handleMarkConsumed(booking._id)}
+                                >
+                                    <Text style={styles.confirmButtonText}>Confirm Meal</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={[
+                                    styles.statusBadge, 
+                                    { backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : '#FFF3E0' }
+                                ]}>
+                                    <Text style={[
+                                        styles.statusText, 
+                                        { color: booking.status === 'consumed' ? '#2E7D32' : '#E65100' }
+                                    ]}>
+                                        {booking.status}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    ))
+                )}
             </View>
         </ScrollView>
     );
@@ -211,9 +301,39 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: Colors.text,
     },
-    scanTime: {
+    scanSub: {
         fontSize: 12,
         color: Colors.textLight,
+        marginTop: 2,
+    },
+    statusBadge: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#2E7D32',
+        textTransform: 'uppercase',
+    },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: Spacing.sm,
+    },
+    confirmButton: {
+        backgroundColor: Colors.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    confirmButtonText: {
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: '700',
     },
 });
 

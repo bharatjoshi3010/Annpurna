@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, ActivityIndicator } from 'react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 
@@ -13,7 +13,33 @@ const MENU_ITEMS = [
 ];
 
 const MenuScreen = ({ navigation, route }: any) => {
-    const mealType = route?.params?.mealType || 'Meal';
+    const { mealType, restaurantId, restaurantName } = route?.params || {};
+    const [menuItems, setMenuItems] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (restaurantId) {
+            fetchMenu();
+        }
+    }, [restaurantId, mealType]);
+
+    const fetchMenu = async () => {
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            // Passing date as today to get current menu (weekly routine or single specific)
+            const response = await fetch(`${baseUrl}/api/menu/${restaurantId}?date=${new Date().toISOString()}`);
+            const data = await response.json();
+            if (response.ok) {
+                // Find items for this specific mealType
+                const mealMenu = data.find((m: any) => m.mealType === mealType);
+                setMenuItems(mealMenu ? mealMenu.items : []);
+            }
+        } catch (error) {
+            console.error('Error fetching menu:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -22,37 +48,30 @@ const MenuScreen = ({ navigation, route }: any) => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.restaurantHeader}>
                     <View style={styles.restaurantInfo}>
-                        <Text style={Typography.h2}>The Green Plate</Text>
-                        <Text style={Typography.caption}>Pure Veg • Healthy • 4.8 ★</Text>
+                        <Text style={Typography.h2}>{restaurantName || 'Restaurant Menu'}</Text>
+                        <Text style={Typography.caption}>Healthy • Fresh • Today's Special</Text>
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={[Typography.h3, styles.sectionTitle]}>Featured Dishes</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredContainer}>
-                        {MENU_ITEMS.filter(item => item.featured).map(item => (
-                            <View key={item.id} style={styles.featuredCard}>
-                                <View style={styles.featuredImagePlaceholder}>
-                                    <Text style={styles.featuredEmoji}>🍛</Text>
-                                </View>
-                                <Text style={styles.featuredName}>{item.name}</Text>
-                                <Text style={styles.featuredPrice}>₹{item.price}</Text>
-                            </View>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={[Typography.h3, styles.sectionTitle]}>Full Menu</Text>
-                    {MENU_ITEMS.map(item => (
-                        <View key={item.id} style={styles.menuItem}>
-                            <View style={styles.menuItemInfo}>
-                                <Text style={styles.itemName}>{item.name}</Text>
-                                <Text style={styles.itemCategory}>{item.category}</Text>
-                            </View>
-                            <Text style={styles.itemPrice}>₹{item.price}</Text>
+                    <Text style={[Typography.h3, styles.sectionTitle]}>Meal Items</Text>
+                    {loading ? (
+                        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
+                    ) : menuItems.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No special menu items listed for this meal yet.</Text>
                         </View>
-                    ))}
+                    ) : (
+                        menuItems.map((item, index) => (
+                            <View key={index} style={styles.menuItem}>
+                                <View style={styles.menuItemInfo}>
+                                    <Text style={styles.itemName}>{item.name}</Text>
+                                    <Text style={styles.itemCategory}>{mealType} Special</Text>
+                                </View>
+                                <Text style={styles.itemEmoji}>🍲</Text>
+                            </View>
+                        ))
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
