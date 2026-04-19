@@ -9,6 +9,7 @@ interface RestaurantCardProps {
     imageUrl?: string;
     onPress: () => void;
     isSelected?: boolean;
+    kycStatus?: string;
 }
 
 const RestaurantCard: React.FC<RestaurantCardProps> = ({
@@ -18,7 +19,26 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
     imageUrl,
     onPress,
     isSelected,
+    kycStatus,
 }) => {
+    const getKycBadgeStyle = () => {
+        switch (kycStatus) {
+            case 'approved': return styles.approvedBadge;
+            case 'pending': return styles.pendingBadge;
+            case 'rejected': return styles.rejectedBadge;
+            default: return styles.pendingBadge;
+        }
+    };
+
+    const getKycTextStyle = () => {
+        switch (kycStatus) {
+            case 'approved': return styles.approvedText;
+            case 'pending': return styles.pendingText;
+            case 'rejected': return styles.rejectedText;
+            default: return styles.pendingText;
+        }
+    };
+
     return (
         <TouchableOpacity
             style={[styles.container, isSelected && styles.selectedContainer]}
@@ -41,7 +61,14 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
                         <Text style={styles.ratingText}>★ {rating}</Text>
                     </View>
                 </View>
-                <Text style={Typography.caption}>{cuisine}</Text>
+                <View style={styles.metaRow}>
+                    <Text style={Typography.caption}>{cuisine}</Text>
+                    {kycStatus && (
+                        <View style={[styles.kycBadge, getKycBadgeStyle()]}>
+                            <Text style={[styles.kycText, getKycTextStyle()]}>{kycStatus.toUpperCase()}</Text>
+                        </View>
+                    )}
+                </View>
                 {isSelected && (
                     <View style={styles.selectedBadge}>
                         <Text style={styles.selectedText}>Selected</Text>
@@ -107,6 +134,43 @@ const styles = StyleSheet.create({
     name: {
         flex: 1,
         fontSize: 18,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 2,
+    },
+    kycBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        borderWidth: 0.5,
+    },
+    kycText: {
+        fontSize: 8,
+        fontWeight: '800',
+    },
+    approvedBadge: {
+        backgroundColor: '#E6FFFA',
+        borderColor: '#38B2AC',
+    },
+    approvedText: {
+        color: '#2C7A7B',
+    },
+    pendingBadge: {
+        backgroundColor: '#FFFBEB',
+        borderColor: '#D97706',
+    },
+    pendingText: {
+        color: '#D97706',
+    },
+    rejectedBadge: {
+        backgroundColor: '#FFF5F5',
+        borderColor: '#E53E3E',
+    },
+    rejectedText: {
+        color: '#E53E3E',
     },
     ratingBadge: {
         backgroundColor: '#FFF9E5',

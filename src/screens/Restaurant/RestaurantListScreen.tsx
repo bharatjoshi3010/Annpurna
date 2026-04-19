@@ -32,10 +32,16 @@ const RestaurantListScreen = ({ navigation }: any) => {
         }
     };
 
-    const filteredRestaurants = restaurants.filter(r =>
-        (r.restaurantName || '').toLowerCase().includes(search.toLowerCase()) || 
-        (r.ownerName || '').toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredRestaurants = restaurants
+        .filter(r =>
+            (r.restaurantName || '').toLowerCase().includes(search.toLowerCase()) || 
+            (r.ownerName || '').toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (a.kycStatus === 'approved' && b.kycStatus !== 'approved') return -1;
+            if (a.kycStatus !== 'approved' && b.kycStatus === 'approved') return 1;
+            return 0;
+        });
 
     return (
         <SafeAreaView style={styles.container}>
@@ -62,6 +68,7 @@ const RestaurantListScreen = ({ navigation }: any) => {
                             cuisine={item.specifications || 'Multi-cuisine'}
                             rating={item.rating || 4.5}
                             isSelected={item._id === selectedId}
+                            kycStatus={item.kycStatus}
                             onPress={() => setSelectedId(item._id)}
                         />
                     )}
