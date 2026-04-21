@@ -131,7 +131,7 @@ const HomeScreen = ({ navigation }: any) => {
 
                         <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={() => navigation.navigate('Menu')}
+                            onPress={() => navigation.navigate('Restaurants', { purpose: 'viewMenu' })}
                         >
                             <View style={[styles.actionIconBg, { backgroundColor: '#F3E5F5' }]}>
                                 <Text style={styles.actionIcon}>📜</Text>

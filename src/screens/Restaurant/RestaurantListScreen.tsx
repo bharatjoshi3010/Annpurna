@@ -15,6 +15,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const [bookingLoading, setBookingLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedId, setSelectedId] = useState('');
+    const purpose = route.params?.purpose;
 
     useEffect(() => {
         fetchRestaurants();
@@ -111,7 +112,17 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                                 rating={item.rating || 4.5}
                                 isSelected={item._id === selectedId}
                                 kycStatus={item.kycStatus}
-                                onPress={() => setSelectedId(item._id)}
+                                onPress={() => {
+                                    if (purpose === 'viewMenu') {
+                                        navigation.navigate('Menu', { 
+                                            restaurantId: item._id, 
+                                            restaurantName: item.restaurantName,
+                                            mealType: route.params?.mealType || 'Lunch'
+                                        });
+                                    } else {
+                                        setSelectedId(item._id);
+                                    }
+                                }}
                             />
                         )}
                         contentContainerStyle={styles.listContent}
@@ -129,13 +140,15 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                 )}
             </View>
 
-            <View style={styles.footer}>
-                <AppButton
-                    title={bookingLoading ? "Booking..." : "Confirm Booking"}
-                    onPress={handleBooking}
-                    disabled={!selectedId || bookingLoading}
-                />
-            </View>
+            {purpose !== 'viewMenu' && (
+                <View style={styles.footer}>
+                    <AppButton
+                        title={bookingLoading ? "Booking..." : "Confirm Booking"}
+                        onPress={handleBooking}
+                        disabled={!selectedId || bookingLoading}
+                    />
+                </View>
+            )}
         </SafeAreaView>
     );
 };

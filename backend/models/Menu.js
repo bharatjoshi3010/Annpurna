@@ -27,7 +27,8 @@ const menuSchema = new mongoose.Schema({
     },
     items: [{
         name: { type: String, required: true },
-        description: { type: String }
+        description: { type: String },
+        image: { type: String }
     }]
 }, { timestamps: true });
 
