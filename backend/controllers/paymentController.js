@@ -49,8 +49,10 @@ export const createPaymentIntent = async (req, res) => {
 export const confirmPayment = async (req, res) => {
     try {
         const { paymentIntentId, studentId } = req.body;
+        console.log('Verifying payment for Intent:', paymentIntentId);
 
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        console.log('Stripe status:', paymentIntent.status);
 
         if (paymentIntent.status === 'succeeded') {
             // Update transaction status
@@ -61,6 +63,7 @@ export const confirmPayment = async (req, res) => {
             );
 
             if (transaction) {
+                console.log('Transaction found and updated:', transaction._id);
                 // Update student balance
                 const student = await Student.findByIdAndUpdate(
                     studentId,
@@ -68,16 +71,20 @@ export const confirmPayment = async (req, res) => {
                     { new: true }
                 );
 
+                console.log('Student balance updated to:', student.walletBalance);
                 return res.json({ 
                     message: 'Payment successful', 
                     balance: student.walletBalance,
                     transaction 
                 });
+            } else {
+                console.log('ERROR: Transaction record not found for Intent:', paymentIntentId);
             }
         }
 
-        res.status(400).json({ message: 'Payment not successful' });
+        res.status(400).json({ message: `Payment status is ${paymentIntent.status}. Expected "succeeded".` });
     } catch (error) {
+        console.error('Confirmation error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -87,6 +94,81 @@ export const getTransactionHistory = async (req, res) => {
         const { studentId } = req.params;
         const transactions = await Transaction.find({ user: studentId }).sort({ createdAt: -1 });
         res.json(transactions);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const buySubscription = async (req, res) => {
+    try {
+        const { studentId, planName, price, defaultRestaurantId } = req.body;
+        const student = await Student.findById(studentId);
+
+        if (!student) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (student.walletBalance < price) {
+            return res.status(400).json({ message: 'Insufficient balance' });
+        }
+
+        // Deduct balance and update subscription
+        student.walletBalance -= price;
+        student.selectedPlan = planName;
+        student.defaultRestaurantId = defaultRestaurantId;
+        student.subscriptionDate = new Date();
+        student.subscriptionStatus = 'active';
+        
+        student.subscriptionHistory.push({
+            planName,
+            price,
+            startDate: new Date(),
+            status: 'active'
+        });
+
+        await student.save();
+
+        // Create a transaction record
+        await Transaction.create({
+            user: studentId,
+            amount: price,
+            type: 'debit',
+            status: 'success',
+            description: `Subscription: ${planName}`
+        });
+
+        res.json({ message: 'Subscription successful', student });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const cancelSubscription = async (req, res) => {
+    try {
+        const { studentId } = req.body;
+        const student = await Student.findById(studentId);
+
+        if (!student) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (student.subscriptionStatus !== 'active') {
+            return res.status(400).json({ message: 'No active subscription found' });
+        }
+
+        // Update history
+        const activeSub = student.subscriptionHistory.find(h => h.status === 'active');
+        if (activeSub) {
+            activeSub.status = 'cancelled';
+            activeSub.endDate = new Date();
+        }
+
+        student.selectedPlan = null;
+        student.subscriptionStatus = 'cancelled';
+        
+        await student.save();
+
+        res.json({ message: 'Subscription cancelled successfully', student });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

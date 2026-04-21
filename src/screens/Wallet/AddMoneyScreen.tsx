@@ -7,10 +7,11 @@ import { useAuth } from '../../context/AuthContext';
 import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const AddMoneyScreen = ({ navigation }: any) => {
+const AddMoneyScreen = ({ navigation, route }: any) => {
     const { user, setUser } = useAuth();
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
-    const [amount, setAmount] = useState('');
+    const initialAmount = route.params?.amount?.toString() || '';
+    const [amount, setAmount] = useState(initialAmount);
     const [loading, setLoading] = useState(false);
 
     const fetchPaymentSheetParams = async () => {
@@ -63,18 +64,22 @@ const AddMoneyScreen = ({ navigation }: any) => {
     };
 
     const openPaymentSheet = async (paymentIntentId: string) => {
+        console.log('Opening payment sheet for:', paymentIntentId);
         const { error } = await presentPaymentSheet();
 
         if (error) {
-            Alert.alert(`Error code: ${error.code}`, error.message);
+            console.log('Payment sheet error:', error);
+            Alert.alert(`Payment Cancelled`, error.message);
             setLoading(false);
         } else {
-            confirmPayment(paymentIntentId);
+            console.log('Payment sheet successful, confirming with backend...');
+            await confirmPayment(paymentIntentId);
         }
     };
 
     const confirmPayment = async (paymentIntentId: string) => {
         try {
+            console.log('Sending confirmation to backend for:', paymentIntentId);
             const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
             const response = await fetch(`${baseUrl}/api/payment/confirm`, {
                 method: 'POST',
@@ -87,18 +92,21 @@ const AddMoneyScreen = ({ navigation }: any) => {
                 }),
             });
 
+            console.log('Backend confirmation response status:', response.status);
+            const data = await response.json();
+            
             if (response.ok) {
-                const data = await response.json();
+                console.log('Payment verified successfully:', data);
                 Alert.alert('Success', 'Money added to your wallet!');
-                // Update local user state with new balance
                 setUser({ ...user, walletBalance: data.balance });
                 navigation.goBack();
             } else {
-                Alert.alert('Error', 'Payment verification failed on server');
+                console.log('Payment verification failed:', data);
+                Alert.alert('Error', data.message || 'Payment verification failed on server');
             }
-        } catch (e) {
-            console.error(e);
-            Alert.alert('Error', 'Could not confirm payment');
+        } catch (e: any) {
+            console.log('Confirmation network error:', e);
+            Alert.alert('Error', `Could not confirm payment: ${e.message}`);
         } finally {
             setLoading(false);
         }

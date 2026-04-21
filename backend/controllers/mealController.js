@@ -3,9 +3,9 @@ import Student from '../models/Student.js';
 import Restaurant from '../models/Restaurant.js';
 
 const MEAL_TIMES = {
-    Breakfast: { endHour: 10, endMinute: 30 }, // Ends 10:30 AM
-    Lunch: { endHour: 15, endMinute: 30 },     // Ends 3:30 PM
-    Dinner: { endHour: 22, endMinute: 30 }     // Ends 10:30 PM
+    Breakfast: { endHour: 10, endMinute: 30, cutoff: '08:00' }, // Ends 10:30 AM, Cutoff 08:00 AM
+    Lunch: { endHour: 15, endMinute: 30, cutoff: '10:00' },     // Ends 3:30 PM, Cutoff 10:00 AM
+    Dinner: { endHour: 22, endMinute: 30, cutoff: '17:00' }     // Ends 10:30 PM, Cutoff 05:00 PM
 };
 
 const isMealPast = (mealType) => {
@@ -101,38 +101,76 @@ export const markConsumed = async (req, res) => {
     }
 };
 
+const isCutoffPassed = (mealType, restaurant) => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Get cutoff from restaurant settings or system defaults
+    const cutoffStr = restaurant?.cutoffs?.[mealType.toLowerCase()] || MEAL_TIMES[mealType].cutoff;
+    const [hours, minutes] = cutoffStr.split(':').map(Number);
+    const cutoffMinutes = hours * 60 + minutes;
+
+    return currentMinutes >= cutoffMinutes;
+};
+
 export const getStudentMealStatus = async (req, res) => {
     try {
         const { studentId } = req.params;
+        const student = await Student.findById(studentId).populate('defaultRestaurantId');
+        
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
         const start = new Date();
         start.setHours(0, 0, 0, 0);
         const end = new Date();
         end.setHours(23, 59, 59, 999);
 
-        const currentHour = new Date().getHours();
         const bookings = await Booking.find({
             student: studentId,
             date: { $gte: start, $lte: end }
-        }).populate('restaurant', 'restaurantName');
+        }).populate('restaurant', 'restaurantName cutoffs');
 
         const mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
         const status = mealTypes.map(type => {
             const booking = bookings.find(b => b.mealType === type);
             const past = isMealPast(type);
+            
+            // Check if cutoff is passed for the restaurant (either booked or default)
+            const activeRestaurant = booking?.restaurant || student.defaultRestaurantId;
+            const cutoffPassed = isCutoffPassed(type, activeRestaurant);
 
             if (booking) {
-                if (booking.status === 'consumed') {
-                    return { mealType: type, status: 'Consumed', restaurantName: booking.restaurant.restaurantName, restaurantId: booking.restaurant._id };
-                }
-                if (past) {
-                    return { mealType: type, status: 'Not Consumed', restaurantName: booking.restaurant.restaurantName, restaurantId: booking.restaurant._id };
-                }
-                return { mealType: type, status: booking.restaurant.restaurantName, bookingId: booking._id, restaurantId: booking.restaurant._id };
+                return { 
+                    mealType: type, 
+                    status: booking.status === 'consumed' ? 'Consumed' : (past ? 'Not Consumed' : (booking.status === 'cancelled' ? 'Cancelled' : booking.restaurant.restaurantName)),
+                    restaurantName: booking.restaurant.restaurantName,
+                    restaurantId: booking.restaurant._id,
+                    bookingId: booking._id,
+                    isLocked: cutoffPassed,
+                    canModify: !cutoffPassed && booking.status === 'booked'
+                };
             } else {
-                if (past) {
-                    return { mealType: type, status: 'Not Consumed' };
+                // If no booking, and we have a default restaurant + active plan
+                if (student.subscriptionStatus === 'active' && student.defaultRestaurantId) {
+                    return {
+                        mealType: type,
+                        status: past ? 'Not Consumed' : student.defaultRestaurantId.restaurantName,
+                        restaurantName: student.defaultRestaurantId.restaurantName,
+                        restaurantId: student.defaultRestaurantId._id,
+                        isLocked: cutoffPassed,
+                        canModify: !cutoffPassed,
+                        isDefault: true
+                    };
                 }
-                return { mealType: type, status: 'Select' };
+                
+                return { 
+                    mealType: type, 
+                    status: past ? 'Not Consumed' : 'Select',
+                    isLocked: past || cutoffPassed,
+                    canModify: !past && !cutoffPassed
+                };
             }
         });
 

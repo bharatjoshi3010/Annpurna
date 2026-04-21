@@ -9,9 +9,10 @@ interface MealSlotCardProps {
     restaurant?: string;
     onPress: () => void;
     statusText?: string;
+    locked?: boolean;
 }
 
-const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText }) => {
+const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText, locked }) => {
     const getStatusColor = () => {
         switch (status) {
             case 'booked':
@@ -27,24 +28,34 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaur
     };
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress}>
-            <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
+        <TouchableOpacity 
+            style={[styles.container, locked && styles.lockedContainer]} 
+            onPress={locked ? undefined : onPress}
+            activeOpacity={locked ? 1 : 0.7}
+        >
+            <View style={[styles.statusIndicator, { backgroundColor: locked ? '#999' : getStatusColor() }]} />
             <View style={styles.content}>
                 <View style={styles.leftContent}>
-                    <Text style={Typography.h3}>{type}</Text>
+                    <Text style={[Typography.h3, locked && styles.lockedText]}>{type}</Text>
                     <Text style={Typography.caption}>{time}</Text>
                 </View>
                 <View style={styles.rightContent}>
                     {restaurant && restaurant !== 'Not selected' ? (
-                        <Text style={styles.restaurantName} numberOfLines={1}>
+                        <Text style={[styles.restaurantName, locked && styles.lockedText]} numberOfLines={1}>
                             {restaurant}
                         </Text>
                     ) : (
                         <Text style={styles.placeholderText}>Not selected</Text>
                     )}
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-                        <Text style={[styles.statusText, { color: getStatusColor() }]}>
-                            {statusText ? statusText.toUpperCase() : status.toUpperCase()}
+                    <View style={[
+                        styles.statusBadge, 
+                        { backgroundColor: locked ? '#F5F5F5' : getStatusColor() + '20' }
+                    ]}>
+                        <Text style={[
+                            styles.statusText, 
+                            { color: locked ? '#666' : getStatusColor() }
+                        ]}>
+                            {locked ? 'LOCKED' : (statusText ? statusText.toUpperCase() : status.toUpperCase())}
                         </Text>
                     </View>
                 </View>
@@ -105,6 +116,13 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 10,
         fontWeight: '700',
+    },
+    lockedContainer: {
+        backgroundColor: '#FCFCFC',
+        opacity: 0.8,
+    },
+    lockedText: {
+        color: '#999',
     },
 });
 

@@ -9,6 +9,43 @@ import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 
+const PLANS = [
+    {
+        id: 'basic',
+        name: 'Basic',
+        fullName: 'The Essential Plan',
+        price: '2,999',
+        priceNum: 2999,
+        tagline: 'Traditional mess with a digital safety net.',
+        icon: '📅',
+        color: '#000000',
+        features: ['5-Day Absence Rule', 'Weekend Pause Facility', 'Fixed Partner Restaurant']
+    },
+    {
+        id: 'silver',
+        name: 'Silver',
+        fullName: 'The Explorer Plan',
+        price: '3,499',
+        priceNum: 3499,
+        tagline: 'Focuses on variety and location flexibility.',
+        icon: '📍',
+        color: '#000000',
+        features: ['Any Network Restaurant', '30-Min Cutoff Switching', 'Taste Matching Suggestions']
+    },
+    {
+        id: 'gold',
+        name: 'Gold',
+        fullName: 'The Freedom Plan',
+        price: '3,999',
+        priceNum: 3999,
+        tagline: 'Complete control over your dining experience.',
+        icon: '📦',
+        color: '#000000',
+        isPopular: true,
+        features: ['Full Cancellation Refund', 'Unlimited Switching', 'Takeaway Packing Toggle', 'Priority QR Access']
+    }
+];
+
 const HomeScreen = ({ navigation }: any) => {
     const { user } = useAuth();
     const [mealStatuses, setMealStatuses] = useState<any[]>([]);
@@ -47,13 +84,15 @@ const HomeScreen = ({ navigation }: any) => {
         const mealStatus = mealStatuses.find(s => s.mealType === type);
         const status = mealStatus?.status || 'Select';
         const restaurantName = mealStatus?.restaurantName || (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
-        
+        const isLocked = mealStatus?.isLocked || false;
+
         return (
             <MealSlotCard
                 type={type}
                 time={time}
                 status={status === 'Consumed' ? 'taken' : (status === 'Not Consumed' ? 'missed' : (status === 'Select' ? 'available' : 'booked'))}
                 restaurant={restaurantName}
+                locked={isLocked}
                 onPress={() => {
                     if (status === 'Select') {
                         navigation.navigate('Restaurants', { mealType: type });
@@ -73,6 +112,8 @@ const HomeScreen = ({ navigation }: any) => {
         );
     };
 
+    const isActive = user?.subscriptionStatus === 'active';
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView 
@@ -86,7 +127,7 @@ const HomeScreen = ({ navigation }: any) => {
                 <View style={styles.header}>
                     <View>
                         <Text style={styles.welcomeText}>Hello, {displayName}!</Text>
-                        <Text style={Typography.body}>Time for your next meal?</Text>
+                        <Text style={Typography.body}>{isActive ? 'Your healthy meal is waiting!' : 'Join a plan to start your journey'}</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.profileBadge}
@@ -101,53 +142,108 @@ const HomeScreen = ({ navigation }: any) => {
                     onRecharge={() => navigation.navigate('AddMoney')}
                 />
 
-                <View style={styles.section}>
+                {!isActive && (
+                    <View style={styles.onboardingBanner}>
+                        <View style={styles.bannerInfo}>
+                            <Text style={styles.bannerTitle}>UNLIMITED MEALS AWAIT</Text>
+                            <Text style={styles.bannerDesc}>Unlock your personal meal dashboard by selecting a subscription tier below.</Text>
+                        </View>
+                    </View>
+                )}
+
+                {isActive && (
+                    <>
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={Typography.h2}>Today's Meals</Text>
+                            </View>
+
+                            {renderMealSlot('Breakfast', '08:00 AM - 10:30 AM')}
+                            {renderMealSlot('Lunch', '12:30 PM - 03:30 PM')}
+                            {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
+                        </View>
+
+                        <View style={styles.quickActions}>
+                            <View style={styles.actionRow}>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => navigation.navigate('Restaurants')}
+                                >
+                                    <View style={[styles.actionIconBg, { backgroundColor: '#E3F2FD' }]}>
+                                        <Text style={styles.actionIcon}>🏪</Text>
+                                    </View>
+                                    <Text style={styles.actionLabel}>Change Restaurant</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionButton}>
+                                    <View style={[styles.actionIconBg, { backgroundColor: '#FFF3E0' }]}>
+                                        <Text style={styles.actionIcon}>🚫</Text>
+                                    </View>
+                                    <Text style={styles.actionLabel}>Cancel Meal</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => navigation.navigate('Restaurants', { purpose: 'viewMenu' })}
+                                >
+                                    <View style={[styles.actionIconBg, { backgroundColor: '#F3E5F5' }]}>
+                                        <Text style={styles.actionIcon}>📜</Text>
+                                    </View>
+                                    <Text style={styles.actionLabel}>View Menu</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </>
+                )}
+
+                <View style={styles.subscriptionSection}>
                     <View style={styles.sectionHeader}>
-                        <Text style={Typography.h2}>Today's Meals</Text>
+                        <Text style={styles.sectionTitle}>SUBSCRIPTION TIERS</Text>
+                        <Text style={styles.sectionSubtitle}>Select your access level</Text>
                     </View>
 
-                    {renderMealSlot('Breakfast', '08:00 AM - 10:30 AM')}
-                    {renderMealSlot('Lunch', '12:30 PM - 03:30 PM')}
-                    {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
-                </View>
-
-                <View style={styles.quickActions}>
-                    <View style={styles.actionRow}>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => navigation.navigate('Restaurants')}
+                    {user?.selectedPlan ? (
+                        <TouchableOpacity 
+                            style={styles.activePlanCard}
+                            onPress={() => navigation.navigate('PlanDetail', { plan: PLANS.find(p => p.name === user.selectedPlan) || PLANS[0] })}
                         >
-                            <View style={[styles.actionIconBg, { backgroundColor: '#E3F2FD' }]}>
-                                <Text style={styles.actionIcon}>🏪</Text>
+                            <View style={styles.statusBar}>
+                                <Text style={styles.statusText}>ACTIVE SESSION</Text>
+                                <View style={styles.pulseDot} />
                             </View>
-                            <Text style={styles.actionLabel}>Change Restaurant</Text>
+                            <Text style={styles.activePlanName}>{user.selectedPlan.toUpperCase()}</Text>
+                            <Text style={styles.activePlanDesc}>Tap to view benefits & manage features</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.actionButton}>
-                            <View style={[styles.actionIconBg, { backgroundColor: '#FFF3E0' }]}>
-                                <Text style={styles.actionIcon}>🚫</Text>
-                            </View>
-                            <Text style={styles.actionLabel}>Cancel Meal</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => navigation.navigate('Restaurants', { purpose: 'viewMenu' })}
-                        >
-                            <View style={[styles.actionIconBg, { backgroundColor: '#F3E5F5' }]}>
-                                <Text style={styles.actionIcon}>📜</Text>
-                            </View>
-                            <Text style={styles.actionLabel}>View Menu</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                <View style={styles.subscriptionInfo}>
-                    <Text style={styles.subLabel}>Current Plan</Text>
-                    <View style={styles.subCard}>
-                        <Text style={styles.subTitle}>{user?.selectedPlan || 'No Active Plan'}</Text>
-                        <Text style={styles.subExpiry}>{user?.selectedPlan ? 'Monthly Subscription active' : 'Choose a plan to get started'}</Text>
-                    </View>
+                    ) : (
+                        <View style={styles.tiersContainer}>
+                            {PLANS.map(plan => (
+                                <TouchableOpacity 
+                                    key={plan.id} 
+                                    style={styles.tierCard}
+                                    onPress={() => navigation.navigate('PlanDetail', { plan })}
+                                >
+                                    {plan.isPopular && (
+                                        <View style={styles.popularBadge}>
+                                            <Text style={styles.popularText}>MOST POPULAR</Text>
+                                        </View>
+                                    )}
+                                    <View style={styles.tierHeader}>
+                                        <View style={styles.tierInfo}>
+                                            <Text style={styles.tierName}>{plan.name.toUpperCase()}</Text>
+                                            <Text style={styles.tierTagline}>{plan.tagline}</Text>
+                                        </View>
+                                        <Text style={styles.tierIcon}>{plan.icon}</Text>
+                                    </View>
+                                    <View style={styles.tierFooter}>
+                                        <Text style={styles.tierPrice}>₹{plan.price}<Text style={styles.perMonth}>/mo</Text></Text>
+                                        <View style={styles.viewBtn}>
+                                            <Text style={styles.viewBtnText}>VIEW DETAILS</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -222,31 +318,162 @@ const styles = StyleSheet.create({
         color: Colors.text,
         textAlign: 'center',
     },
-    subscriptionInfo: {
+    subscriptionSection: {
         marginTop: Spacing.xl,
+        paddingBottom: 40,
     },
-    subLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: Colors.textLight,
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: 2,
+    },
+    sectionSubtitle: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#666',
+        marginTop: 2,
+        marginBottom: 20,
+    },
+    activePlanCard: {
+        backgroundColor: '#000',
+        borderRadius: 2,
+        padding: 24,
+        minHeight: 140,
+        justifyContent: 'center',
+    },
+    statusBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    statusText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '900',
+        letterSpacing: 1.5,
+        marginRight: 8,
+    },
+    pulseDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#4CAF50',
+    },
+    activePlanName: {
+        color: '#FFF',
+        fontSize: 32,
+        fontWeight: '900',
+        letterSpacing: -1,
+    },
+    activePlanDesc: {
+        color: '#AAA',
+        fontSize: 12,
+        marginTop: 8,
+    },
+    tiersContainer: {
+        gap: 20,
+    },
+    tierCard: {
+        backgroundColor: '#FFF',
+        borderWidth: 2,
+        borderColor: '#000',
+        borderRadius: 2,
+        padding: 20,
+        position: 'relative',
+    },
+    popularBadge: {
+        position: 'absolute',
+        top: -12,
+        right: 20,
+        backgroundColor: '#000',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 2,
+    },
+    popularText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    tierHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 24,
+    },
+    tierInfo: {
+        flex: 1,
+        paddingRight: 10,
+    },
+    tierName: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: -0.5,
+    },
+    tierTagline: {
+        fontSize: 13,
+        color: '#666',
+        marginTop: 4,
+        lineHeight: 18,
+    },
+    tierIcon: {
+        fontSize: 32,
+    },
+    tierFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#EEE',
+        paddingTop: 16,
+    },
+    tierPrice: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#000',
+    },
+    perMonth: {
+        fontSize: 12,
+        fontWeight: '400',
+        color: '#666',
+    },
+    viewBtn: {
+        backgroundColor: '#000',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 2,
+    },
+    viewBtnText: {
+        color: '#FFF',
+        fontSize: 11,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    onboardingBanner: {
+        backgroundColor: '#F5F5F5',
+        borderRadius: 2,
+        padding: 24,
+        marginTop: 24,
+        borderLeftWidth: 4,
+        borderLeftColor: '#000',
+    },
+    bannerInfo: {
+        flex: 1,
+    },
+    bannerTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: 1,
         marginBottom: 8,
     },
-    subCard: {
-        padding: Spacing.md,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: Colors.secondary,
-        backgroundColor: '#FFFCFA',
-    },
-    subTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: Colors.primary,
-    },
-    subExpiry: {
-        fontSize: 12,
-        color: Colors.textLight,
-        marginTop: 4,
+    bannerDesc: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 20,
     },
 });
 

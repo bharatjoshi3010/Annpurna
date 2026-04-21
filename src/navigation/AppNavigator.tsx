@@ -20,6 +20,8 @@ import RestaurantDashboardScreen from '../screens/RestaurantOwner/RestaurantDash
 import ManageMenuScreen from '../screens/RestaurantOwner/MenuManagement/ManageMenuScreen';
 import MealHistoryScreen from '../screens/MealHistory/MealHistoryScreen';
 import AddMoneyScreen from '../screens/Wallet/AddMoneyScreen';
+import PlanDetailScreen from '../screens/Subscription/PlanDetailScreen';
+import RestaurantSelectionScreen from '../screens/Subscription/RestaurantSelectionScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -142,6 +144,8 @@ const AppNavigator = () => {
                 <Stack.Screen name="MealHistory" component={MealHistoryScreen} />
                 <Stack.Screen name="ManageMenu" component={ManageMenuScreen} />
                 <Stack.Screen name="AddMoney" component={AddMoneyScreen} />
+                <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
+                <Stack.Screen name="RestaurantSelection" component={RestaurantSelectionScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

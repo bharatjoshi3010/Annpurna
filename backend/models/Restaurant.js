@@ -14,6 +14,11 @@ const restaurantSchema = new mongoose.Schema({
     specifications: { type: String },
     maxCapacity: { type: Number, required: true },
     walletBalance: { type: Number, default: 0 },
+    cutoffs: {
+        breakfast: { type: String, default: '07:00' },
+        lunch: { type: String, default: '10:00' },
+        dinner: { type: String, default: '17:00' }
+    },
     kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'restaurant' }

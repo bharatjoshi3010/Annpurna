@@ -14,7 +14,17 @@ const studentSchema = new mongoose.Schema({
     location: { type: String },
     budget: { type: String },
     selectedPlan: { type: String },
+    subscriptionDate: { type: Date },
+    subscriptionStatus: { type: String, enum: ['active', 'inactive', 'cancelled'], default: 'inactive' },
+    subscriptionHistory: [{
+        planName: String,
+        price: Number,
+        startDate: Date,
+        endDate: Date,
+        status: String
+    }],
     walletBalance: { type: Number, default: 0 },
+    defaultRestaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' },
     kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'student' }
