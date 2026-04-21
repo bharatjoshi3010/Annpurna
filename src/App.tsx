@@ -6,18 +6,22 @@ import { Colors } from './styles/theme';
 import { AuthProvider } from './context/AuthContext';
 
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 const App = () => {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={Colors.background}
-        translucent={false}
-      />
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 };
 

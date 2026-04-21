@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Image, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 

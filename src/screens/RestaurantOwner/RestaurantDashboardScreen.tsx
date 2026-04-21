@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
@@ -85,102 +86,104 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-            <KYCWarning />
-            <View style={styles.header}>
-                <View style={styles.titleRow}>
-                    <View>
-                        <Text style={Typography.h1}>{displayName}</Text>
-                        <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+                <KYCWarning />
+                <View style={styles.header}>
+                    <View style={styles.titleRow}>
+                        <View>
+                            <Text style={Typography.h1}>{displayName}</Text>
+                            <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
+                        </View>
+                        <TouchableOpacity 
+                            style={styles.profileIndicator}
+                            onPress={() => navigation.navigate('PersonalDetails')}
+                        >
+                            <Text style={styles.profileEmoji}>👤</Text>
+                            <Text style={styles.viewProfileText}>View Profile</Text>
+                        </TouchableOpacity>
                     </View>
+                </View>
+
+                <View style={styles.statsContainer}>
+                    <StatCard title="Total Expected" value={stats.totalComing} color={Colors.primary} />
+                    <StatCard title="Completed" value={stats.completed} color="#4CAF50" />
+                </View>
+                <View style={styles.statsContainer}>
+                    <StatCard title="Remaining" value={stats.remaining} color="#FF9800" />
+                    <StatCard title="Canceled" value={stats.canceled} color="#F44336" />
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={Typography.h2}>Quick Actions</Text>
+
                     <TouchableOpacity 
-                        style={styles.profileIndicator}
-                        onPress={() => navigation.navigate('PersonalDetails')}
+                        style={styles.actionCard}
+                        onPress={() => navigation.navigate('ManageMenu')}
                     >
-                        <Text style={styles.profileEmoji}>👤</Text>
-                        <Text style={styles.viewProfileText}>View Profile</Text>
+                        <View style={styles.actionIconContainer}>
+                            <Text style={styles.actionIcon}>📋</Text>
+                        </View>
+                        <View>
+                            <Text style={styles.actionTitle}>Manage Menu</Text>
+                            <Text style={styles.actionSubtitle}>Weekly routine & daily specials</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.actionCard}>
+                        <View style={styles.actionIconContainer}>
+                            <Text style={styles.actionIcon}>📸</Text>
+                        </View>
+                        <View>
+                            <Text style={styles.actionTitle}>Scan Student QR</Text>
+                            <Text style={styles.actionSubtitle}>Verify student meal token</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
-            </View>
 
-            <View style={styles.statsContainer}>
-                <StatCard title="Total Expected" value={stats.totalComing} color={Colors.primary} />
-                <StatCard title="Completed" value={stats.completed} color="#4CAF50" />
-            </View>
-            <View style={styles.statsContainer}>
-                <StatCard title="Remaining" value={stats.remaining} color="#FF9800" />
-                <StatCard title="Canceled" value={stats.canceled} color="#F44336" />
-            </View>
-
-            <View style={styles.section}>
-                <Text style={Typography.h2}>Quick Actions</Text>
-
-                <TouchableOpacity 
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('ManageMenu')}
-                >
-                    <View style={styles.actionIconContainer}>
-                        <Text style={styles.actionIcon}>📋</Text>
+                <View style={styles.section}>
+                    <View style={styles.sectionHeaderRow}>
+                        <Text style={Typography.h2}>Incoming Students</Text>
+                        {loading && <ActivityIndicator size="small" color={Colors.primary} />}
                     </View>
-                    <View>
-                        <Text style={styles.actionTitle}>Manage Menu</Text>
-                        <Text style={styles.actionSubtitle}>Weekly routine & daily specials</Text>
-                    </View>
-                </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionCard}>
-                    <View style={styles.actionIconContainer}>
-                        <Text style={styles.actionIcon}>📸</Text>
-                    </View>
-                    <View>
-                        <Text style={styles.actionTitle}>Scan Student QR</Text>
-                        <Text style={styles.actionSubtitle}>Verify student meal token</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                    <Text style={Typography.h2}>Incoming Students</Text>
-                    {loading && <ActivityIndicator size="small" color={Colors.primary} />}
-                </View>
-
-                {incomingStudents.length === 0 ? (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No students expected yet for this meal slot.</Text>
-                    </View>
-                ) : (
-                    incomingStudents.map((booking, index) => (
-                        <View key={booking._id} style={[styles.scanItem, index === incomingStudents.length - 1 && { borderBottomWidth: 0 }]}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.scanName}>{booking.student?.name || 'Anonymous Student'}</Text>
-                                <Text style={styles.scanSub}>{booking.mealType} • {booking.student?.phoneNumber}</Text>
-                            </View>
-                            {booking.status === 'booked' ? (
-                                <TouchableOpacity 
-                                    style={styles.confirmButton}
-                                    onPress={() => handleMarkConsumed(booking._id)}
-                                >
-                                    <Text style={styles.confirmButtonText}>Confirm Meal</Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <View style={[
-                                    styles.statusBadge, 
-                                    { backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : '#FFF3E0' }
-                                ]}>
-                                    <Text style={[
-                                        styles.statusText, 
-                                        { color: booking.status === 'consumed' ? '#2E7D32' : '#E65100' }
-                                    ]}>
-                                        {booking.status}
-                                    </Text>
-                                </View>
-                            )}
+                    {incomingStudents.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No students expected yet for this meal slot.</Text>
                         </View>
-                    ))
-                )}
-            </View>
-        </ScrollView>
+                    ) : (
+                        incomingStudents.map((booking, index) => (
+                            <View key={booking._id} style={[styles.scanItem, index === incomingStudents.length - 1 && { borderBottomWidth: 0 }]}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.scanName}>{booking.student?.name || 'Anonymous Student'}</Text>
+                                    <Text style={styles.scanSub}>{booking.mealType} • {booking.student?.phoneNumber}</Text>
+                                </View>
+                                {booking.status === 'booked' ? (
+                                    <TouchableOpacity 
+                                        style={styles.confirmButton}
+                                        onPress={() => handleMarkConsumed(booking._id)}
+                                    >
+                                        <Text style={styles.confirmButtonText}>Confirm Meal</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View style={[
+                                        styles.statusBadge, 
+                                        { backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : '#FFF3E0' }
+                                    ]}>
+                                        <Text style={[
+                                            styles.statusText, 
+                                            { color: booking.status === 'consumed' ? '#2E7D32' : '#E65100' }
+                                        ]}>
+                                            {booking.status}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        ))
+                    )}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -191,7 +194,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: Spacing.lg,
-        paddingTop: 60,
     },
     header: {
         marginBottom: Spacing.xl,

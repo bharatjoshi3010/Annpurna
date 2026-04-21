@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../../styles/theme';
 import Header from '../../components/Header';
 import RestaurantCard from '../../components/RestaurantCard';
