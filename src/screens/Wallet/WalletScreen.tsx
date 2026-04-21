@@ -1,20 +1,54 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity, Platform, RefreshControl, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import WalletCard from '../../components/WalletCard';
 import { useAuth } from '../../context/AuthContext';
 
-const TRANSACTIONS = [
-    { id: '1', title: 'Meal at Restaurant', amount: -150, date: 'Mar 12, 12:45 PM', type: 'debit' },
-    { id: '2', title: 'Wallet Recharge', amount: 1000, date: 'Mar 10, 09:20 AM', type: 'credit' },
-    { id: '3', title: 'Meal at Restaurant', amount: -120, date: 'Mar 09, 08:30 AM', type: 'debit' },
-    { id: '4', title: 'Meal at Restaurant', amount: -110, date: 'Mar 08, 07:45 PM', type: 'debit' },
-    { id: '5', title: 'Weekly Plan Cashback', amount: 50, date: 'Mar 07, 10:00 AM', type: 'credit' },
-];
-
 const WalletScreen = ({ navigation }: any) => {
     const { user } = useAuth();
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchTransactions = async () => {
+        if (!user?._id) return;
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/payment/history/${user._id}`);
+            const data = await response.json();
+            if (response.ok) {
+                setTransactions(data);
+            }
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchTransactions();
+        }, [user?._id])
+    );
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchTransactions();
+    };
+
+    const formatDate = (dateString: string) => {
+        const options: Intl.DateTimeFormatOptions = { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -23,45 +57,64 @@ const WalletScreen = ({ navigation }: any) => {
             <View style={styles.content}>
                 <WalletCard
                     balance={user?.walletBalance || 0}
-                    onRecharge={() => { }}
+                    onRecharge={() => navigation.navigate('AddMoney')}
                 />
 
                 <View style={styles.transactionSection}>
                     <View style={styles.sectionHeader}>
-                        <Text style={Typography.h3}>Recent Transactions</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.viewAll}>See All</Text>
+                        <Text style={Typography.h3}>History</Text>
+                        <TouchableOpacity onPress={onRefresh}>
+                            <Text style={styles.viewAll}>Refresh</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <FlatList
-                        data={TRANSACTIONS}
-                        keyExtractor={(item) => item.id}
-                        showsVerticalScrollIndicator={false}
-                        renderItem={({ item }) => (
-                            <View style={styles.transactionItem}>
-                                <View style={styles.iconContainer}>
-                                    <Text style={styles.txnEmoji}>
-                                        {item.type === 'credit' ? '💰' : '🍽️'}
-                                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color={Colors.primary} style={{ marginTop: 20 }} />
+                    ) : transactions.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No transaction history yet.</Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={transactions}
+                            keyExtractor={(item) => item._id}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                            }
+                            renderItem={({ item }) => (
+                                <View style={styles.transactionItem}>
+                                    <View style={styles.iconContainer}>
+                                        <Text style={styles.txnEmoji}>
+                                            {item.type === 'credit' ? '💰' : '🍽️'}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.txnInfo}>
+                                        <Text style={styles.txnTitle}>{item.description || (item.type === 'credit' ? 'Wallet Top-up' : 'Meal Payment')}</Text>
+                                        <Text style={styles.txnDate}>{formatDate(item.createdAt)}</Text>
+                                    </View>
+                                    <View style={{ alignItems: 'flex-end' }}>
+                                        <Text style={[
+                                            styles.txnAmount,
+                                            { color: item.type === 'credit' ? Colors.success : Colors.text }
+                                        ]}>
+                                            {item.type === 'credit' ? '+' : '-'}₹{Math.abs(item.amount)}
+                                        </Text>
+                                        <Text style={[styles.statusText, { color: item.status === 'success' ? Colors.success : Colors.error }]}>
+                                            {item.status}
+                                        </Text>
+                                    </View>
                                 </View>
-                                <View style={styles.txnInfo}>
-                                    <Text style={styles.txnTitle}>{item.title}</Text>
-                                    <Text style={styles.txnDate}>{item.date}</Text>
-                                </View>
-                                <Text style={[
-                                    styles.txnAmount,
-                                    { color: item.type === 'credit' ? Colors.success : Colors.text }
-                                ]}>
-                                    {item.type === 'credit' ? '+' : '-'}{Math.abs(item.amount)}
-                                </Text>
-                            </View>
-                        )}
-                        ItemSeparatorComponent={() => <View style={styles.separator} />}
-                    />
+                            )}
+                            ItemSeparatorComponent={() => <View style={styles.separator} />}
+                        />
+                    )}
                 </View>
 
-                <TouchableOpacity style={styles.rechargeButton}>
+                <TouchableOpacity 
+                    style={styles.rechargeButton}
+                    onPress={() => navigation.navigate('AddMoney')}
+                >
                     <Text style={styles.rechargeButtonText}>Add Money to Wallet</Text>
                 </TouchableOpacity>
             </View>
@@ -127,6 +180,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
     },
+    statusText: {
+        fontSize: 10,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        marginTop: 2,
+    },
     separator: {
         height: 1,
         backgroundColor: Colors.border,
@@ -145,6 +204,17 @@ const styles = StyleSheet.create({
         color: Colors.white,
         fontSize: 16,
         fontWeight: '700',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 40,
+    },
+    emptyText: {
+        color: Colors.textLight,
+        fontSize: 14,
+        fontStyle: 'italic',
     },
 });
 

@@ -98,7 +98,7 @@ const HomeScreen = ({ navigation }: any) => {
 
                 <WalletCard
                     balance={user?.walletBalance || 0}
-                    onRecharge={() => navigation.navigate('Wallet')}
+                    onRecharge={() => navigation.navigate('AddMoney')}
                 />
 
                 <View style={styles.section}>

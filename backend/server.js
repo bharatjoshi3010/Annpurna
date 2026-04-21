@@ -9,6 +9,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -66,6 +67,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/payment', paymentRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
