@@ -3,9 +3,16 @@ import Student from '../models/Student.js';
 import Restaurant from '../models/Restaurant.js';
 
 const MEAL_TIMES = {
-    Breakfast: { endHour: 10, endMinute: 30, cutoff: '08:00' }, // Ends 10:30 AM, Cutoff 08:00 AM
-    Lunch: { endHour: 15, endMinute: 30, cutoff: '10:00' },     // Ends 3:30 PM, Cutoff 10:00 AM
-    Dinner: { endHour: 22, endMinute: 30, cutoff: '17:00' }     // Ends 10:30 PM, Cutoff 05:00 PM
+    Breakfast: { endHour: 10, endMinute: 30, cutoff: '07:45' }, // Ends 10:30 AM, Cutoff 07:45 AM
+    Lunch:     { endHour: 15, endMinute: 30, cutoff: '11:45' }, // Ends 3:30 PM,  Cutoff 11:45 AM
+    Dinner:    { endHour: 22, endMinute: 30, cutoff: '17:45' } // Ends 10:30 PM, Cutoff 05:45 PM
+};
+
+// Friendly display of cutoff times shown to the user
+const CUTOFF_DISPLAY = {
+    Breakfast: '7:45 AM',
+    Lunch:     '11:45 AM',
+    Dinner:    '5:45 PM'
 };
 
 const isMealPast = (mealType) => {
@@ -53,7 +60,18 @@ export const bookMeal = async (req, res) => {
             if (existingBooking.status === 'consumed') {
                 return res.status(400).json({ message: 'Meal already consumed' });
             }
-            // Update existing booking to a new restaurant if they change their mind
+            if (existingBooking.status === 'cancelled') {
+                return res.status(400).json({ message: 'This meal booking has been cancelled.' });
+            }
+
+            // Check cutoff before allowing restaurant change
+            if (isCutoffPassed(mealType, restaurant)) {
+                return res.status(400).json({
+                    message: `Cut-off time passed: You cannot change your ${mealType} restaurant after ${CUTOFF_DISPLAY[mealType]}.`
+                });
+            }
+
+            // Update existing booking to a new restaurant
             existingBooking.restaurant = restaurantId;
             await existingBooking.save();
             
@@ -105,12 +123,55 @@ const isCutoffPassed = (mealType, restaurant) => {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     
-    // Get cutoff from restaurant settings or system defaults
+    // Use restaurant-specific cutoffs if set, otherwise system defaults
     const cutoffStr = restaurant?.cutoffs?.[mealType.toLowerCase()] || MEAL_TIMES[mealType].cutoff;
     const [hours, minutes] = cutoffStr.split(':').map(Number);
     const cutoffMinutes = hours * 60 + minutes;
 
     return currentMinutes >= cutoffMinutes;
+};
+
+export const cancelMeal = async (req, res) => {
+    try {
+        const { bookingId, studentId } = req.body;
+
+        if (!bookingId || !studentId) {
+            return res.status(400).json({ message: 'bookingId and studentId are required.' });
+        }
+
+        const booking = await Booking.findById(bookingId).populate('restaurant');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Ensure the booking belongs to the requesting student
+        if (booking.student.toString() !== studentId) {
+            return res.status(403).json({ message: 'Unauthorized: This booking does not belong to you.' });
+        }
+
+        if (booking.status === 'consumed') {
+            return res.status(400).json({ message: 'Cannot cancel a meal that has already been consumed.' });
+        }
+
+        if (booking.status === 'cancelled') {
+            return res.status(400).json({ message: 'This meal is already cancelled.' });
+        }
+
+        // Enforce cut-off time for cancellation
+        if (isCutoffPassed(booking.mealType, booking.restaurant)) {
+            return res.status(400).json({
+                message: `Cut-off time passed: You cannot cancel ${booking.mealType} after ${CUTOFF_DISPLAY[booking.mealType]}.`
+            });
+        }
+
+        booking.status = 'cancelled';
+        await booking.save();
+
+        res.json({ message: `${booking.mealType} cancelled successfully.`, booking });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 export const getStudentMealStatus = async (req, res) => {

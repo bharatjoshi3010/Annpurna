@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, Typography } from '../../styles/theme';
@@ -50,6 +50,13 @@ const HomeScreen = ({ navigation }: any) => {
     const { user } = useAuth();
     const [mealStatuses, setMealStatuses] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Cut-off times displayed to the user
+    const CUTOFF_DISPLAY: Record<string, string> = {
+        Breakfast: '7:45 AM',
+        Lunch: '11:45 AM',
+        Dinner: '5:45 PM',
+    };
     
     const fetchMealStatuses = async () => {
         if (!user?._id) return;
@@ -80,11 +87,100 @@ const HomeScreen = ({ navigation }: any) => {
     // Fallback to "Guest" or a field based on role. Student has 'name', Restaurant has 'ownerName'.
     const displayName = user?.name || user?.ownerName || 'Guest';
 
+    // ---------- Cancel Meal ----------
+    const handleCancelMeal = () => {
+        const cancellable = mealStatuses.filter(m => m.canModify && m.bookingId);
+        if (cancellable.length === 0) {
+            const anyLocked = mealStatuses.some(m => m.isLocked);
+            Alert.alert(
+                anyLocked ? '🔒 Cut-off Passed' : 'No Active Meals',
+                anyLocked
+                    ? `Cut-off times have passed. You can no longer cancel today's meals.`
+                    : 'You have no active meal bookings to cancel right now.'
+            );
+            return;
+        }
+        Alert.alert(
+            'Cancel Meal',
+            'Which meal would you like to cancel?',
+            [
+                ...cancellable.map(meal => ({
+                    text: `${meal.mealType}  (before ${CUTOFF_DISPLAY[meal.mealType]})`,
+                    style: 'destructive' as const,
+                    onPress: () =>
+                        Alert.alert(
+                            'Confirm Cancellation',
+                            `Are you sure you want to cancel your ${meal.mealType}?`,
+                            [
+                                {
+                                    text: 'Yes, Cancel Meal',
+                                    style: 'destructive',
+                                    onPress: () => executeCancelMeal(meal.bookingId, meal.mealType),
+                                },
+                                { text: 'No', style: 'cancel' },
+                            ]
+                        ),
+                })),
+                { text: 'Dismiss', style: 'cancel' },
+            ]
+        );
+    };
+
+    const executeCancelMeal = async (bookingId: string, mealType: string) => {
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const response = await fetch(`${baseUrl}/api/meals/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId, studentId: user._id }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                Alert.alert('✅ Cancelled', data.message);
+                fetchMealStatuses();
+            } else {
+                Alert.alert('Cannot Cancel', data.message || 'Failed to cancel meal.');
+            }
+        } catch {
+            Alert.alert('Error', 'Something went wrong. Please try again.');
+        }
+    };
+
+    // ---------- Change Restaurant ----------
+    const handleChangeRestaurant = () => {
+        // Meals that still allow switching (cutoff not passed, active booking or default)
+        const switchable = mealStatuses.filter(
+            m => m.canModify && (m.bookingId || m.isDefault)
+        );
+        if (switchable.length === 0) {
+            const anyLocked = mealStatuses.some(m => m.isLocked);
+            Alert.alert(
+                anyLocked ? '🔒 Cut-off Passed' : 'No Active Meals',
+                anyLocked
+                    ? `Cut-off times have passed. You can no longer change restaurants for today's meals.`
+                    : 'Book a meal first to change its restaurant.'
+            );
+            return;
+        }
+        Alert.alert(
+            'Change Restaurant',
+            'Which meal would you like to change?',
+            [
+                ...switchable.map(meal => ({
+                    text: `${meal.mealType}  (before ${CUTOFF_DISPLAY[meal.mealType]})`,
+                    onPress: () => navigation.navigate('Restaurants', { mealType: meal.mealType }),
+                })),
+                { text: 'Dismiss', style: 'cancel' },
+            ]
+        );
+    };
+
     const renderMealSlot = (type: string, time: string) => {
         const mealStatus = mealStatuses.find(s => s.mealType === type);
         const status = mealStatus?.status || 'Select';
         const restaurantName = mealStatus?.restaurantName || (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
         const isLocked = mealStatus?.isLocked || false;
+        const canModify = mealStatus?.canModify ?? true;
 
         return (
             <MealSlotCard
@@ -94,20 +190,28 @@ const HomeScreen = ({ navigation }: any) => {
                 restaurant={restaurantName}
                 locked={isLocked}
                 onPress={() => {
+                    // After cut-off: show lock message — no action allowed
+                    if (isLocked) {
+                        Alert.alert(
+                            `🔒 ${type} Locked`,
+                            `The cut-off time of ${CUTOFF_DISPLAY[type]} has passed.\nYou can no longer modify or cancel this meal.`
+                        );
+                        return;
+                    }
                     if (status === 'Select') {
                         navigation.navigate('Restaurants', { mealType: type });
                     } else if (status === 'Consumed' || status === 'Not Consumed') {
-                        // Maybe show history or details?
+                        // history / details — no action
                     } else {
-                        // Already booked, show menu or change
-                        navigation.navigate('Menu', { 
-                            mealType: type, 
+                        // Already booked — go to menu
+                        navigation.navigate('Menu', {
+                            mealType: type,
                             restaurantId: mealStatus?.restaurantId,
-                            restaurantName: mealStatus?.restaurantName || status
+                            restaurantName: mealStatus?.restaurantName || status,
                         });
                     }
                 }}
-                statusText={status} // Pass the status text to be displayed
+                statusText={status}
             />
         );
     };
@@ -167,7 +271,7 @@ const HomeScreen = ({ navigation }: any) => {
                             <View style={styles.actionRow}>
                                 <TouchableOpacity
                                     style={styles.actionButton}
-                                    onPress={() => navigation.navigate('Restaurants')}
+                                    onPress={handleChangeRestaurant}
                                 >
                                     <View style={[styles.actionIconBg, { backgroundColor: '#E3F2FD' }]}>
                                         <Text style={styles.actionIcon}>🏪</Text>
@@ -175,7 +279,10 @@ const HomeScreen = ({ navigation }: any) => {
                                     <Text style={styles.actionLabel}>Change Restaurant</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.actionButton}>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={handleCancelMeal}
+                                >
                                     <View style={[styles.actionIconBg, { backgroundColor: '#FFF3E0' }]}>
                                         <Text style={styles.actionIcon}>🚫</Text>
                                     </View>
