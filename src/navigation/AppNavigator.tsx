@@ -12,6 +12,7 @@ import SignupScreen from '../screens/Auth/SignupScreen';
 import HomeScreen from '../screens/Home/HomeScreen';
 import RestaurantListScreen from '../screens/Restaurant/RestaurantListScreen';
 import MenuScreen from '../screens/Restaurant/MenuScreen';
+import MealDetailScreen from '../screens/Restaurant/MealDetailScreen';
 import QRCodeScreen from '../screens/Main/QRCodeScreen';
 import WalletScreen from '../screens/Wallet/WalletScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
@@ -140,6 +141,7 @@ const AppNavigator = () => {
                 {/* Screens outside Tab Navigation */}
                 <Stack.Screen name="Restaurants" component={RestaurantListScreen} />
                 <Stack.Screen name="Menu" component={MenuScreen} />
+                <Stack.Screen name="MealDetail" component={MealDetailScreen} />
                 <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
                 <Stack.Screen name="MealHistory" component={MealHistoryScreen} />
                 <Stack.Screen name="ManageMenu" component={ManageMenuScreen} />

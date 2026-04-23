@@ -25,6 +25,12 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         enum: ['booked', 'consumed', 'cancelled'],
         default: 'booked'
+    },
+    // True once the student has used their one-time restaurant switch.
+    // After this is set no further changes or cancellations are allowed.
+    isModified: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

@@ -6,7 +6,7 @@ const SOCKET_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://
 
 type AuthContextType = {
     user: any;
-    setUser: (user: any) => void;
+    setUser: (user: any | ((prev: any) => any)) => void;
 };
 
 const AuthContext = createContext<AuthContextType>({ user: null, setUser: () => {} });

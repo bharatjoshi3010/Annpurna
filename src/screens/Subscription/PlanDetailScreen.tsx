@@ -63,13 +63,38 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
     };
 
     const handleCancelSubscription = async () => {
+        // Step 1 — fetch refund preview before asking for confirmation
+        setLoading(true);
+        let refundPreview: any = null;
+        try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/payment/refund-preview/${user._id}`);
+            if (res.ok) refundPreview = (await res.json()).refund;
+        } catch {
+            // ignore preview failure, still allow cancellation
+        } finally {
+            setLoading(false);
+        }
+
+        // Build breakdown message
+        const breakdownMsg = refundPreview
+            ? `\n📊 Refund Breakdown:\n` +
+              `  Subscription paid:       ₹${refundPreview.subscriptionPrice}\n` +
+              `  Breakfast ×${refundPreview.mealBreakdown.Breakfast}:           -₹${refundPreview.mealBreakdown.Breakfast * 26}\n` +
+              `  Lunch ×${refundPreview.mealBreakdown.Lunch}:              -₹${refundPreview.mealBreakdown.Lunch * 40}\n` +
+              `  Dinner ×${refundPreview.mealBreakdown.Dinner}:             -₹${refundPreview.mealBreakdown.Dinner * 40}\n` +
+              `  Early cancellation fee:  -₹${refundPreview.earlyCancellationCharge}\n` +
+              `  ─────────────────────────\n` +
+              `  💰 Refund to wallet:      ₹${refundPreview.refundAmount}`
+            : '\n(Could not load refund preview)';
+
         Alert.alert(
             'CANCEL SUBSCRIPTION',
-            'Are you sure? You will lose access to all premium network features.',
+            `Are you sure you want to cancel?\n${breakdownMsg}\n\nThe refund will be credited to your wallet immediately.`,
             [
                 { text: 'KEEP PLAN', style: 'cancel' },
-                { 
-                    text: 'YES, CANCEL', 
+                {
+                    text: 'YES, CANCEL',
                     style: 'destructive',
                     onPress: async () => {
                         setLoading(true);
@@ -83,10 +108,16 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
                             const data = await response.json();
                             if (response.ok) {
                                 setUser(data.student);
-                                Alert.alert('CANCELLED', 'Your subscription has been deactivated.');
+                                const r = data.refund;
+                                Alert.alert(
+                                    '✅ SUBSCRIPTION CANCELLED',
+                                    `₹${r.refundAmount} has been credited to your wallet.\n\nNew wallet balance: ₹${r.newWalletBalance}`
+                                );
+                            } else {
+                                Alert.alert('ERROR', data.message || 'Could not cancel at this time.');
                             }
-                        } catch (error) {
-                            Alert.alert('ERROR', 'Could not cancel at this time');
+                        } catch {
+                            Alert.alert('ERROR', 'Something went wrong. Please try again.');
                         } finally {
                             setLoading(false);
                         }

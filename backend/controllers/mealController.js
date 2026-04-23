@@ -1,88 +1,131 @@
 import Booking from '../models/Booking.js';
 import Student from '../models/Student.js';
 import Restaurant from '../models/Restaurant.js';
+import Menu from '../models/Menu.js';
 
+// ─── Cutoff times (per spec) ──────────────────────────────────────────────────
+// Breakfast → 7:30 AM  |  Lunch → 12:30 PM  |  Dinner → 6:45 PM
 const MEAL_TIMES = {
-    Breakfast: { endHour: 10, endMinute: 30, cutoff: '07:45' }, // Ends 10:30 AM, Cutoff 07:45 AM
-    Lunch:     { endHour: 15, endMinute: 30, cutoff: '11:45' }, // Ends 3:30 PM,  Cutoff 11:45 AM
-    Dinner:    { endHour: 22, endMinute: 30, cutoff: '17:45' } // Ends 10:30 PM, Cutoff 05:45 PM
+    Breakfast: { endHour: 10, endMinute: 30, cutoffHour: 7,  cutoffMinute: 30 },
+    Lunch:     { endHour: 15, endMinute: 30, cutoffHour: 12, cutoffMinute: 30 },
+    Dinner:    { endHour: 22, endMinute: 30, cutoffHour: 18, cutoffMinute: 45 },
 };
 
-// Friendly display of cutoff times shown to the user
 const CUTOFF_DISPLAY = {
-    Breakfast: '7:45 AM',
-    Lunch:     '11:45 AM',
-    Dinner:    '5:45 PM'
+    Breakfast: '7:30 AM',
+    Lunch:     '12:30 PM',
+    Dinner:    '6:45 PM',
+};
+
+// Per-meal refund amounts credited to wallet on cancellation
+const MEAL_REFUND = {
+    Breakfast: 20,
+    Lunch:     32,
+    Dinner:    32,
+};
+
+// ─── Plan feature matrix (spec) ───────────────────────────────────────────────
+// Basic    → view only (no change, no cancel)
+// Standard → can change restaurant before cutoff, one-time per meal
+// Premium  → can change restaurant + can cancel, both before cutoff, one-time
+const PLAN_CAN_CHANGE  = ['Standard', 'Premium'];
+const PLAN_CAN_CANCEL  = ['Premium'];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const isCutoffPassed = (mealType) => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const { cutoffHour, cutoffMinute } = MEAL_TIMES[mealType];
+    return currentMinutes >= cutoffHour * 60 + cutoffMinute;
 };
 
 const isMealPast = (mealType) => {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const config = MEAL_TIMES[mealType];
-    const endMinutes = config.endHour * 60 + config.endMinute;
-    return currentMinutes >= endMinutes;
+    const { endHour, endMinute } = MEAL_TIMES[mealType];
+    return currentMinutes >= endHour * 60 + endMinute;
 };
 
+const todayRange = () => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end   = new Date(); end.setHours(23, 59, 59, 999);
+    return { start, end };
+};
+
+// ─── Book / Switch Meal ───────────────────────────────────────────────────────
 export const bookMeal = async (req, res) => {
     try {
         const { studentId, restaurantId, mealType } = req.body;
 
-        // Verify student and restaurant exist
-        const student = await Student.findById(studentId);
+        const student    = await Student.findById(studentId);
         const restaurant = await Restaurant.findById(restaurantId);
 
         if (!student || !restaurant) {
             return res.status(404).json({ message: 'Student or Restaurant not found' });
         }
 
-        // Time Check
         if (isMealPast(mealType)) {
-            const config = MEAL_TIMES[mealType];
-            return res.status(400).json({ 
-                message: `Booking Closed: ${mealType} ended at ${config.endHour}:${config.endMinute || '00'}` 
+            const { endHour, endMinute } = MEAL_TIMES[mealType];
+            return res.status(400).json({
+                message: `Booking closed: ${mealType} service ends at ${endHour}:${String(endMinute).padStart(2,'0')}.`
             });
         }
 
-        // Get today's start and end date
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+        const plan = student.selectedPlan || 'Basic'; // Basic | Standard | Premium
+        const { start, end } = todayRange();
 
-        // Check if already booked for this meal today
         const existingBooking = await Booking.findOne({
             student: studentId,
             mealType,
             date: { $gte: start, $lte: end }
         });
 
+        // ── Existing booking: this is a restaurant-switch request ──────────────
         if (existingBooking) {
             if (existingBooking.status === 'consumed') {
-                return res.status(400).json({ message: 'Meal already consumed' });
+                return res.status(400).json({ message: 'Meal already consumed.' });
             }
             if (existingBooking.status === 'cancelled') {
-                return res.status(400).json({ message: 'This meal booking has been cancelled.' });
+                return res.status(400).json({ message: 'This meal has already been cancelled.' });
             }
 
-            // Check cutoff before allowing restaurant change
-            if (isCutoffPassed(mealType, restaurant)) {
-                return res.status(400).json({
-                    message: `Cut-off time passed: You cannot change your ${mealType} restaurant after ${CUTOFF_DISPLAY[mealType]}.`
+            // Plan check: must be Standard or Premium to change restaurant
+            if (!PLAN_CAN_CHANGE.includes(plan)) {
+                return res.status(403).json({
+                    message: 'Upgrade your plan. This feature is not available in your current subscription.'
                 });
             }
 
-            // Update existing booking to a new restaurant
+            // Cutoff check
+            if (isCutoffPassed(mealType)) {
+                return res.status(400).json({
+                    message: `Cutoff time exceeded. You can no longer modify this meal.`
+                });
+            }
+
+            // Already modified (one-time rule)
+            if (existingBooking.isModified) {
+                return res.status(400).json({
+                    message: 'You have already changed the restaurant for this meal. No further modifications are allowed.'
+                });
+            }
+
+            // Perform the switch — mark isModified so it's locked afterwards
             existingBooking.restaurant = restaurantId;
+            existingBooking.isModified = true;
             await existingBooking.save();
-            
-            const populatedBooking = await Booking.findById(existingBooking._id)
+
+            const populated = await Booking.findById(existingBooking._id)
                 .populate('student', 'name email phoneNumber')
                 .populate('restaurant', 'restaurantName address location');
-            
-            req.io.to(restaurantId).emit('newBooking', populatedBooking);
-            return res.json(populatedBooking);
+
+            // Notify new restaurant owner via socket
+            req.io.to(restaurantId).emit('newBooking', populated);
+
+            return res.json({ message: 'Restaurant changed successfully.', booking: populated });
         }
 
+        // ── New booking ────────────────────────────────────────────────────────
         const booking = await Booking.create({
             student: studentId,
             restaurant: restaurantId,
@@ -90,47 +133,33 @@ export const bookMeal = async (req, res) => {
             date: new Date()
         });
 
-        const populatedBooking = await Booking.findById(booking._id)
+        const populated = await Booking.findById(booking._id)
             .populate('student', 'name email phoneNumber')
             .populate('restaurant', 'restaurantName address location');
 
-        req.io.to(restaurantId).emit('newBooking', populatedBooking);
-        res.status(201).json(populatedBooking);
+        req.io.to(restaurantId).emit('newBooking', populated);
+        res.status(201).json(populated);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
+// ─── Mark Consumed ────────────────────────────────────────────────────────────
 export const markConsumed = async (req, res) => {
     try {
         const { bookingId } = req.body;
         const booking = await Booking.findById(bookingId);
-
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
-        }
+        if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
         booking.status = 'consumed';
         await booking.save();
-
         res.json({ message: 'Meal marked as consumed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-const isCutoffPassed = (mealType, restaurant) => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    // Use restaurant-specific cutoffs if set, otherwise system defaults
-    const cutoffStr = restaurant?.cutoffs?.[mealType.toLowerCase()] || MEAL_TIMES[mealType].cutoff;
-    const [hours, minutes] = cutoffStr.split(':').map(Number);
-    const cutoffMinutes = hours * 60 + minutes;
-
-    return currentMinutes >= cutoffMinutes;
-};
-
+// ─── Cancel Meal ───────────────────────────────────────────────────────────── 
 export const cancelMeal = async (req, res) => {
     try {
         const { bookingId, studentId } = req.body;
@@ -139,13 +168,20 @@ export const cancelMeal = async (req, res) => {
             return res.status(400).json({ message: 'bookingId and studentId are required.' });
         }
 
-        const booking = await Booking.findById(bookingId).populate('restaurant');
+        const student = await Student.findById(studentId);
+        if (!student) return res.status(404).json({ message: 'Student not found.' });
 
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found.' });
+        // Plan permission check first
+        const plan = student.selectedPlan || 'Basic';
+        if (!PLAN_CAN_CANCEL.includes(plan)) {
+            return res.status(403).json({
+                message: 'Upgrade your plan. This feature is not available in your current subscription.'
+            });
         }
 
-        // Ensure the booking belongs to the requesting student
+        const booking = await Booking.findById(bookingId).populate('restaurant');
+        if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+
         if (booking.student.toString() !== studentId) {
             return res.status(403).json({ message: 'Unauthorized: This booking does not belong to you.' });
         }
@@ -153,84 +189,139 @@ export const cancelMeal = async (req, res) => {
         if (booking.status === 'consumed') {
             return res.status(400).json({ message: 'Cannot cancel a meal that has already been consumed.' });
         }
-
         if (booking.status === 'cancelled') {
             return res.status(400).json({ message: 'This meal is already cancelled.' });
         }
 
-        // Enforce cut-off time for cancellation
-        if (isCutoffPassed(booking.mealType, booking.restaurant)) {
+        // After an isModified restaurant switch, no further actions allowed
+        if (booking.isModified) {
             return res.status(400).json({
-                message: `Cut-off time passed: You cannot cancel ${booking.mealType} after ${CUTOFF_DISPLAY[booking.mealType]}.`
+                message: 'This meal has been modified (restaurant changed). No further modifications or cancellations are allowed.'
             });
         }
+
+        // Cutoff check
+        if (isCutoffPassed(booking.mealType)) {
+            return res.status(400).json({
+                message: `Cutoff time exceeded. You can no longer modify this meal.`
+            });
+        }
+
+        // Cancel and refund wallet
+        const refundAmount = MEAL_REFUND[booking.mealType] || 0;
 
         booking.status = 'cancelled';
         await booking.save();
 
-        res.json({ message: `${booking.mealType} cancelled successfully.`, booking });
+        // Credit refund to student wallet
+        student.walletBalance = (student.walletBalance || 0) + refundAmount;
+        await student.save();
+
+        res.json({
+            message: `${booking.mealType} cancelled successfully. ₹${refundAmount} refunded to your wallet.`,
+            refundAmount,
+            newWalletBalance: student.walletBalance,
+            booking
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
+// ─── Get Student Meal Status (Dashboard) ──────────────────────────────────────
 export const getStudentMealStatus = async (req, res) => {
     try {
         const { studentId } = req.params;
         const student = await Student.findById(studentId).populate('defaultRestaurantId');
-        
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
 
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
 
+        const { start, end } = todayRange();
         const bookings = await Booking.find({
             student: studentId,
             date: { $gte: start, $lte: end }
         }).populate('restaurant', 'restaurantName cutoffs');
 
+        const plan = student.selectedPlan || 'Basic'; // Basic | Standard | Premium
         const mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
+
         const status = mealTypes.map(type => {
-            const booking = bookings.find(b => b.mealType === type);
-            const past = isMealPast(type);
-            
-            // Check if cutoff is passed for the restaurant (either booked or default)
-            const activeRestaurant = booking?.restaurant || student.defaultRestaurantId;
-            const cutoffPassed = isCutoffPassed(type, activeRestaurant);
+            const booking      = bookings.find(b => b.mealType === type);
+            const past         = isMealPast(type);
+            const cutoffPassed = isCutoffPassed(type);
+
+            // Plan-level feature flags
+            const planCanChange = PLAN_CAN_CHANGE.includes(plan);
+            const planCanCancel = PLAN_CAN_CANCEL.includes(plan);
 
             if (booking) {
-                return { 
-                    mealType: type, 
-                    status: booking.status === 'consumed' ? 'Consumed' : (past ? 'Not Consumed' : (booking.status === 'cancelled' ? 'Cancelled' : booking.restaurant.restaurantName)),
+                const isActive = booking.status === 'booked';
+
+                // canModify: plan allows change + not cutoff + not already modified + still booked
+                const canModify =
+                    planCanChange &&
+                    !cutoffPassed &&
+                    !booking.isModified &&
+                    isActive;
+
+                // canCancel: plan allows cancel + not cutoff + not already modified + still booked
+                const canCancel =
+                    planCanCancel &&
+                    !cutoffPassed &&
+                    !booking.isModified &&
+                    isActive;
+
+                return {
+                    mealType:       type,
+                    status:         booking.status === 'consumed' ? 'Consumed'
+                                  : booking.status === 'cancelled' ? 'Cancelled'
+                                  : past ? 'Not Consumed'
+                                  : booking.restaurant.restaurantName,
                     restaurantName: booking.restaurant.restaurantName,
-                    restaurantId: booking.restaurant._id,
-                    bookingId: booking._id,
-                    isLocked: cutoffPassed,
-                    canModify: !cutoffPassed && booking.status === 'booked'
+                    restaurantId:   booking.restaurant._id,
+                    bookingId:      booking._id,
+                    isLocked:       cutoffPassed,
+                    isModified:     booking.isModified,
+                    canModify,
+                    canCancel,
+                    refundAmount:   MEAL_REFUND[type],
+                    planName:       plan,
+                    planCanChange,
+                    planCanCancel,
+                    cutoffDisplay:  CUTOFF_DISPLAY[type],
                 };
             } else {
-                // If no booking, and we have a default restaurant + active plan
+                // No booking yet — fall back to default restaurant
                 if (student.subscriptionStatus === 'active' && student.defaultRestaurantId) {
                     return {
-                        mealType: type,
-                        status: past ? 'Not Consumed' : student.defaultRestaurantId.restaurantName,
+                        mealType:       type,
+                        status:         past ? 'Not Consumed' : student.defaultRestaurantId.restaurantName,
                         restaurantName: student.defaultRestaurantId.restaurantName,
-                        restaurantId: student.defaultRestaurantId._id,
-                        isLocked: cutoffPassed,
-                        canModify: !cutoffPassed,
-                        isDefault: true
+                        restaurantId:   student.defaultRestaurantId._id,
+                        isLocked:       cutoffPassed,
+                        isModified:     false,
+                        canModify:      planCanChange && !cutoffPassed,
+                        canCancel:      false, // no booking to cancel yet
+                        refundAmount:   MEAL_REFUND[type],
+                        isDefault:      true,
+                        planName:       plan,
+                        planCanChange,
+                        planCanCancel,
+                        cutoffDisplay:  CUTOFF_DISPLAY[type],
                     };
                 }
-                
-                return { 
-                    mealType: type, 
-                    status: past ? 'Not Consumed' : 'Select',
-                    isLocked: past || cutoffPassed,
-                    canModify: !past && !cutoffPassed
+                return {
+                    mealType:      type,
+                    status:        past ? 'Not Consumed' : 'Select',
+                    isLocked:      past || cutoffPassed,
+                    isModified:    false,
+                    canModify:     !past && !cutoffPassed,
+                    canCancel:     false,
+                    refundAmount:  MEAL_REFUND[type],
+                    planName:      plan,
+                    planCanChange,
+                    planCanCancel,
+                    cutoffDisplay: CUTOFF_DISPLAY[type],
                 };
             }
         });
@@ -241,14 +332,11 @@ export const getStudentMealStatus = async (req, res) => {
     }
 };
 
+// ─── Get Incoming Students (Restaurant Side) ──────────────────────────────────
 export const getIncomingStudents = async (req, res) => {
     try {
         const { restaurantId } = req.params;
-        
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+        const { start, end } = todayRange();
 
         const bookings = await Booking.find({
             restaurant: restaurantId,
@@ -262,17 +350,59 @@ export const getIncomingStudents = async (req, res) => {
     }
 };
 
+// ─── Get Student Booking History ──────────────────────────────────────────────
 export const getStudentBookings = async (req, res) => {
     try {
         const { studentId } = req.params;
-
-        const bookings = await Booking.find({
-            student: studentId
-        })
-        .populate('restaurant', 'restaurantName address location')
-        .sort({ date: -1 });
-
+        const bookings = await Booking.find({ student: studentId })
+            .populate('restaurant', 'restaurantName address location')
+            .sort({ date: -1 });
         res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// ─── Get Restaurants With Menu for a Meal Type (for Change-Restaurant picker) ─
+export const getRestaurantsForMeal = async (req, res) => {
+    try {
+        const { mealType } = req.params;
+        const now = new Date();
+        const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const dayName   = DAY_NAMES[now.getDay()];
+        const { start: todayStart, end: todayEnd } = todayRange();
+
+        const restaurants = await Restaurant.find({ kycStatus: 'approved' }).select('-password');
+
+        const result = await Promise.all(restaurants.map(async (r) => {
+            // Prefer single-date override, fall back to weekly routine
+            let menu = await Menu.findOne({
+                restaurant: r._id,
+                mealType,
+                menuType: 'single',
+                date: { $gte: todayStart, $lte: todayEnd }
+            });
+            if (!menu) {
+                menu = await Menu.findOne({
+                    restaurant: r._id,
+                    mealType,
+                    menuType: 'weekly',
+                    dayOfWeek: dayName
+                });
+            }
+
+            return {
+                _id:            r._id,
+                restaurantName: r.restaurantName,
+                address:        r.address,
+                location:       r.location,
+                specifications: r.specifications,
+                kycStatus:      r.kycStatus,
+                menuItems:      menu?.items || []
+            };
+        }));
+
+        res.json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

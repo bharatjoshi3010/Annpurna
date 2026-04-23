@@ -16,46 +16,46 @@ const PLANS = [
         fullName: 'The Essential Plan',
         price: '2,999',
         priceNum: 2999,
-        tagline: 'Traditional mess with a digital safety net.',
+        tagline: 'Fixed restaurant, simple daily meals.',
         icon: '📅',
         color: '#000000',
-        features: ['5-Day Absence Rule', 'Weekend Pause Facility', 'Fixed Partner Restaurant']
+        features: ['View meals anytime', 'Fixed partner restaurant', 'Reliable daily service']
     },
     {
-        id: 'silver',
-        name: 'Silver',
+        id: 'standard',
+        name: 'Standard',
         fullName: 'The Explorer Plan',
-        price: '3,499',
-        priceNum: 3499,
-        tagline: 'Focuses on variety and location flexibility.',
+        price: '3,749',
+        priceNum: 3749,
+        tagline: 'Flexibility to switch restaurants before cutoff.',
         icon: '📍',
         color: '#000000',
-        features: ['Any Network Restaurant', '30-Min Cutoff Switching', 'Taste Matching Suggestions']
+        features: ['View meals anytime', 'Change restaurant before cutoff', 'One-time switch per meal']
     },
     {
-        id: 'gold',
-        name: 'Gold',
+        id: 'premium',
+        name: 'Premium',
         fullName: 'The Freedom Plan',
-        price: '3,999',
-        priceNum: 3999,
-        tagline: 'Complete control over your dining experience.',
+        price: '3,949',
+        priceNum: 3949,
+        tagline: 'Full control — switch or cancel before cutoff.',
         icon: '📦',
         color: '#000000',
         isPopular: true,
-        features: ['Full Cancellation Refund', 'Unlimited Switching', 'Takeaway Packing Toggle', 'Priority QR Access']
+        features: ['View meals anytime', 'Change restaurant before cutoff', 'Cancel meal + instant refund', 'Priority QR Access']
     }
 ];
 
 const HomeScreen = ({ navigation }: any) => {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const [mealStatuses, setMealStatuses] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
-    // Cut-off times displayed to the user
+    // Cut-off times (per spec): Breakfast 7:30AM, Lunch 12:30PM, Dinner 6:45PM
     const CUTOFF_DISPLAY: Record<string, string> = {
-        Breakfast: '7:45 AM',
-        Lunch: '11:45 AM',
-        Dinner: '5:45 PM',
+        Breakfast: '7:30 AM',
+        Lunch:     '12:30 PM',
+        Dinner:    '6:45 PM',
     };
     
     const fetchMealStatuses = async () => {
@@ -136,6 +136,9 @@ const HomeScreen = ({ navigation }: any) => {
             });
             const data = await response.json();
             if (response.ok) {
+                if (data.newWalletBalance !== undefined) {
+                    setUser((prev: any) => ({ ...prev, walletBalance: data.newWalletBalance }));
+                }
                 Alert.alert('✅ Cancelled', data.message);
                 fetchMealStatuses();
             } else {
@@ -175,44 +178,178 @@ const HomeScreen = ({ navigation }: any) => {
         );
     };
 
+    // Direct per-meal cancel — used by Premium plan inline button
+    const confirmAndCancelMeal = (bookingId: string, mealType: string, refundAmount: number) => {
+        Alert.alert(
+            'Cancel This Meal',
+            `Are you sure you want to cancel your ${mealType} for today?\n\n₹${refundAmount} will be refunded instantly to your wallet.`,
+            [
+                { text: 'No', style: 'cancel' },
+                {
+                    text: 'Yes, Cancel',
+                    style: 'destructive',
+                    onPress: () => executeCancelMeal(bookingId, mealType)
+                }
+            ]
+        );
+    };
+
     const renderMealSlot = (type: string, time: string) => {
-        const mealStatus = mealStatuses.find(s => s.mealType === type);
-        const status = mealStatus?.status || 'Select';
-        const restaurantName = mealStatus?.restaurantName || (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
-        const isLocked = mealStatus?.isLocked || false;
-        const canModify = mealStatus?.canModify ?? true;
+        const mealStatus    = mealStatuses.find(s => s.mealType === type);
+        const status        = mealStatus?.status || 'Select';
+        const restaurantName = mealStatus?.restaurantName ||
+            (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
+        const isLocked      = mealStatus?.isLocked || false;
+        const isModified    = mealStatus?.isModified || false;
+        const canModify     = mealStatus?.canModify ?? false;
+        const canCancel     = mealStatus?.canCancel ?? false;
+        const planName      = (mealStatus?.planName || user?.selectedPlan || 'Basic');
+        const planCanChange = mealStatus?.planCanChange ?? false;
+        const planCanCancel = mealStatus?.planCanCancel ?? false;
+        const refundAmount  = mealStatus?.refundAmount || 0;
+        const cutoffDisplay = mealStatus?.cutoffDisplay || CUTOFF_DISPLAY[type];
+
+        const hasActiveBooking =
+            !!(mealStatus?.bookingId) &&
+            status !== 'Cancelled' &&
+            status !== 'Consumed' &&
+            status !== 'Not Consumed';
+
+        // Standard plan: show inline action buttons
+        const showStandardActions =
+            planName === 'Standard' &&
+            hasActiveBooking &&
+            !isLocked &&
+            !isModified;
+
+        // Premium plan: show both change + cancel inline
+        const showPremiumActions =
+            planName === 'Premium' &&
+            hasActiveBooking &&
+            !isLocked &&
+            !isModified;
+
+        // Switched/modified notice after a one-time switch
+        const showModifiedNotice = isModified && !isLocked;
+
+        const cardStatus =
+            status === 'Consumed'     ? 'taken'
+          : status === 'Not Consumed' ? 'missed'
+          : status === 'Select'       ? 'available'
+          : 'booked';
 
         return (
-            <MealSlotCard
-                type={type}
-                time={time}
-                status={status === 'Consumed' ? 'taken' : (status === 'Not Consumed' ? 'missed' : (status === 'Select' ? 'available' : 'booked'))}
-                restaurant={restaurantName}
-                locked={isLocked}
-                onPress={() => {
-                    // After cut-off: show lock message — no action allowed
-                    if (isLocked) {
-                        Alert.alert(
-                            `🔒 ${type} Locked`,
-                            `The cut-off time of ${CUTOFF_DISPLAY[type]} has passed.\nYou can no longer modify or cancel this meal.`
-                        );
-                        return;
-                    }
-                    if (status === 'Select') {
-                        navigation.navigate('Restaurants', { mealType: type });
-                    } else if (status === 'Consumed' || status === 'Not Consumed') {
-                        // history / details — no action
-                    } else {
-                        // Already booked — go to menu
-                        navigation.navigate('Menu', {
-                            mealType: type,
-                            restaurantId: mealStatus?.restaurantId,
+            <View key={type} style={styles.mealSlotWrapper}>
+                <MealSlotCard
+                    type={type}
+                    time={time}
+                    status={cardStatus}
+                    restaurant={restaurantName}
+                    locked={isLocked || isModified}
+                    onPress={() => {
+                        if (isLocked) {
+                            Alert.alert(
+                                `🔒 ${type} Locked`,
+                                `The cut-off time of ${cutoffDisplay} has passed.\nYou can no longer modify or cancel this meal.`
+                            );
+                            return;
+                        }
+                        if (status === 'Select') {
+                            navigation.navigate('Restaurants', { mealType: type });
+                            return;
+                        }
+                        if (status === 'Consumed' || status === 'Not Consumed' || status === 'Cancelled') {
+                            return;
+                        }
+
+                        // Navigate to MealDetailScreen for all active meals
+                        navigation.navigate('MealDetail', {
+                            mealType:       type,
+                            restaurantId:   mealStatus?.restaurantId,
                             restaurantName: mealStatus?.restaurantName || status,
+                            bookingId:      mealStatus?.bookingId,
+                            planName,
+                            planCanChange,
+                            planCanCancel,
+                            isLocked,
+                            isModified,
+                            canModify,
+                            canCancel,
+                            refundAmount,
+                            cutoffDisplay,
+                            status,
                         });
+                    }}
+                    statusText={
+                        isLocked   ? 'LOCKED'
+                      : isModified ? 'SWITCHED'
+                      : status
                     }
-                }}
-                statusText={status}
-            />
+                />
+
+                {/* Standard plan inline actions */}
+                {showStandardActions && (
+                    <View style={styles.mealActions}>
+                        <TouchableOpacity
+                            style={styles.mealActionBtn}
+                            onPress={() => navigation.navigate('Restaurants', {
+                                mealType: type,
+                                purpose:  'changeRestaurant',
+                                bookingId: mealStatus?.bookingId
+                            })}
+                        >
+                            <Text style={styles.mealActionIcon}>🔄</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.mealActionText}>Change Restaurant</Text>
+                                <Text style={styles.mealActionNote}>One-time switch · before {cutoffDisplay}</Text>
+                            </View>
+                            <Text style={styles.mealActionArrow}>›</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Premium plan inline actions */}
+                {showPremiumActions && (
+                    <View style={styles.mealActions}>
+                        <TouchableOpacity
+                            style={styles.mealActionBtn}
+                            onPress={() => navigation.navigate('Restaurants', {
+                                mealType: type,
+                                purpose:  'changeRestaurant',
+                                bookingId: mealStatus?.bookingId
+                            })}
+                        >
+                            <Text style={styles.mealActionIcon}>🔄</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.mealActionText}>Change Restaurant</Text>
+                                <Text style={styles.mealActionNote}>One-time switch · before {cutoffDisplay}</Text>
+                            </View>
+                            <Text style={styles.mealActionArrow}>›</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.mealActionDivider} />
+
+                        <TouchableOpacity
+                            style={[styles.mealActionBtn, styles.cancelActionBtn]}
+                            onPress={() => confirmAndCancelMeal(mealStatus!.bookingId, type, refundAmount)}
+                        >
+                            <Text style={styles.mealActionIcon}>🚫</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.mealActionText, { color: '#E53935' }]}>Cancel This Meal</Text>
+                                <Text style={styles.mealActionNote}>Refund ₹{refundAmount} to wallet</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Modified/locked notice */}
+                {showModifiedNotice && (
+                    <View style={styles.switchedBanner}>
+                        <Text style={styles.switchedIcon}>✓</Text>
+                        <Text style={styles.switchedText}>Restaurant switched. This meal is now locked — no further changes or cancellations.</Text>
+                    </View>
+                )}
+            </View>
         );
     };
 
@@ -267,6 +404,8 @@ const HomeScreen = ({ navigation }: any) => {
                             {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
                         </View>
 
+                        {/* Quick actions — Premium plan gets the action row shortcut */}
+                        {(user?.selectedPlan === 'Premium' || (user?.selectedPlan || '').toLowerCase() === 'gold') && (
                         <View style={styles.quickActions}>
                             <View style={styles.actionRow}>
                                 <TouchableOpacity
@@ -300,6 +439,7 @@ const HomeScreen = ({ navigation }: any) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
+                        )}
                     </>
                 )}
 
@@ -390,6 +530,77 @@ const styles = StyleSheet.create({
     },
     profileIcon: {
         fontSize: 20,
+    },
+    mealSlotWrapper: {
+        marginVertical: 0,
+    },
+    mealActions: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        marginTop: 4,
+        marginBottom: 8,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+    },
+    mealActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+    },
+    cancelActionBtn: {
+        // subtle red tint for cancel
+    },
+    mealActionDivider: {
+        height: 1,
+        backgroundColor: '#F5F5F5',
+        marginHorizontal: 16,
+    },
+    mealActionIcon: {
+        fontSize: 18,
+        marginRight: 12,
+    },
+    mealActionText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1A1A1A',
+    },
+    mealActionNote: {
+        fontSize: 11,
+        color: '#999',
+        marginTop: 1,
+    },
+    mealActionArrow: {
+        fontSize: 20,
+        color: '#CCC',
+        marginLeft: 8,
+    },
+    switchedBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E8F5E9',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 8,
+    },
+    switchedIcon: {
+        fontSize: 14,
+        color: '#2E7D32',
+        fontWeight: '900',
+        marginRight: 8,
+    },
+    switchedText: {
+        fontSize: 12,
+        color: '#2E7D32',
+        flex: 1,
+        lineHeight: 16,
     },
     section: {
         marginTop: Spacing.lg,

@@ -16,16 +16,24 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const [bookingLoading, setBookingLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedId, setSelectedId] = useState('');
-    const purpose = route.params?.purpose;
+    const mealType = route.params?.mealType;
+    const purpose  = route.params?.purpose;   // 'changeRestaurant' | 'viewMenu' | undefined
+    const bookingId = route.params?.bookingId;
 
     useEffect(() => {
         fetchRestaurants();
-    }, []);
+    }, [mealType]);
 
     const fetchRestaurants = async () => {
         try {
             const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/auth/restaurants`);
+            
+            // Output menu with restaurants if mealType is provided
+            const url = mealType 
+                ? `${baseUrl}/api/meals/restaurants-for-meal/${mealType}`
+                : `${baseUrl}/api/auth/restaurants`;
+                
+            const response = await fetch(url);
             const data = await response.json();
             if (response.ok) {
                 setRestaurants(data);
@@ -55,32 +63,55 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
             return;
         }
 
-        const mealType = route.params?.mealType || 'Lunch'; // Default to Lunch if not provided
+        const currentMealType = mealType || 'Lunch';
 
+        if (purpose === 'changeRestaurant') {
+            // Spec-exact confirmation message
+            Alert.alert(
+                'Confirm Restaurant Change',
+                'Are you sure you want to change the restaurant? After confirming, you cannot modify or cancel this meal.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Yes, Change', onPress: () => processBooking(currentMealType) }
+                ]
+            );
+        } else {
+            processBooking(currentMealType);
+        }
+    };
+
+    const processBooking = async (type: string) => {
         setBookingLoading(true);
         try {
             const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            
+
             const response = await fetch(`${baseUrl}/api/meals/book`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    studentId: user._id,
+                    studentId:    user._id,
                     restaurantId: selectedId,
-                    mealType
+                    mealType:     type
                 })
             });
 
+            const responseData = await response.json();
+
             if (response.ok) {
-                Alert.alert('Success', `Meal booked successfully for ${mealType}!`);
-                navigation.navigate('Main');
+                const isSwitch = purpose === 'changeRestaurant';
+                Alert.alert(
+                    isSwitch ? '✅ Restaurant Changed' : '✅ Booking Confirmed',
+                    isSwitch
+                        ? `Restaurant updated for your ${type}. This meal is now locked — no further changes or cancellations.`
+                        : `Restaurant selected for ${type}!`,
+                    [{ text: 'OK', onPress: () => navigation.navigate('Main') }]
+                );
             } else {
-                const errorData = await response.json();
-                Alert.alert('Error', errorData.message || 'Failed to book meal.');
+                Alert.alert('Error', responseData.message || 'Failed to complete booking.');
             }
         } catch (error) {
             console.error('Error booking meal:', error);
-            Alert.alert('Error', 'Something went wrong. Please try again.');
+            Alert.alert('Network Error', 'Something went wrong. Please try again.');
         } finally {
             setBookingLoading(false);
         }
@@ -106,26 +137,32 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                     <FlatList
                         data={filteredRestaurants}
                         keyExtractor={(item) => item._id}
-                        renderItem={({ item }) => (
-                            <RestaurantCard
-                                name={item.restaurantName || 'Unknown Restaurant'}
-                                cuisine={item.specifications || 'Multi-cuisine'}
-                                rating={item.rating || 4.5}
-                                isSelected={item._id === selectedId}
-                                kycStatus={item.kycStatus}
-                                onPress={() => {
-                                    if (purpose === 'viewMenu') {
-                                        navigation.navigate('Menu', { 
-                                            restaurantId: item._id, 
-                                            restaurantName: item.restaurantName,
-                                            mealType: route.params?.mealType || 'Lunch'
-                                        });
-                                    } else {
-                                        setSelectedId(item._id);
-                                    }
-                                }}
-                            />
-                        )}
+                        renderItem={({ item }) => {
+                            const firstMenuItem = item.menuItems && item.menuItems.length > 0 ? item.menuItems[0] : null;
+                            
+                            return (
+                                <RestaurantCard
+                                    name={item.restaurantName || 'Unknown Restaurant'}
+                                    cuisine={item.specifications || 'Multi-cuisine'}
+                                    rating={item.rating || 4.5}
+                                    isSelected={item._id === selectedId}
+                                    kycStatus={item.kycStatus}
+                                    menuItemName={firstMenuItem ? firstMenuItem.name : undefined}
+                                    menuItemImage={firstMenuItem ? firstMenuItem.image : undefined}
+                                    onPress={() => {
+                                        if (purpose === 'viewMenu') {
+                                            navigation.navigate('Menu', { 
+                                                restaurantId: item._id, 
+                                                restaurantName: item.restaurantName,
+                                                mealType: mealType || 'Lunch'
+                                            });
+                                        } else {
+                                            setSelectedId(item._id);
+                                        }
+                                    }}
+                                />
+                            );
+                        }}
                         contentContainerStyle={styles.listContent}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>

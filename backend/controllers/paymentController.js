@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import Student from '../models/Student.js';
 import Transaction from '../models/Transaction.js';
+import Booking from '../models/Booking.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -143,6 +144,61 @@ export const buySubscription = async (req, res) => {
     }
 };
 
+// ─── Shared refund calculation (pure, no DB writes) ──────────────────────────
+const calcRefund = async (student) => {
+    const MEAL_COST = { Breakfast: 26, Lunch: 40, Dinner: 40 };
+    const EARLY_CANCELLATION_CHARGE = 100;
+
+    const activeSub = student.subscriptionHistory.find(h => h.status === 'active');
+    const subscriptionPrice = activeSub?.price || 0;
+    const subscriptionStart = activeSub?.startDate || student.subscriptionDate || new Date(0);
+
+    const consumedBookings = await Booking.find({
+        student: student._id,
+        status: 'consumed',
+        date: { $gte: subscriptionStart }
+    });
+
+    let mealDeduction = 0;
+    const mealBreakdown = { Breakfast: 0, Lunch: 0, Dinner: 0 };
+
+    for (const booking of consumedBookings) {
+        const cost = MEAL_COST[booking.mealType] || 40;
+        mealDeduction += cost;
+        if (mealBreakdown[booking.mealType] !== undefined) {
+            mealBreakdown[booking.mealType]++;
+        }
+    }
+
+    const refundAmount = Math.max(0, subscriptionPrice - mealDeduction - EARLY_CANCELLATION_CHARGE);
+
+    return {
+        subscriptionPrice,
+        totalMealsConsumed: consumedBookings.length,
+        mealBreakdown,
+        mealDeduction,
+        earlyCancellationCharge: EARLY_CANCELLATION_CHARGE,
+        refundAmount
+    };
+};
+
+export const getRefundPreview = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const student = await Student.findById(studentId);
+
+        if (!student) return res.status(404).json({ message: 'User not found' });
+        if (student.subscriptionStatus !== 'active') {
+            return res.status(400).json({ message: 'No active subscription found' });
+        }
+
+        const refund = await calcRefund(student);
+        res.json({ refund });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const cancelSubscription = async (req, res) => {
     try {
         const { studentId } = req.body;
@@ -156,20 +212,58 @@ export const cancelSubscription = async (req, res) => {
             return res.status(400).json({ message: 'No active subscription found' });
         }
 
-        // Update history
+        // ── Shared helper computes refund without any DB writes ────────────────
+        const planName = student.selectedPlan || '';
+        const { subscriptionPrice, mealBreakdown, mealDeduction,
+                earlyCancellationCharge, refundAmount,
+                totalMealsConsumed } = await calcRefund(student);
+
+        // ── Cancel subscription in student record ──────────────────────────────
         const activeSub = student.subscriptionHistory.find(h => h.status === 'active');
         if (activeSub) {
-            activeSub.status = 'cancelled';
+            activeSub.status  = 'cancelled';
             activeSub.endDate = new Date();
         }
+        student.selectedPlan        = null;
+        student.subscriptionStatus  = 'cancelled';
+        student.defaultRestaurantId = null;
 
-        student.selectedPlan = null;
-        student.subscriptionStatus = 'cancelled';
-        
+        // ── Credit refund to wallet ────────────────────────────────────────────
+        student.walletBalance += refundAmount;
         await student.save();
 
-        res.json({ message: 'Subscription cancelled successfully', student });
+        // ── Record a detailed refund transaction ───────────────────────────────
+        const breakdownText =
+            `Meals deducted — ` +
+            `Breakfast ×${mealBreakdown.Breakfast} (₹${mealBreakdown.Breakfast * 26}), ` +
+            `Lunch ×${mealBreakdown.Lunch} (₹${mealBreakdown.Lunch * 40}), ` +
+            `Dinner ×${mealBreakdown.Dinner} (₹${mealBreakdown.Dinner * 40}). ` +
+            `Early cancellation: ₹${earlyCancellationCharge}. ` +
+            `Refund: ₹${refundAmount}.`;
+
+        await Transaction.create({
+            user:        studentId,
+            amount:      refundAmount,
+            type:        'credit',
+            status:      'success',
+            description: `Subscription Cancellation Refund — ${planName || 'Plan'}. ${breakdownText}`
+        });
+
+        res.json({
+            message: 'Subscription cancelled successfully',
+            refund: {
+                subscriptionPrice,
+                totalMealsConsumed,
+                mealBreakdown,
+                mealDeduction,
+                earlyCancellationCharge,
+                refundAmount,
+                newWalletBalance: student.walletBalance
+            },
+            student
+        });
     } catch (error) {
+        console.error('Cancel subscription error:', error);
         res.status(500).json({ message: error.message });
     }
 };

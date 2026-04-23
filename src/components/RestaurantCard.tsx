@@ -10,6 +10,8 @@ interface RestaurantCardProps {
     onPress: () => void;
     isSelected?: boolean;
     kycStatus?: string;
+    menuItemName?: string;
+    menuItemImage?: string;
 }
 
 const RestaurantCard: React.FC<RestaurantCardProps> = ({
@@ -20,6 +22,8 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
     onPress,
     isSelected,
     kycStatus,
+    menuItemName,
+    menuItemImage,
 }) => {
     const getKycBadgeStyle = () => {
         switch (kycStatus) {
@@ -46,8 +50,8 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
             activeOpacity={0.9}
         >
             <View style={styles.imageContainer}>
-                {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={styles.image} />
+                {menuItemImage || imageUrl ? (
+                    <Image source={{ uri: menuItemImage || imageUrl }} style={styles.image} />
                 ) : (
                     <View style={styles.placeholderImage}>
                         <Text style={styles.placeholderText}>{name.charAt(0)}</Text>
@@ -69,6 +73,11 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
                         </View>
                     )}
                 </View>
+                {menuItemName && (
+                    <Text style={styles.menuItemText} numberOfLines={2}>
+                        🍲 Serving: {menuItemName}
+                    </Text>
+                )}
                 {isSelected && (
                     <View style={styles.selectedBadge}>
                         <Text style={styles.selectedText}>Selected</Text>
@@ -140,6 +149,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginTop: 2,
+    },
+    menuItemText: {
+        fontSize: 13,
+        color: Colors.primary,
+        marginTop: 6,
+        fontWeight: '500',
     },
     kycBadge: {
         paddingHorizontal: 6,
