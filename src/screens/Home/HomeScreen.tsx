@@ -215,20 +215,6 @@ const HomeScreen = ({ navigation }: any) => {
             status !== 'Consumed' &&
             status !== 'Not Consumed';
 
-        // Standard plan: show inline action buttons
-        const showStandardActions =
-            planName === 'Standard' &&
-            hasActiveBooking &&
-            !isLocked &&
-            !isModified;
-
-        // Premium plan: show both change + cancel inline
-        const showPremiumActions =
-            planName === 'Premium' &&
-            hasActiveBooking &&
-            !isLocked &&
-            !isModified;
-
         // Switched/modified notice after a one-time switch
         const showModifiedNotice = isModified && !isLocked;
 
@@ -286,62 +272,6 @@ const HomeScreen = ({ navigation }: any) => {
                       : status
                     }
                 />
-
-                {/* Standard plan inline actions */}
-                {showStandardActions && (
-                    <View style={styles.mealActions}>
-                        <TouchableOpacity
-                            style={styles.mealActionBtn}
-                            onPress={() => navigation.navigate('Restaurants', {
-                                mealType: type,
-                                purpose:  'changeRestaurant',
-                                bookingId: mealStatus?.bookingId
-                            })}
-                        >
-                            <Text style={styles.mealActionIcon}>🔄</Text>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.mealActionText}>Change Restaurant</Text>
-                                <Text style={styles.mealActionNote}>One-time switch · before {cutoffDisplay}</Text>
-                            </View>
-                            <Text style={styles.mealActionArrow}>›</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                {/* Premium plan inline actions */}
-                {showPremiumActions && (
-                    <View style={styles.mealActions}>
-                        <TouchableOpacity
-                            style={styles.mealActionBtn}
-                            onPress={() => navigation.navigate('Restaurants', {
-                                mealType: type,
-                                purpose:  'changeRestaurant',
-                                bookingId: mealStatus?.bookingId
-                            })}
-                        >
-                            <Text style={styles.mealActionIcon}>🔄</Text>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.mealActionText}>Change Restaurant</Text>
-                                <Text style={styles.mealActionNote}>One-time switch · before {cutoffDisplay}</Text>
-                            </View>
-                            <Text style={styles.mealActionArrow}>›</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.mealActionDivider} />
-
-                        <TouchableOpacity
-                            style={[styles.mealActionBtn, styles.cancelActionBtn]}
-                            onPress={() => confirmAndCancelMeal(mealStatus!.bookingId, type, refundAmount)}
-                        >
-                            <Text style={styles.mealActionIcon}>🚫</Text>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.mealActionText, { color: '#E53935' }]}>Cancel This Meal</Text>
-                                <Text style={styles.mealActionNote}>Refund ₹{refundAmount} to wallet</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
                 {/* Modified/locked notice */}
                 {showModifiedNotice && (
                     <View style={styles.switchedBanner}>
@@ -404,42 +334,6 @@ const HomeScreen = ({ navigation }: any) => {
                             {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
                         </View>
 
-                        {/* Quick actions — Premium plan gets the action row shortcut */}
-                        {(user?.selectedPlan === 'Premium' || (user?.selectedPlan || '').toLowerCase() === 'gold') && (
-                        <View style={styles.quickActions}>
-                            <View style={styles.actionRow}>
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={handleChangeRestaurant}
-                                >
-                                    <View style={[styles.actionIconBg, { backgroundColor: '#E3F2FD' }]}>
-                                        <Text style={styles.actionIcon}>🏪</Text>
-                                    </View>
-                                    <Text style={styles.actionLabel}>Change Restaurant</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={handleCancelMeal}
-                                >
-                                    <View style={[styles.actionIconBg, { backgroundColor: '#FFF3E0' }]}>
-                                        <Text style={styles.actionIcon}>🚫</Text>
-                                    </View>
-                                    <Text style={styles.actionLabel}>Cancel Meal</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => navigation.navigate('Restaurants', { purpose: 'viewMenu' })}
-                                >
-                                    <View style={[styles.actionIconBg, { backgroundColor: '#F3E5F5' }]}>
-                                        <Text style={styles.actionIcon}>📜</Text>
-                                    </View>
-                                    <Text style={styles.actionLabel}>View Menu</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                        )}
                     </>
                 )}
 

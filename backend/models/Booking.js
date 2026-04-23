@@ -28,7 +28,8 @@ const bookingSchema = new mongoose.Schema({
     },
     // True once the student has used their one-time restaurant switch.
     // After this is set no further changes or cancellations are allowed.
-    isModified: {
+    // NOTE: named restaurantSwitched (NOT isModified) to avoid Mongoose reserved-name conflict.
+    restaurantSwitched: {
         type: Boolean,
         default: false
     }

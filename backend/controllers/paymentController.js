@@ -3,6 +3,7 @@ import Student from '../models/Student.js';
 import Transaction from '../models/Transaction.js';
 import Booking from '../models/Booking.js';
 import dotenv from 'dotenv';
+import { upsertBookings, getRemainingMeals } from '../utils/bookingHelper.js';
 
 dotenv.config();
 
@@ -137,6 +138,22 @@ export const buySubscription = async (req, res) => {
             status: 'success',
             description: `Subscription: ${planName}`
         });
+
+        // ── Auto-create bookings for remaining meals today ───────────────────────
+        // Uses cutoff times: e.g. plan bought at 2 PM → only Dinner is still bookable
+        const remainingMeals = getRemainingMeals(); // cutoff-based, no arg needed
+        if (remainingMeals.length > 0 && defaultRestaurantId) {
+            await upsertBookings(
+                studentId,
+                defaultRestaurantId,
+                remainingMeals,
+                new Date(),
+                req.io
+            );
+            console.log(`[Subscription] Auto-booked ${remainingMeals.length} meal(s) for student ${studentId}: ${remainingMeals.join(', ')}`);
+        } else if (remainingMeals.length === 0) {
+            console.log(`[Subscription] All meal cutoffs passed for today — bookings will be created by 4 AM cron.`);
+        }
 
         res.json({ message: 'Subscription successful', student });
     } catch (error) {

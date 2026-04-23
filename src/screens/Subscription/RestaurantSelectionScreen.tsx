@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
@@ -20,13 +20,19 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
     const fetchRestaurants = async () => {
         try {
             const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/admin/restaurants`);
+            // Public endpoint — no auth token needed
+            const response = await fetch(`${baseUrl}/api/auth/restaurants`);
             const data = await response.json();
             if (response.ok) {
-                setRestaurants(data);
+                // Only show KYC-approved restaurants
+                const approved = data.filter((r: any) => r.kycStatus === 'approved');
+                setRestaurants(approved);
+            } else {
+                Alert.alert('Error', 'Could not load restaurants. Please try again.');
             }
         } catch (error) {
             console.error('Error fetching restaurants:', error);
+            Alert.alert('Network Error', 'Check your connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -54,7 +60,7 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
             const data = await response.json();
             if (response.ok) {
                 setUser(data.student);
-                Alert.alert('SUCCESS', `Subscription activated! Your default mess is now set.`, [
+                Alert.alert('SUCCESS', 'Subscription activated! Your default mess is now set.', [
                     { text: 'GO TO DASHBOARD', onPress: () => navigation.navigate('Main') }
                 ]);
             } else {
@@ -67,8 +73,20 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
         }
     };
 
+    const EmptyState = () => (
+        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>🏪</Text>
+            <Text style={{ fontSize: 15, color: '#888', textAlign: 'center' }}>
+                No approved restaurants available yet.
+            </Text>
+            <Text style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 4 }}>
+                Please check back soon.
+            </Text>
+        </View>
+    );
+
     const renderRestaurantItem = ({ item }: { item: any }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
             style={[
                 styles.restaurantCard,
                 selectedId === item._id && styles.selectedCard
@@ -82,11 +100,11 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
                 </View>
                 {selectedId === item._id && <Text style={styles.checkIcon}>✅</Text>}
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.viewMenuBtn}
-                onPress={() => navigation.navigate('Menu', { 
-                    restaurantId: item._id, 
-                    restaurantName: item.restaurantName || item.name 
+                onPress={() => navigation.navigate('Menu', {
+                    restaurantId: item._id,
+                    restaurantName: item.restaurantName || item.name
                 })}
             >
                 <Text style={styles.viewMenuText}>VIEW TODAY'S MENU</Text>
@@ -97,7 +115,7 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <Header title="SELECT DEFAULT MESS" showBack onBackPress={() => navigation.goBack()} />
-            
+
             <View style={styles.content}>
                 <View style={styles.stepHeader}>
                     <Text style={styles.stepTitle}>STEP 2: CHOOSE YOUR MESS</Text>
@@ -113,11 +131,12 @@ const RestaurantSelectionScreen = ({ route, navigation }: any) => {
                         renderItem={renderRestaurantItem}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
+                        ListEmptyComponent={<EmptyState />}
                     />
                 )}
 
-                <TouchableOpacity 
-                    style={[styles.confirmBtn, !selectedId && styles.disabledBtn]} 
+                <TouchableOpacity
+                    style={[styles.confirmBtn, !selectedId && styles.disabledBtn]}
                     onPress={handleConfirmSelection}
                     disabled={submitting || !selectedId}
                 >

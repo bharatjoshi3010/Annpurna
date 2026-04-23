@@ -1,5 +1,41 @@
 import Student from '../models/Student.js';
 import Restaurant from '../models/Restaurant.js';
+import jwt from 'jsonwebtoken';
+
+// ── Admin Login ──────────────────────────────────────────────────────────────
+export const adminLogin = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    if (
+        email    !== process.env.ADMIN_EMAIL ||
+        password !== process.env.ADMIN_PASSWORD
+    ) {
+        return res.status(401).json({ message: 'Invalid admin credentials.' });
+    }
+
+    // Issue a 30-day admin JWT (role: 'admin' so protectAdmin middleware accepts it)
+    const token = jwt.sign({ id: 'admin', role: 'admin' }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+
+    res.json({
+        token,
+        role:  'admin',
+        email: email,
+        name:  'Administrator',
+    });
+};
+
+// ── Admin Session Restore (/me) ───────────────────────────────────────────────
+// Called by the admin web-app on page load to validate a stored token.
+export const adminMe = async (req, res) => {
+    // If we get here, protectAdmin already verified the token is valid
+    res.json({ role: 'admin', email: process.env.ADMIN_EMAIL, name: 'Administrator' });
+};
 
 // --- STUDENTS ---
 

@@ -2,6 +2,7 @@ import Booking from '../models/Booking.js';
 import Student from '../models/Student.js';
 import Restaurant from '../models/Restaurant.js';
 import Menu from '../models/Menu.js';
+import { upsertBookings } from '../utils/bookingHelper.js';
 
 // ─── Cutoff times (per spec) ──────────────────────────────────────────────────
 // Breakfast → 7:30 AM  |  Lunch → 12:30 PM  |  Dinner → 6:45 PM
@@ -103,17 +104,22 @@ export const bookMeal = async (req, res) => {
                 });
             }
 
-            // Already modified (one-time rule)
-            if (existingBooking.isModified) {
+            // Already switched — one-time rule enforced
+            if (existingBooking.restaurantSwitched) {
                 return res.status(400).json({
                     message: 'You have already changed the restaurant for this meal. No further modifications are allowed.'
                 });
             }
 
-            // Perform the switch — mark isModified so it's locked afterwards
+            // Perform the switch — mark restaurantSwitched so it's locked afterwards
             existingBooking.restaurant = restaurantId;
-            existingBooking.isModified = true;
+            existingBooking.restaurantSwitched = true;
             await existingBooking.save();
+
+            // ── Also update the student's defaultRestaurantId ─────────────────────────
+            // so tomorrow's 4 AM cron books the new restaurant automatically
+            student.defaultRestaurantId = restaurantId;
+            await student.save();
 
             const populated = await Booking.findById(existingBooking._id)
                 .populate('student', 'name email phoneNumber')
@@ -153,6 +159,14 @@ export const markConsumed = async (req, res) => {
 
         booking.status = 'consumed';
         await booking.save();
+
+        // Notify the student in real-time so their dashboard updates
+        req.io.to(booking.student.toString()).emit('mealConsumed', {
+            bookingId: booking._id,
+            mealType:  booking.mealType,
+            status:    'consumed',
+        });
+
         res.json({ message: 'Meal marked as consumed', booking });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -193,8 +207,8 @@ export const cancelMeal = async (req, res) => {
             return res.status(400).json({ message: 'This meal is already cancelled.' });
         }
 
-        // After an isModified restaurant switch, no further actions allowed
-        if (booking.isModified) {
+        // After a restaurant switch, no further actions allowed
+        if (booking.restaurantSwitched) {
             return res.status(400).json({
                 message: 'This meal has been modified (restaurant changed). No further modifications or cancellations are allowed.'
             });
@@ -257,38 +271,40 @@ export const getStudentMealStatus = async (req, res) => {
             if (booking) {
                 const isActive = booking.status === 'booked';
 
-                // canModify: plan allows change + not cutoff + not already modified + still booked
+                // canModify: plan allows change + not cutoff + not already switched + still booked
                 const canModify =
                     planCanChange &&
                     !cutoffPassed &&
-                    !booking.isModified &&
+                    !booking.restaurantSwitched &&
                     isActive;
 
-                // canCancel: plan allows cancel + not cutoff + not already modified + still booked
+                // canCancel: plan allows cancel + not cutoff + not already switched + still booked
                 const canCancel =
                     planCanCancel &&
                     !cutoffPassed &&
-                    !booking.isModified &&
+                    !booking.restaurantSwitched &&
                     isActive;
 
                 return {
-                    mealType:       type,
-                    status:         booking.status === 'consumed' ? 'Consumed'
-                                  : booking.status === 'cancelled' ? 'Cancelled'
-                                  : past ? 'Not Consumed'
-                                  : booking.restaurant.restaurantName,
-                    restaurantName: booking.restaurant.restaurantName,
-                    restaurantId:   booking.restaurant._id,
-                    bookingId:      booking._id,
-                    isLocked:       cutoffPassed,
-                    isModified:     booking.isModified,
+                    mealType:            type,
+                    status:              booking.status === 'consumed' ? 'Consumed'
+                                       : booking.status === 'cancelled' ? 'Cancelled'
+                                       : past ? 'Not Consumed'
+                                       : booking.restaurant.restaurantName,
+                    restaurantName:      booking.restaurant.restaurantName,
+                    restaurantId:        booking.restaurant._id,
+                    bookingId:           booking._id,
+                    isLocked:            cutoffPassed,
+                    restaurantSwitched:  booking.restaurantSwitched,
+                    // keep isModified as alias so frontend still works
+                    isModified:          booking.restaurantSwitched,
                     canModify,
                     canCancel,
-                    refundAmount:   MEAL_REFUND[type],
-                    planName:       plan,
+                    refundAmount:        MEAL_REFUND[type],
+                    planName:            plan,
                     planCanChange,
                     planCanCancel,
-                    cutoffDisplay:  CUTOFF_DISPLAY[type],
+                    cutoffDisplay:       CUTOFF_DISPLAY[type],
                 };
             } else {
                 // No booking yet — fall back to default restaurant
@@ -338,11 +354,12 @@ export const getIncomingStudents = async (req, res) => {
         const { restaurantId } = req.params;
         const { start, end } = todayRange();
 
+        // Return ALL statuses so the dashboard can show consumed/cancelled too
         const bookings = await Booking.find({
             restaurant: restaurantId,
             date: { $gte: start, $lte: end },
-            status: 'booked'
-        }).populate('student', 'name email phoneNumber');
+        }).populate('student', 'name email phoneNumber')
+          .sort({ mealType: 1, createdAt: 1 }); // ordered: Breakfast → Lunch → Dinner
 
         res.json(bookings);
     } catch (error) {

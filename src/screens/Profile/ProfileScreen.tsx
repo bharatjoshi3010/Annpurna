@@ -6,7 +6,12 @@ import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 
 const ProfileScreen = ({ navigation }: any) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        await logout();
+        navigation.replace('Auth');
+    };
 
     // Determine the values to display
     const displayName = user?.name || user?.restaurantName || 'Guest';
@@ -73,7 +78,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
                 <TouchableOpacity
                     style={styles.logoutButton}
-                    onPress={() => navigation.replace('Auth')}
+                    onPress={handleLogout}
                 >
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>

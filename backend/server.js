@@ -10,6 +10,7 @@ import mealRoutes from './routes/mealRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import { startCronJobs } from './cronJobs.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -77,4 +78,8 @@ app.get('/', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    // Start scheduled jobs (daily 4 AM booking creator)
+    startCronJobs(io);
+});

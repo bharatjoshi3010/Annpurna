@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
 import { Colors, Typography } from '../../styles/theme';
+import { useAuth } from '../../context/AuthContext';
 
 const SplashScreen = ({ navigation }: any) => {
-    const fadeAnim = new Animated.Value(0);
-    const scaleAnim = new Animated.Value(0.8);
+    const { user, isLoading } = useAuth();
+    const fadeAnim  = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
+    // ── Logo animation ────────────────────────────────────────────────────────
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -19,13 +22,30 @@ const SplashScreen = ({ navigation }: any) => {
                 useNativeDriver: true,
             }),
         ]).start();
+    }, []);
+
+    // ── Session check: wait until AuthContext finishes AsyncStorage lookup ────
+    useEffect(() => {
+        if (isLoading) return; // still checking — wait
+
+        // Give the logo animation at least 1.5 s before navigating
+        const minDelay = 1500;
 
         const timer = setTimeout(() => {
-            navigation.replace('Auth');
-        }, 2500);
+            if (user) {
+                // Session found — skip login
+                if (user.role === 'restaurant') {
+                    navigation.replace('RestaurantMain');
+                } else {
+                    navigation.replace('Main');
+                }
+            } else {
+                navigation.replace('Auth');
+            }
+        }, minDelay);
 
         return () => clearTimeout(timer);
-    }, [navigation]);
+    }, [isLoading, user, navigation]);
 
     return (
         <View style={styles.container}>
@@ -44,6 +64,11 @@ const SplashScreen = ({ navigation }: any) => {
                 </View>
                 <Text style={styles.appName}>Annpurna</Text>
                 <Text style={styles.tagline}>Student Meal Network</Text>
+
+                {/* Subtle loading indicator while session check runs */}
+                {isLoading && (
+                    <Text style={styles.loadingText}>Restoring session…</Text>
+                )}
             </Animated.View>
         </View>
     );
@@ -87,6 +112,12 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.9)',
         marginTop: 8,
         fontWeight: '500',
+    },
+    loadingText: {
+        fontSize: 13,
+        color: 'rgba(255,255,255,0.6)',
+        marginTop: 24,
+        fontWeight: '400',
     },
 });
 

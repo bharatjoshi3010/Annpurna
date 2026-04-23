@@ -142,6 +142,19 @@ const MealDetailScreen = ({ navigation, route }: any) => {
     };
 
     const executeCancelMeal = async () => {
+        // Guard: bookingId must exist (meal must be an actual DB booking, not a default-slot)
+        if (!bookingId) {
+            Alert.alert(
+                'Cannot Cancel',
+                'This meal slot does not have an active booking yet. Please refresh your dashboard.'
+            );
+            return;
+        }
+        if (!user?._id) {
+            Alert.alert('Error', 'You must be logged in to cancel a meal.');
+            return;
+        }
+
         setCancelling(true);
         try {
             const res = await fetch(`${BASE_URL}/api/meals/cancel`, {
