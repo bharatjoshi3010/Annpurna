@@ -47,6 +47,25 @@ const isMealPast = (mealType) => {
     return currentMinutes >= endHour * 60 + endMinute;
 };
 
+// Returns true when the serving window is currently open (between service start and end)
+// Service start times match MEAL_TIMES cutoff/start:
+//   Breakfast: 08:00 - 10:30  |  Lunch: 12:30 - 15:30  |  Dinner: 19:30 - 22:30
+const MEAL_SERVICE_START = {
+    Breakfast: { startHour: 8,  startMinute: 0  },
+    Lunch:     { startHour: 12, startMinute: 30 },
+    Dinner:    { startHour: 19, startMinute: 30 },
+};
+
+const isMealServing = (mealType) => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const { startHour, startMinute } = MEAL_SERVICE_START[mealType];
+    const { endHour,   endMinute   } = MEAL_TIMES[mealType];
+    const start = startHour * 60 + startMinute;
+    const end   = endHour   * 60 + endMinute;
+    return currentMinutes >= start && currentMinutes < end;
+};
+
 const todayRange = () => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const end   = new Date(); end.setHours(23, 59, 59, 999);
@@ -259,7 +278,7 @@ export const getStudentMealStatus = async (req, res) => {
         const plan = student.selectedPlan || 'Basic'; // Basic | Standard | Premium
         const mealTypes = ['Breakfast', 'Lunch', 'Dinner'];
 
-        const status = mealTypes.map(type => {
+        const status = await Promise.all(mealTypes.map(async type => {
             const booking      = bookings.find(b => b.mealType === type);
             const past         = isMealPast(type);
             const cutoffPassed = isCutoffPassed(type);
@@ -269,7 +288,19 @@ export const getStudentMealStatus = async (req, res) => {
             const planCanCancel = PLAN_CAN_CANCEL.includes(plan);
 
             if (booking) {
-                const isActive = booking.status === 'booked';
+                const isActive   = booking.status === 'booked';
+                const isConsumed = booking.status === 'consumed';
+                const isCancelled= booking.status === 'cancelled';
+                const isNotConsumed = booking.status === 'not_consumed';
+                const serving    = isMealServing(type);
+
+                // ── Auto-mark not_consumed once window closes ─────────────────
+                // If the meal was still 'booked' when the serving window ended,
+                // update the DB record immediately — money already deducted.
+                if (isActive && past) {
+                    booking.status = 'not_consumed';
+                    await booking.save();
+                }
 
                 // canModify: plan allows change + not cutoff + not already switched + still booked
                 const canModify =
@@ -285,18 +316,23 @@ export const getStudentMealStatus = async (req, res) => {
                     !booking.restaurantSwitched &&
                     isActive;
 
+                // Derive the display status
+                const displayStatus =
+                    (isConsumed || booking.status === 'consumed')   ? 'Consumed'
+                  : (isCancelled )                                  ? 'Cancelled'
+                  : (isNotConsumed || (isActive && past))           ? 'Not Consumed'
+                  : serving                                         ? 'Serving'
+                  : booking.restaurant.restaurantName;
+
                 return {
                     mealType:            type,
-                    status:              booking.status === 'consumed' ? 'Consumed'
-                                       : booking.status === 'cancelled' ? 'Cancelled'
-                                       : past ? 'Not Consumed'
-                                       : booking.restaurant.restaurantName,
+                    status:              displayStatus,
                     restaurantName:      booking.restaurant.restaurantName,
                     restaurantId:        booking.restaurant._id,
                     bookingId:           booking._id,
                     isLocked:            cutoffPassed,
+                    isServing:           serving && isActive,
                     restaurantSwitched:  booking.restaurantSwitched,
-                    // keep isModified as alias so frontend still works
                     isModified:          booking.restaurantSwitched,
                     canModify,
                     canCancel,
@@ -309,15 +345,17 @@ export const getStudentMealStatus = async (req, res) => {
             } else {
                 // No booking yet — fall back to default restaurant
                 if (student.subscriptionStatus === 'active' && student.defaultRestaurantId) {
+                    const serving = isMealServing(type);
                     return {
                         mealType:       type,
-                        status:         past ? 'Not Consumed' : student.defaultRestaurantId.restaurantName,
+                        status:         past ? 'Not Consumed' : serving ? 'Serving' : student.defaultRestaurantId.restaurantName,
                         restaurantName: student.defaultRestaurantId.restaurantName,
                         restaurantId:   student.defaultRestaurantId._id,
                         isLocked:       cutoffPassed,
+                        isServing:      serving,
                         isModified:     false,
                         canModify:      planCanChange && !cutoffPassed,
-                        canCancel:      false, // no booking to cancel yet
+                        canCancel:      false,
                         refundAmount:   MEAL_REFUND[type],
                         isDefault:      true,
                         planName:       plan,
@@ -330,6 +368,7 @@ export const getStudentMealStatus = async (req, res) => {
                     mealType:      type,
                     status:        past ? 'Not Consumed' : 'Select',
                     isLocked:      past || cutoffPassed,
+                    isServing:     false,
                     isModified:    false,
                     canModify:     !past && !cutoffPassed,
                     canCancel:     false,
@@ -339,8 +378,9 @@ export const getStudentMealStatus = async (req, res) => {
                     planCanCancel,
                     cutoffDisplay: CUTOFF_DISPLAY[type],
                 };
-            }
-        });
+            }   // end else (no booking)
+        }));   // end Promise.all map
+
 
         res.json(status);
     } catch (error) {

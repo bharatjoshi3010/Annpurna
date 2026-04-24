@@ -13,7 +13,6 @@ import HomeScreen from '../screens/Home/HomeScreen';
 import RestaurantListScreen from '../screens/Restaurant/RestaurantListScreen';
 import MenuScreen from '../screens/Restaurant/MenuScreen';
 import MealDetailScreen from '../screens/Restaurant/MealDetailScreen';
-import QRCodeScreen from '../screens/Main/QRCodeScreen';
 import WalletScreen from '../screens/Wallet/WalletScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import PersonalDetailsScreen from '../screens/Profile/PersonalDetailsScreen';
@@ -31,12 +30,11 @@ const Tab = createBottomTabNavigator();
 const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => {
     const getIcon = () => {
         switch (label) {
-            case 'Home': return '🏠';
-            case 'Wallet': return '💰';
-            case 'QR Code': return '🔍';
-            case 'Profile': return '👤';
+            case 'Home':      return '🏠';
+            case 'Wallet':    return '💰';
+            case 'Profile':   return '👤';
             case 'Dashboard': return '📊';
-            default: return '●';
+            default:          return '●';
         }
     };
 
@@ -73,13 +71,6 @@ const MainTabNavigator = () => {
                 component={WalletScreen}
                 options={{
                     tabBarIcon: ({ focused }) => <TabIcon label="Wallet" focused={focused} />
-                }}
-            />
-            <Tab.Screen
-                name="QRTab"
-                component={QRCodeScreen}
-                options={{
-                    tabBarIcon: ({ focused }) => <TabIcon label="QR Code" focused={focused} />
                 }}
             />
             <Tab.Screen

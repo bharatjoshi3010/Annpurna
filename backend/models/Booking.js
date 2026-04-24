@@ -23,7 +23,7 @@ const bookingSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['booked', 'consumed', 'cancelled'],
+        enum: ['booked', 'consumed', 'cancelled', 'not_consumed'],
         default: 'booked'
     },
     // True once the student has used their one-time restaurant switch.

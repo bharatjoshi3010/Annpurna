@@ -210,6 +210,8 @@ const HomeScreen = ({ navigation }: any) => {
         const refundAmount  = mealStatus?.refundAmount || 0;
         const cutoffDisplay = mealStatus?.cutoffDisplay || CUTOFF_DISPLAY[type];
 
+        const isServing     = mealStatus?.isServing    || false;
+
         const hasActiveBooking =
             !!(mealStatus?.bookingId) &&
             status !== 'Cancelled' &&
@@ -222,6 +224,7 @@ const HomeScreen = ({ navigation }: any) => {
         const cardStatus =
             status === 'Consumed'     ? 'taken'
           : status === 'Not Consumed' ? 'missed'
+          : status === 'Serving'      ? 'booked'   // still booked, serving window open
           : status === 'Select'       ? 'available'
           : 'booked';
 
@@ -273,6 +276,18 @@ const HomeScreen = ({ navigation }: any) => {
                       : status
                     }
                 />
+
+                {/* 🚨 Serving window open — urge to go now */}
+                {isServing && (
+                    <View style={styles.servingBanner}>
+                        <Text style={styles.servingIcon}>🏃</Text>
+                        <View style={styles.servingTextBlock}>
+                            <Text style={styles.servingTitle}>Reach fast, food is waiting for you!</Text>
+                            <Text style={styles.servingSubtitle}>{type} is being served now at {restaurantName}</Text>
+                        </View>
+                    </View>
+                )}
+
                 {/* Modified/locked notice */}
                 {showModifiedNotice && (
                     <View style={styles.switchedBanner}>
@@ -498,6 +513,36 @@ const styles = StyleSheet.create({
         color: '#2E7D32',
         flex: 1,
         lineHeight: 16,
+    },
+    // ── Serving window banner ─────────────────────────────────────────────────
+    servingBanner: {
+        flexDirection:      'row',
+        alignItems:         'center',
+        backgroundColor:    '#FFF3E0',
+        borderRadius:       10,
+        borderWidth:        1.5,
+        borderColor:        '#FFCC02',
+        paddingHorizontal:  14,
+        paddingVertical:    10,
+        marginBottom:       8,
+        gap:                10,
+    },
+    servingIcon: {
+        fontSize: 22,
+    },
+    servingTextBlock: {
+        flex: 1,
+    },
+    servingTitle: {
+        fontSize:    13,
+        fontWeight:  '800',
+        color:       '#E65100',
+        lineHeight:  18,
+    },
+    servingSubtitle: {
+        fontSize:  11,
+        color:     '#BF360C',
+        marginTop: 2,
     },
     section: {
         marginTop: Spacing.lg,

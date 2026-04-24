@@ -13,49 +13,77 @@ interface MealSlotCardProps {
 }
 
 const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText, locked }) => {
+    // 'taken' = consumed — ALWAYS green, regardless of locked flag
+    const isConsumed = status === 'taken';
+
+    // A meal is visually "locked grey" only when locked AND not consumed
+    const showLocked = locked && !isConsumed;
+
     const getStatusColor = () => {
         switch (status) {
-            case 'booked':
-                return Colors.primary;
-            case 'taken':
-                return Colors.success;
+            case 'booked':  return Colors.primary;
+            case 'taken':   return Colors.success;   // green
             case 'skipped':
-            case 'missed':
-                return Colors.error;
-            default:
-                return Colors.textLight;
+            case 'missed':  return Colors.error;
+            default:        return Colors.textLight;
         }
     };
 
+    const color = getStatusColor();
+
     return (
-        <TouchableOpacity 
-            style={[styles.container, locked && styles.lockedContainer]} 
-            onPress={locked ? undefined : onPress}
-            activeOpacity={locked ? 1 : 0.7}
+        <TouchableOpacity
+            style={[
+                styles.container,
+                showLocked  && styles.lockedContainer,
+                isConsumed  && styles.consumedContainer,   // ← light green card tint
+            ]}
+            onPress={showLocked ? undefined : onPress}
+            activeOpacity={showLocked ? 1 : 0.7}
         >
-            <View style={[styles.statusIndicator, { backgroundColor: locked ? '#999' : getStatusColor() }]} />
+            {/* Left colour bar — always green for consumed */}
+            <View style={[styles.statusIndicator, { backgroundColor: showLocked ? '#999' : color }]} />
+
             <View style={styles.content}>
                 <View style={styles.leftContent}>
-                    <Text style={[Typography.h3, locked && styles.lockedText]}>{type}</Text>
+                    <Text style={[
+                        Typography.h3,
+                        showLocked  && styles.lockedText,
+                        isConsumed  && styles.consumedTitle,
+                    ]}>
+                        {type}
+                    </Text>
                     <Text style={Typography.caption}>{time}</Text>
                 </View>
+
                 <View style={styles.rightContent}>
                     {restaurant && restaurant !== 'Not selected' ? (
-                        <Text style={[styles.restaurantName, locked && styles.lockedText]} numberOfLines={1}>
+                        <Text
+                            style={[
+                                styles.restaurantName,
+                                showLocked && styles.lockedText,
+                                isConsumed && styles.consumedRestaurant,
+                            ]}
+                            numberOfLines={1}
+                        >
                             {restaurant}
                         </Text>
                     ) : (
                         <Text style={styles.placeholderText}>Not selected</Text>
                     )}
+
+                    {/* Status badge */}
                     <View style={[
-                        styles.statusBadge, 
-                        { backgroundColor: locked ? '#F5F5F5' : getStatusColor() + '20' }
+                        styles.statusBadge,
+                        showLocked ? { backgroundColor: '#F0F0F0' } : { backgroundColor: color + '22' },
                     ]}>
-                        <Text style={[
-                            styles.statusText, 
-                            { color: locked ? '#666' : getStatusColor() }
-                        ]}>
-                            {locked ? 'LOCKED' : (statusText ? statusText.toUpperCase() : status.toUpperCase())}
+                        <Text style={[styles.statusText, { color: showLocked ? '#888' : color }]}>
+                            {isConsumed
+                                ? '✓  CONSUMED'
+                                : showLocked
+                                    ? '🔒 LOCKED'
+                                    : (statusText ? statusText.toUpperCase() : status.toUpperCase())
+                            }
                         </Text>
                     </View>
                 </View>
@@ -119,10 +147,23 @@ const styles = StyleSheet.create({
     },
     lockedContainer: {
         backgroundColor: '#FCFCFC',
-        opacity: 0.8,
+        opacity: 0.75,
     },
     lockedText: {
         color: '#999',
+    },
+    // ── Consumed / green theme ────────────────────────────────────────────────
+    consumedContainer: {
+        backgroundColor: '#F0FDF4',   // very light green card
+        borderWidth: 1,
+        borderColor: '#BBF7D0',
+    },
+    consumedTitle: {
+        color: '#166534',             // dark green meal name
+        fontWeight: '700' as const,
+    },
+    consumedRestaurant: {
+        color: '#16a34a',             // medium green restaurant name
     },
 });
 
