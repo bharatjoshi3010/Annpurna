@@ -8,6 +8,7 @@ import MealSlotCard from '../../components/MealSlotCard';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
+import MealStatusBadge from '../../components/MealStatusBadge';
 
 const PLANS = [
     {
@@ -307,6 +308,8 @@ const HomeScreen = ({ navigation }: any) => {
                         <Text style={styles.profileIcon}>👤</Text>
                     </TouchableOpacity>
                 </View>
+
+                <MealStatusBadge />
 
                 <WalletCard
                     balance={user?.walletBalance || 0}
