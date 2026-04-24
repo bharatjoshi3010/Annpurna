@@ -58,7 +58,12 @@ export const getRemainingMeals = () => {
  * @returns created/updated booking documents
  */
 export const upsertBookings = async (studentId, restaurantId, mealTypes, forDate = new Date(), io = null) => {
-    const { start, end } = dayRange(forDate);
+    // Always normalize to start-of-day so the unique index on { student, mealType, date }
+    // treats the entire calendar day as one slot (prevents duplicate docs at different timestamps).
+    const normalizedDate = new Date(forDate);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const { start, end } = dayRange(normalizedDate);
     const results = [];
 
     for (const mealType of mealTypes) {
@@ -80,12 +85,13 @@ export const upsertBookings = async (studentId, restaurantId, mealTypes, forDate
                 }
                 // else leave it untouched
             } else {
-                // No booking yet — create one
+                // No booking yet — create one (use normalizedDate so the unique
+                // index key is always midnight — prevents duplicates from cron re-runs)
                 const booking = await Booking.create({
                     student:           studentId,
                     restaurant:        restaurantId,
                     mealType,
-                    date:              forDate,
+                    date:              normalizedDate,
                     status:            'booked',
                     restaurantSwitched: false,
                 });

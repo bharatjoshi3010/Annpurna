@@ -115,16 +115,22 @@ export const buySubscription = async (req, res) => {
         }
 
         // Deduct balance and update subscription
+        const subscriptionStart = new Date();
+        const subscriptionEnd   = new Date(subscriptionStart);
+        subscriptionEnd.setDate(subscriptionEnd.getDate() + 30); // 30-day plan
+
         student.walletBalance -= price;
         student.selectedPlan = planName;
         student.defaultRestaurantId = defaultRestaurantId;
-        student.subscriptionDate = new Date();
+        student.subscriptionDate = subscriptionStart;
+        student.subscriptionEndDate = subscriptionEnd;
         student.subscriptionStatus = 'active';
         
         student.subscriptionHistory.push({
             planName,
             price,
-            startDate: new Date(),
+            startDate: subscriptionStart,
+            endDate:   subscriptionEnd,
             status: 'active'
         });
 

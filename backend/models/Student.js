@@ -15,6 +15,7 @@ const studentSchema = new mongoose.Schema({
     budget: { type: String },
     selectedPlan: { type: String },
     subscriptionDate: { type: Date },
+    subscriptionEndDate: { type: Date },
     subscriptionStatus: { type: String, enum: ['active', 'inactive', 'cancelled'], default: 'inactive' },
     subscriptionHistory: [{
         planName: String,
