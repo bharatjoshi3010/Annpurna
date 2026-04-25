@@ -14,8 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
-
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+import { API_BASE_URL as BASE_URL } from '../../config';
 
 const DAY_ORDER  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const MEALS      = ['Breakfast','Lunch','Dinner'] as const;

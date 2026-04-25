@@ -20,7 +20,7 @@ const LoginScreen = ({ navigation }: any) => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(false);
-    
+
     const { setUser } = useAuth();
 
     const handleLogin = async () => {
@@ -45,9 +45,9 @@ const LoginScreen = ({ navigation }: any) => {
                     Alert.alert('Incomplete Profile', 'Your profile is missing required details. You cannot sign in without them. Please register again or contact support.');
                     return;
                 }
-                
+
                 setUser(data);
-                
+
                 if (role === 'restaurant') {
                     navigation.replace('RestaurantMain');
                 } else {

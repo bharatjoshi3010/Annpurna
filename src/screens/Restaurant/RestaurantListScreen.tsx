@@ -17,7 +17,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const [search, setSearch] = useState('');
     const [selectedId, setSelectedId] = useState('');
     const mealType = route.params?.mealType;
-    const purpose  = route.params?.purpose;   // 'changeRestaurant' | 'viewMenu' | undefined
+    const purpose = route.params?.purpose;   // 'changeRestaurant' | 'viewMenu' | undefined
     const bookingId = route.params?.bookingId;
 
     useEffect(() => {
@@ -27,12 +27,12 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const fetchRestaurants = async () => {
         try {
             const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            
+
             // Output menu with restaurants if mealType is provided
-            const url = mealType 
+            const url = mealType
                 ? `${baseUrl}/api/meals/restaurants-for-meal/${mealType}`
                 : `${baseUrl}/api/auth/restaurants`;
-                
+
             const response = await fetch(url);
             const data = await response.json();
             if (response.ok) {
@@ -48,7 +48,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
 
     const filteredRestaurants = restaurants
         .filter(r =>
-            (r.restaurantName || '').toLowerCase().includes(search.toLowerCase()) || 
+            (r.restaurantName || '').toLowerCase().includes(search.toLowerCase()) ||
             (r.ownerName || '').toLowerCase().includes(search.toLowerCase())
         )
         .sort((a, b) => {
@@ -89,9 +89,9 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    studentId:    user._id,
+                    studentId: user._id,
                     restaurantId: selectedId,
-                    mealType:     type
+                    mealType: type
                 })
             });
 
@@ -139,7 +139,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                         keyExtractor={(item) => item._id}
                         renderItem={({ item }) => {
                             const firstMenuItem = item.menuItems && item.menuItems.length > 0 ? item.menuItems[0] : null;
-                            
+
                             return (
                                 <RestaurantCard
                                     name={item.restaurantName || 'Unknown Restaurant'}
@@ -151,8 +151,8 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                                     menuItemImage={firstMenuItem ? firstMenuItem.image : undefined}
                                     onPress={() => {
                                         if (purpose === 'viewMenu') {
-                                            navigation.navigate('Menu', { 
-                                                restaurantId: item._id, 
+                                            navigation.navigate('Menu', {
+                                                restaurantId: item._id,
                                                 restaurantName: item.restaurantName,
                                                 mealType: mealType || 'Lunch'
                                             });

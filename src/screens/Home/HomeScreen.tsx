@@ -55,10 +55,10 @@ const HomeScreen = ({ navigation }: any) => {
     // Cut-off times (per spec): Breakfast 7:30AM, Lunch 12:30PM, Dinner 6:45PM
     const CUTOFF_DISPLAY: Record<string, string> = {
         Breakfast: '7:30 AM',
-        Lunch:     '12:30 PM',
-        Dinner:    '6:45 PM',
+        Lunch: '12:30 PM',
+        Dinner: '6:45 PM',
     };
-    
+
     const fetchMealStatuses = async () => {
         if (!user?._id) return;
         try {
@@ -196,21 +196,21 @@ const HomeScreen = ({ navigation }: any) => {
     };
 
     const renderMealSlot = (type: string, time: string) => {
-        const mealStatus    = mealStatuses.find(s => s.mealType === type);
-        const status        = mealStatus?.status || 'Select';
+        const mealStatus = mealStatuses.find(s => s.mealType === type);
+        const status = mealStatus?.status || 'Select';
         const restaurantName = mealStatus?.restaurantName ||
             (status !== 'Select' && status !== 'Not Consumed' && status !== 'Consumed' ? status : 'Not selected');
-        const isLocked      = mealStatus?.isLocked || false;
-        const isModified    = mealStatus?.isModified || false;
-        const canModify     = mealStatus?.canModify ?? false;
-        const canCancel     = mealStatus?.canCancel ?? false;
-        const planName      = (mealStatus?.planName || user?.selectedPlan || 'Basic');
+        const isLocked = mealStatus?.isLocked || false;
+        const isModified = mealStatus?.isModified || false;
+        const canModify = mealStatus?.canModify ?? false;
+        const canCancel = mealStatus?.canCancel ?? false;
+        const planName = (mealStatus?.planName || user?.selectedPlan || 'Basic');
         const planCanChange = mealStatus?.planCanChange ?? false;
         const planCanCancel = mealStatus?.planCanCancel ?? false;
-        const refundAmount  = mealStatus?.refundAmount || 0;
+        const refundAmount = mealStatus?.refundAmount || 0;
         const cutoffDisplay = mealStatus?.cutoffDisplay || CUTOFF_DISPLAY[type];
 
-        const isServing     = mealStatus?.isServing    || false;
+        const isServing = mealStatus?.isServing || false;
 
         const hasActiveBooking =
             !!(mealStatus?.bookingId) &&
@@ -222,11 +222,11 @@ const HomeScreen = ({ navigation }: any) => {
         const showModifiedNotice = isModified && !isLocked;
 
         const cardStatus =
-            status === 'Consumed'     ? 'taken'
-          : status === 'Not Consumed' ? 'missed'
-          : status === 'Serving'      ? 'booked'   // still booked, serving window open
-          : status === 'Select'       ? 'available'
-          : 'booked';
+            status === 'Consumed' ? 'taken'
+                : status === 'Not Consumed' ? 'missed'
+                    : status === 'Serving' ? 'booked'   // still booked, serving window open
+                        : status === 'Select' ? 'available'
+                            : 'booked';
 
         return (
             <View key={type} style={styles.mealSlotWrapper}>
@@ -254,10 +254,10 @@ const HomeScreen = ({ navigation }: any) => {
 
                         // Navigate to MealDetailScreen for all active meals
                         navigation.navigate('MealDetail', {
-                            mealType:       type,
-                            restaurantId:   mealStatus?.restaurantId,
+                            mealType: type,
+                            restaurantId: mealStatus?.restaurantId,
                             restaurantName: mealStatus?.restaurantName || status,
-                            bookingId:      mealStatus?.bookingId,
+                            bookingId: mealStatus?.bookingId,
                             planName,
                             planCanChange,
                             planCanCancel,
@@ -271,9 +271,9 @@ const HomeScreen = ({ navigation }: any) => {
                         });
                     }}
                     statusText={
-                        isLocked   ? 'LOCKED'
-                      : isModified ? 'SWITCHED'
-                      : status
+                        isLocked ? 'LOCKED'
+                            : isModified ? 'SWITCHED'
+                                : status
                     }
                 />
 
@@ -303,8 +303,8 @@ const HomeScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
+            <ScrollView
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
@@ -362,7 +362,7 @@ const HomeScreen = ({ navigation }: any) => {
                     </View>
 
                     {user?.selectedPlan ? (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.activePlanCard}
                             onPress={() => navigation.navigate('PlanDetail', { plan: PLANS.find(p => p.name === user.selectedPlan) || PLANS[0] })}
                         >
@@ -376,8 +376,8 @@ const HomeScreen = ({ navigation }: any) => {
                     ) : (
                         <View style={styles.tiersContainer}>
                             {PLANS.map(plan => (
-                                <TouchableOpacity 
-                                    key={plan.id} 
+                                <TouchableOpacity
+                                    key={plan.id}
                                     style={styles.tierCard}
                                     onPress={() => navigation.navigate('PlanDetail', { plan })}
                                 >
@@ -516,16 +516,16 @@ const styles = StyleSheet.create({
     },
     // ── Serving window banner ─────────────────────────────────────────────────
     servingBanner: {
-        flexDirection:      'row',
-        alignItems:         'center',
-        backgroundColor:    '#FFF3E0',
-        borderRadius:       10,
-        borderWidth:        1.5,
-        borderColor:        '#FFCC02',
-        paddingHorizontal:  14,
-        paddingVertical:    10,
-        marginBottom:       8,
-        gap:                10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF3E0',
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: '#FFCC02',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginBottom: 8,
+        gap: 10,
     },
     servingIcon: {
         fontSize: 22,
@@ -534,14 +534,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     servingTitle: {
-        fontSize:    13,
-        fontWeight:  '800',
-        color:       '#E65100',
-        lineHeight:  18,
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#E65100',
+        lineHeight: 18,
     },
     servingSubtitle: {
-        fontSize:  11,
-        color:     '#BF360C',
+        fontSize: 11,
+        color: '#BF360C',
         marginTop: 2,
     },
     section: {

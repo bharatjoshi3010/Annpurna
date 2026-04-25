@@ -35,8 +35,8 @@ interface Booking {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 /**
@@ -49,22 +49,22 @@ const MONTH_NAMES = [
  *   the date by one day.
  */
 const toDateKey = (d: Date): string =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 // For booking dates received from server (ISO strings stored as UTC)
 const bookingDateKey = (isoStr: string): string => {
     const d = new Date(isoStr);
     // Use UTC parts so a midnight-UTC date never flips to the previous day in IST
-    const y  = d.getUTCFullYear();
-    const m  = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
     const dd = String(d.getUTCDate()).padStart(2, '0');
     return `${y}-${m}-${dd}`;
 };
 
 const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
-    a.getMonth()    === b.getMonth()    &&
-    a.getDate()     === b.getDate();
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
 
 // Green shading by consumed count
 const dayBgColor = (consumed: number, total: number): string => {
@@ -84,11 +84,11 @@ const dayTextColor = (consumed: number): string => {
 // Status pill colour
 const statusColor = (status: string) => {
     switch (status) {
-        case 'consumed':     return { bg: '#E8F5E9', text: '#2E7D32' };
-        case 'booked':       return { bg: '#E3F2FD', text: '#1565C0' };
-        case 'cancelled':    return { bg: '#FFEBEE', text: '#C62828' };
+        case 'consumed': return { bg: '#E8F5E9', text: '#2E7D32' };
+        case 'booked': return { bg: '#E3F2FD', text: '#1565C0' };
+        case 'cancelled': return { bg: '#FFEBEE', text: '#C62828' };
         case 'not_consumed': return { bg: '#FFF8E1', text: '#F57F17' };
-        default:             return { bg: '#F5F5F5', text: '#666'    };
+        default: return { bg: '#F5F5F5', text: '#666' };
     }
 };
 
@@ -98,21 +98,21 @@ const mealEmoji = (type: string) =>
 // ── Component ─────────────────────────────────────────────────────────────────
 const MealHistoryScreen = ({ navigation }: any) => {
     const { user } = useAuth();
-    const [bookings,   setBookings]   = useState<Booking[]>([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
     // Subscription period navigation
-    const [viewYear,  setViewYear]  = useState(new Date().getFullYear());
+    const [viewYear, setViewYear] = useState(new Date().getFullYear());
     const [viewMonth, setViewMonth] = useState(new Date().getMonth());
 
     const fetchHistory = async () => {
         if (!user?._id) return;
         try {
             const base = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const url  = `${base}/api/meals/student/${user._id}`;
+            const url = `${base}/api/meals/student/${user._id}`;
             console.log('[MealHistory] Fetching:', url);
-            const res  = await fetch(url);
+            const res = await fetch(url);
             const data = await res.json();
             console.log('[MealHistory] status:', res.status, 'count:', Array.isArray(data) ? data.length : data);
             if (res.ok) {
@@ -157,10 +157,10 @@ const MealHistoryScreen = ({ navigation }: any) => {
     // subStart may include a time (e.g. 10:39 AM). If we compare the Date
     // objects directly, the subscription START DAY itself (which is midnight
     // 00:00 in the calendar) would appear to be BEFORE subStart and get greyed.
-    const subStart    = user?.subscriptionDate    ? new Date(user.subscriptionDate)    : null;
-    const subEnd      = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+    const subStart = user?.subscriptionDate ? new Date(user.subscriptionDate) : null;
+    const subEnd = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
     const subStartKey = subStart ? toDateKey(subStart) : null;
-    const subEndKey   = subEnd   ? toDateKey(subEnd)   : null;
+    const subEndKey = subEnd ? toDateKey(subEnd) : null;
 
     const isInSubscription = (d: Date): boolean => {
         if (!subStartKey) return true;             // no subscription info — show all
@@ -310,17 +310,17 @@ const MealHistoryScreen = ({ navigation }: any) => {
                         {calendarDays.map((day, i) => {
                             if (!day) return <View key={`empty-${i}`} style={styles.dayCell} />;
 
-                            const key      = toDateKey(day);
+                            const key = toDateKey(day);
                             const dayBooks = byDay[key] || [];
                             const consumed = dayBooks.filter(b => b.status === 'consumed').length;
-                            const inSub    = isInSubscription(day);
+                            const inSub = isInSubscription(day);
                             // Compare date strings — immune to time-of-day and timezone issues
-                            const isFuture   = key > todayKey;
-                            const isToday    = key === todayKey;
+                            const isFuture = key > todayKey;
+                            const isToday = key === todayKey;
                             const isSelected = selectedDay ? toDateKey(selectedDay) === key : false;
 
-                            const bg   = (!inSub || isFuture) ? 'transparent' : dayBgColor(consumed, dayBooks.length);
-                            const txtC = (!inSub || isFuture) ? '#CCC'        : dayTextColor(consumed);
+                            const bg = (!inSub || isFuture) ? 'transparent' : dayBgColor(consumed, dayBooks.length);
+                            const txtC = (!inSub || isFuture) ? '#CCC' : dayTextColor(consumed);
 
 
                             return (
@@ -329,7 +329,7 @@ const MealHistoryScreen = ({ navigation }: any) => {
                                     style={[
                                         styles.dayCell,
                                         { backgroundColor: bg },
-                                        isToday    && styles.todayCell,
+                                        isToday && styles.todayCell,
                                         isSelected && styles.selectedCell,
                                         (!inSub || isFuture) && styles.disabledCell,
                                     ]}
@@ -345,14 +345,14 @@ const MealHistoryScreen = ({ navigation }: any) => {
                                     {/* Meal dots */}
                                     {inSub && !isFuture && dayBooks.length > 0 && (
                                         <View style={styles.dotsRow}>
-                                            {(['Breakfast','Lunch','Dinner'] as const).map(mt => {
+                                            {(['Breakfast', 'Lunch', 'Dinner'] as const).map(mt => {
                                                 const b = dayBooks.find(x => x.mealType === mt);
                                                 if (!b) return null;
                                                 const dotColor =
-                                                    b.status === 'consumed'     ? '#4CAF50'
-                                                  : b.status === 'cancelled'    ? '#F44336'
-                                                  : b.status === 'not_consumed' ? '#FFC107'
-                                                  : '#90CAF9';
+                                                    b.status === 'consumed' ? '#4CAF50'
+                                                        : b.status === 'cancelled' ? '#F44336'
+                                                            : b.status === 'not_consumed' ? '#FFC107'
+                                                                : '#90CAF9';
                                                 return (
                                                     <View
                                                         key={mt}
@@ -372,7 +372,7 @@ const MealHistoryScreen = ({ navigation }: any) => {
                         {[
                             { color: '#166534', label: '3 meals' },
                             { color: '#4CAF50', label: '2 meals' },
-                            { color: '#A8D5B5', label: '1 meal'  },
+                            { color: '#A8D5B5', label: '1 meal' },
                             { color: '#F5F5F5', label: 'Skipped' },
                         ].map(l => (
                             <View key={l.label} style={styles.legendItem}>
@@ -434,9 +434,9 @@ const MealHistoryScreen = ({ navigation }: any) => {
                 {/* ── Stats summary ────────────────────────────────────────── */}
                 <View style={styles.statsRow}>
                     {[
-                        { label: 'Consumed', count: bookings.filter(b => b.status === 'consumed').length,     color: '#4CAF50' },
-                        { label: 'Missed',   count: bookings.filter(b => b.status === 'not_consumed').length, color: '#FFC107' },
-                        { label: 'Cancelled',count: bookings.filter(b => b.status === 'cancelled').length,    color: '#F44336' },
+                        { label: 'Consumed', count: bookings.filter(b => b.status === 'consumed').length, color: '#4CAF50' },
+                        { label: 'Missed', count: bookings.filter(b => b.status === 'not_consumed').length, color: '#FFC107' },
+                        { label: 'Cancelled', count: bookings.filter(b => b.status === 'cancelled').length, color: '#F44336' },
                     ].map(s => (
                         <View key={s.label} style={[styles.statBox, { borderTopColor: s.color }]}>
                             <Text style={[styles.statCount, { color: s.color }]}>{s.count}</Text>
@@ -452,9 +452,9 @@ const MealHistoryScreen = ({ navigation }: any) => {
 };
 
 // Calendar cell size — exactly 1/7 of screen minus card padding (16 each side × 2 + card margin 16 × 2)
-const SCREEN_W  = Dimensions.get('window').width;
-const CARD_PAD  = Spacing.md * 2;   // padding inside card (left + right)
-const CARD_MRG  = Spacing.md * 2;   // card margin (left + right)
+const SCREEN_W = Dimensions.get('window').width;
+const CARD_PAD = Spacing.md * 2;   // padding inside card (left + right)
+const CARD_MRG = Spacing.md * 2;   // card margin (left + right)
 const CELL_SIZE = Math.floor((SCREEN_W - CARD_PAD - CARD_MRG) / 7);
 
 const styles = StyleSheet.create({
@@ -476,10 +476,10 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     subCardTop: {
-        flexDirection:  'row',
+        flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems:     'flex-start',
-        marginBottom:   Spacing.md,
+        alignItems: 'flex-start',
+        marginBottom: Spacing.md,
     },
     subPlanLabel: {
         fontSize: 10, fontWeight: '700', color: Colors.textLight, letterSpacing: 1,
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
     subStatusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
     subDatesRow: {
         flexDirection: 'row',
-        alignItems:    'center',
-        marginBottom:  Spacing.md,
+        alignItems: 'center',
+        marginBottom: Spacing.md,
     },
     subDateItem: { flex: 1, alignItems: 'center' },
     subDateDivider: {
@@ -537,10 +537,10 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     monthNav: {
-        flexDirection:  'row',
-        alignItems:     'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom:   Spacing.md,
+        marginBottom: Spacing.md,
     },
     navBtn: {
         width: 36, height: 36,
@@ -562,11 +562,11 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     weekLabel: {
-        width:      CELL_SIZE,
-        textAlign:  'center',
-        fontSize:   10,
+        width: CELL_SIZE,
+        textAlign: 'center',
+        fontSize: 10,
         fontWeight: '800',
-        color:      Colors.textLight,
+        color: Colors.textLight,
         letterSpacing: 0.3,
         paddingVertical: 4,
     },
@@ -575,11 +575,11 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     dayCell: {
-        width:          CELL_SIZE,
-        height:         CELL_SIZE,
-        alignItems:     'center',
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        alignItems: 'center',
         justifyContent: 'center',
-        borderRadius:   6,
+        borderRadius: 6,
         marginVertical: 1,
     },
     todayCell: {
@@ -606,9 +606,9 @@ const styles = StyleSheet.create({
     },
     // ── Legend ───────────────────────────────────────────────────
     legend: {
-        flexDirection:  'row',
+        flexDirection: 'row',
         justifyContent: 'center',
-        flexWrap:       'wrap',
+        flexWrap: 'wrap',
         gap: 12,
         marginTop: Spacing.md,
         paddingTop: Spacing.sm,
@@ -629,9 +629,9 @@ const styles = StyleSheet.create({
     // ── Day detail ───────────────────────────────────────────────
     detailCard: {
         marginHorizontal: Spacing.md,
-        backgroundColor:  Colors.white,
-        borderRadius:     BorderRadius.md,
-        padding:          Spacing.md,
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.07,
@@ -639,9 +639,9 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     detailTitle: {
-        fontSize:     15,
-        fontWeight:   '700',
-        color:        Colors.text,
+        fontSize: 15,
+        fontWeight: '700',
+        color: Colors.text,
         marginBottom: Spacing.md,
         paddingBottom: Spacing.sm,
         borderBottomWidth: 1,
@@ -654,8 +654,8 @@ const styles = StyleSheet.create({
     noMealsIcon: { fontSize: 32, marginBottom: 8 },
     noMealsText: { fontSize: 14, color: Colors.textLight },
     mealRow: {
-        flexDirection:  'row',
-        alignItems:     'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'space-between',
         paddingVertical: 12,
         borderBottomWidth: 1,
@@ -663,11 +663,11 @@ const styles = StyleSheet.create({
     },
     mealRowLeft: {
         flexDirection: 'row',
-        alignItems:    'center',
+        alignItems: 'center',
         flex: 1,
     },
     mealEmoji: {
-        fontSize:    26,
+        fontSize: 26,
         marginRight: 12,
     },
     mealInfo: { flex: 1 },
@@ -682,27 +682,27 @@ const styles = StyleSheet.create({
     },
     statusPill: {
         paddingHorizontal: 8,
-        paddingVertical:   3,
-        borderRadius:      6,
-        marginLeft:        8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginLeft: 8,
     },
     statusPillText: {
         fontSize: 9, fontWeight: '800', letterSpacing: 0.5,
     },
     // ── Stats row ────────────────────────────────────────────────
     statsRow: {
-        flexDirection:  'row',
-        margin:         Spacing.md,
-        marginTop:      Spacing.sm,
-        gap:            Spacing.sm,
+        flexDirection: 'row',
+        margin: Spacing.md,
+        marginTop: Spacing.sm,
+        gap: Spacing.sm,
     },
     statBox: {
         flex: 1,
-        backgroundColor:  Colors.white,
-        borderRadius:     BorderRadius.sm,
-        alignItems:       'center',
-        paddingVertical:  14,
-        borderTopWidth:   3,
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.sm,
+        alignItems: 'center',
+        paddingVertical: 14,
+        borderTopWidth: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
@@ -710,14 +710,14 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     statCount: {
-        fontSize:   24,
+        fontSize: 24,
         fontWeight: '900',
     },
     statLabel: {
-        fontSize:  11,
-        color:     Colors.textLight,
-        fontWeight:'600',
-        marginTop:  2,
+        fontSize: 11,
+        color: Colors.textLight,
+        fontWeight: '600',
+        marginTop: 2,
     },
 });
 

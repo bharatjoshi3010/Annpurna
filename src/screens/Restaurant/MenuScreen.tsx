@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Platform,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
+import { API_BASE_URL } from '../../config';
 
 const MenuScreen = ({ navigation, route }: any) => {
     const { restaurantId, restaurantName } = route?.params || {};
@@ -26,9 +27,7 @@ const MenuScreen = ({ navigation, route }: any) => {
 
     const fetchMenu = async () => {
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            // Fetch all menus for today
-            const response = await fetch(`${baseUrl}/api/menu/${restaurantId}?date=${new Date().toISOString()}`);
+            const response = await fetch(`${API_BASE_URL}/api/menu/${restaurantId}?date=${new Date().toISOString()}`);
             const data = await response.json();
             if (response.ok) {
                 setAllMenus(data);

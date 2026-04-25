@@ -1,13 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+import { API_BASE_URL as BASE_URL } from '../config';
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 const TOKEN_KEY = '@annpurna_token';
-const ROLE_KEY  = '@annpurna_role';
+const ROLE_KEY = '@annpurna_role';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AuthContextType = {
@@ -20,13 +18,13 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
     user: null,
     isLoading: true,
-    setUser: () => {},
-    logout: async () => {},
+    setUser: () => { },
+    logout: async () => { },
 });
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, _setUser]    = useState<any>(null);
+    const [user, _setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [socket, setSocket] = useState<Socket | null>(null);
 

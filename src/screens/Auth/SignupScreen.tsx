@@ -18,12 +18,12 @@ import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 
 // ─── Validation helpers ────────────────────────────────────────────────────────
-const isValidEmail   = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-const isValidPhone   = (v: string) => /^[6-9]\d{9}$/.test(v.trim());        // Indian 10-digit
-const isValidYear    = (v: string) => /^\d{4}$/.test(v) && +v >= 1900 && +v <= new Date().getFullYear();
-const isValidCapacity= (v: string) => /^\d+$/.test(v) && +v > 0;
-const isNonEmpty     = (v: string) => v.trim().length > 0;
-const isValidPassword= (v: string) => v.length >= 6;
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidPhone = (v: string) => /^[6-9]\d{9}$/.test(v.trim());        // Indian 10-digit
+const isValidYear = (v: string) => /^\d{4}$/.test(v) && +v >= 1900 && +v <= new Date().getFullYear();
+const isValidCapacity = (v: string) => /^\d+$/.test(v) && +v > 0;
+const isNonEmpty = (v: string) => v.trim().length > 0;
+const isValidPassword = (v: string) => v.length >= 6;
 
 interface FieldError { [key: string]: string }
 
@@ -40,32 +40,32 @@ const MAX_FILE_BYTES = 1 * 1024 * 1024; // 1 MB
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const SignupScreen = ({ navigation }: any) => {
-    const [email, setEmail]       = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole]         = useState('student');
-    const [loading, setLoading]   = useState(false);
-    const [errors, setErrors]     = useState<FieldError>({});
+    const [role, setRole] = useState('student');
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState<FieldError>({});
 
     const { setUser } = useAuth();
 
     // Common fields
-    const [address, setAddress]           = useState('');
-    const [phoneNumber, setPhoneNumber]   = useState('');
+    const [address, setAddress] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     // Student fields
-    const [name, setName]                           = useState('');
+    const [name, setName] = useState('');
     const [localGuardianName, setLocalGuardianName] = useState('');
     const [localGuardianPhone, setLocalGuardianPhone] = useState('');
-    const [hometownAddress, setHometownAddress]     = useState('');
-    const [studentIdCard, setStudentIdCard]         = useState<DocField>(null);
+    const [hometownAddress, setHometownAddress] = useState('');
+    const [studentIdCard, setStudentIdCard] = useState<DocField>(null);
 
     // Restaurant fields
-    const [ownerName, setOwnerName]       = useState('');
+    const [ownerName, setOwnerName] = useState('');
     const [restaurantName, setRestaurantName] = useState('');
-    const [openingYear, setOpeningYear]   = useState('');
-    const [maxCapacity, setMaxCapacity]   = useState('');
-    const [fssaiCert, setFssaiCert]       = useState<DocField>(null);
-    const [regCert, setRegCert]           = useState<DocField>(null);
+    const [openingYear, setOpeningYear] = useState('');
+    const [maxCapacity, setMaxCapacity] = useState('');
+    const [fssaiCert, setFssaiCert] = useState<DocField>(null);
+    const [regCert, setRegCert] = useState<DocField>(null);
 
     // ── Image picker ──────────────────────────────────────────────────────────
     const pickDocument = async (
@@ -115,11 +115,11 @@ const SignupScreen = ({ navigation }: any) => {
     const validate = (field: string, value: string) => {
         let msg = '';
         switch (field) {
-            case 'email':    msg = isValidEmail(value)    ? '' : 'Enter a valid email address';    break;
+            case 'email': msg = isValidEmail(value) ? '' : 'Enter a valid email address'; break;
             case 'password': msg = isValidPassword(value) ? '' : 'Password must be at least 6 characters'; break;
             case 'phoneNumber': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
             case 'localGuardianPhone': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
-            case 'openingYear': msg = isValidYear(value)  ? '' : 'Enter a valid year (e.g. 2010)'; break;
+            case 'openingYear': msg = isValidYear(value) ? '' : 'Enter a valid year (e.g. 2010)'; break;
             case 'maxCapacity': msg = isValidCapacity(value) ? '' : 'Capacity must be a positive number'; break;
             default: msg = isNonEmpty(value) ? '' : 'This field is required';
         }
@@ -130,24 +130,24 @@ const SignupScreen = ({ navigation }: any) => {
     const validateAll = (): boolean => {
         const errs: FieldError = {};
 
-        if (!isValidEmail(email))    errs.email    = 'Enter a valid email address';
+        if (!isValidEmail(email)) errs.email = 'Enter a valid email address';
         if (!isValidPassword(password)) errs.password = 'Password must be at least 6 characters';
         if (!isValidPhone(phoneNumber)) errs.phoneNumber = 'Enter a valid 10-digit mobile number';
-        if (!isNonEmpty(address))    errs.address  = 'This field is required';
+        if (!isNonEmpty(address)) errs.address = 'This field is required';
 
         if (role === 'student') {
-            if (!isNonEmpty(name))                     errs.name                = 'This field is required';
-            if (!isNonEmpty(localGuardianName))        errs.localGuardianName   = 'This field is required';
-            if (!isValidPhone(localGuardianPhone))     errs.localGuardianPhone  = 'Enter a valid 10-digit mobile number';
-            if (!isNonEmpty(hometownAddress))          errs.hometownAddress     = 'This field is required';
-            if (!studentIdCard)                        errs.studentIdCard       = 'Please upload your student ID card';
+            if (!isNonEmpty(name)) errs.name = 'This field is required';
+            if (!isNonEmpty(localGuardianName)) errs.localGuardianName = 'This field is required';
+            if (!isValidPhone(localGuardianPhone)) errs.localGuardianPhone = 'Enter a valid 10-digit mobile number';
+            if (!isNonEmpty(hometownAddress)) errs.hometownAddress = 'This field is required';
+            if (!studentIdCard) errs.studentIdCard = 'Please upload your student ID card';
         } else {
-            if (!isNonEmpty(ownerName))                errs.ownerName           = 'This field is required';
-            if (!isNonEmpty(restaurantName))           errs.restaurantName      = 'This field is required';
-            if (!isValidYear(openingYear))             errs.openingYear         = 'Enter a valid year (e.g. 2010)';
-            if (!isValidCapacity(maxCapacity))         errs.maxCapacity         = 'Capacity must be a positive number';
-            if (!fssaiCert)                            errs.fssaiCert           = 'Please upload the FSSAI certificate';
-            if (!regCert)                              errs.regCert             = 'Please upload the registration certificate';
+            if (!isNonEmpty(ownerName)) errs.ownerName = 'This field is required';
+            if (!isNonEmpty(restaurantName)) errs.restaurantName = 'This field is required';
+            if (!isValidYear(openingYear)) errs.openingYear = 'Enter a valid year (e.g. 2010)';
+            if (!isValidCapacity(maxCapacity)) errs.maxCapacity = 'Capacity must be a positive number';
+            if (!fssaiCert) errs.fssaiCert = 'Please upload the FSSAI certificate';
+            if (!regCert) errs.regCert = 'Please upload the registration certificate';
         }
 
         setErrors(errs);
@@ -165,33 +165,33 @@ const SignupScreen = ({ navigation }: any) => {
         try {
             // 1. Upload document(s) first
             let studentIdCardUrl: string | null = null;
-            let fssaiCertUrl:     string | null = null;
-            let regCertUrl:       string | null = null;
+            let fssaiCertUrl: string | null = null;
+            let regCertUrl: string | null = null;
 
             if (role === 'student' && studentIdCard) {
                 studentIdCardUrl = await uploadDocument(studentIdCard, 'student-id', 'studentIdCard');
             }
             if (role === 'restaurant') {
                 if (fssaiCert) fssaiCertUrl = await uploadDocument(fssaiCert, 'fssai-cert', 'fssaiCertificate');
-                if (regCert)  regCertUrl   = await uploadDocument(regCert,  'registration-cert', 'registrationCertificate');
+                if (regCert) regCertUrl = await uploadDocument(regCert, 'registration-cert', 'registrationCertificate');
             }
 
             // 2. Build registration payload
             const payload: any = { email: email.trim(), password, role, address: address.trim(), phoneNumber: phoneNumber.trim() };
 
             if (role === 'student') {
-                payload.name               = name.trim();
-                payload.localGuardianName  = localGuardianName.trim();
+                payload.name = name.trim();
+                payload.localGuardianName = localGuardianName.trim();
                 payload.localGuardianPhone = localGuardianPhone.trim();
-                payload.hometownAddress    = hometownAddress.trim();
+                payload.hometownAddress = hometownAddress.trim();
                 if (studentIdCardUrl) payload.studentIdCard = studentIdCardUrl;
             } else {
-                payload.ownerName      = ownerName.trim();
+                payload.ownerName = ownerName.trim();
                 payload.restaurantName = restaurantName.trim();
-                payload.openingYear    = openingYear;
-                payload.maxCapacity    = maxCapacity;
-                if (fssaiCertUrl) payload.fssaiCertificate        = fssaiCertUrl;
-                if (regCertUrl)   payload.registrationCertificate = regCertUrl;
+                payload.openingYear = openingYear;
+                payload.maxCapacity = maxCapacity;
+                if (fssaiCertUrl) payload.fssaiCertificate = fssaiCertUrl;
+                if (regCertUrl) payload.registrationCertificate = regCertUrl;
             }
 
             // 3. Register user
@@ -398,41 +398,41 @@ const SignupScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container:       { flex: 1, backgroundColor: Colors.background },
-    scrollContent:   { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: 60, paddingBottom: Spacing.lg },
-    header:          { marginBottom: Spacing.xl },
-    subtitle:        { ...Typography.body, color: Colors.textLight, marginTop: 8 },
-    form:            { flex: 1 },
+    container: { flex: 1, backgroundColor: Colors.background },
+    scrollContent: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: 60, paddingBottom: Spacing.lg },
+    header: { marginBottom: Spacing.xl },
+    subtitle: { ...Typography.body, color: Colors.textLight, marginTop: 8 },
+    form: { flex: 1 },
 
     // Role toggle
-    roleContainer:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.lg },
-    roleButton:      { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
-    roleActive:      { backgroundColor: Colors.primary, borderColor: Colors.primary },
-    roleText:        { color: Colors.text, fontWeight: '600' },
-    roleTextActive:  { color: Colors.white, fontWeight: '600' },
+    roleContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.lg },
+    roleButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
+    roleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+    roleText: { color: Colors.text, fontWeight: '600' },
+    roleTextActive: { color: Colors.white, fontWeight: '600' },
 
     // Input fields
-    inputGroup:      { marginBottom: Spacing.md },
-    label:           { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 6, marginLeft: 4 },
-    hintText:        { fontSize: 12, color: Colors.textLight, marginBottom: 6, marginLeft: 4 },
-    input:           { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border, color: Colors.text },
-    inputError:      { borderColor: '#e53935', borderWidth: 1.5 },
-    errorText:       { fontSize: 12, color: '#e53935', marginTop: 4, marginLeft: 4 },
+    inputGroup: { marginBottom: Spacing.md },
+    label: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 6, marginLeft: 4 },
+    hintText: { fontSize: 12, color: Colors.textLight, marginBottom: 6, marginLeft: 4 },
+    input: { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border, color: Colors.text },
+    inputError: { borderColor: '#e53935', borderWidth: 1.5 },
+    errorText: { fontSize: 12, color: '#e53935', marginTop: 4, marginLeft: 4 },
 
     // Document picker
-    docPickerBtn:    { backgroundColor: Colors.white, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },
-    docPlaceholder:  { color: '#aaa', fontSize: 14, textAlign: 'center' },
-    docRow:          { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    docThumb:        { width: 48, height: 48, borderRadius: 6, resizeMode: 'cover' },
-    docName:         { fontSize: 13, color: Colors.text, fontWeight: '500' },
-    docSize:         { fontSize: 11, color: Colors.textLight, marginTop: 2 },
-    changeText:      { fontSize: 12, color: Colors.primary, fontWeight: '600', marginLeft: 4 },
+    docPickerBtn: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },
+    docPlaceholder: { color: '#aaa', fontSize: 14, textAlign: 'center' },
+    docRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    docThumb: { width: 48, height: 48, borderRadius: 6, resizeMode: 'cover' },
+    docName: { fontSize: 13, color: Colors.text, fontWeight: '500' },
+    docSize: { fontSize: 11, color: Colors.textLight, marginTop: 2 },
+    changeText: { fontSize: 12, color: Colors.primary, fontWeight: '600', marginLeft: 4 },
 
     // Buttons & footer
-    signupButton:    { marginTop: Spacing.md },
-    footer:          { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-    footerText:      { color: Colors.textLight, fontSize: 14 },
-    signupText:      { color: Colors.primary, fontWeight: '700', fontSize: 14 },
+    signupButton: { marginTop: Spacing.md },
+    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
+    footerText: { color: Colors.textLight, fontSize: 14 },
+    signupText: { color: Colors.primary, fontWeight: '700', fontSize: 14 },
 });
 
 export default SignupScreen;

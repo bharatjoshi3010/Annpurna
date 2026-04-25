@@ -4,6 +4,7 @@ import { Pencil, Trash2, Search, RefreshCw, User, ImageIcon, X } from 'lucide-re
 import EditModal from '../components/EditModal';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
+import { API_BASE_URL as BASE_IMG } from '../config';
 
 const KYC_BADGE = {
   pending: <span className="badge-pending">⏳ Pending</span>,
@@ -35,7 +36,6 @@ const STUDENT_FIELDS = [
   },
 ];
 
-const BASE_IMG = 'http://localhost:5000';
 
 export default function UsersPage() {
   const [students, setStudents] = useState([]);

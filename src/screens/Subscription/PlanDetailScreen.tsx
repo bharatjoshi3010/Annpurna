@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Switch,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, Typography } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
 const { width } = Dimensions.get('window');
 
@@ -67,8 +68,7 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
         setLoading(true);
         let refundPreview: any = null;
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const res = await fetch(`${baseUrl}/api/payment/refund-preview/${user._id}`);
+            const res = await fetch(`${API_BASE_URL}/api/payment/refund-preview/${user._id}`);
             if (res.ok) refundPreview = (await res.json()).refund;
         } catch {
             // ignore preview failure, still allow cancellation
@@ -99,8 +99,7 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
                     onPress: async () => {
                         setLoading(true);
                         try {
-                            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-                            const response = await fetch(`${baseUrl}/api/payment/cancel-subscription`, {
+                            const response = await fetch(`${API_BASE_URL}/api/payment/cancel-subscription`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ studentId: user._id })

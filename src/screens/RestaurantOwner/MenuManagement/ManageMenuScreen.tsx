@@ -6,6 +6,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../../styles/theme
 import Header from '../../../components/Header';
 import { useAuth } from '../../../context/AuthContext';
 import AppButton from '../../../components/AppButton';
+import { API_BASE_URL } from '../../../config';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
@@ -30,8 +31,7 @@ const ManageMenuScreen = () => {
     const fetchMenu = async () => {
         setLoading(true);
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/menu/${user._id}?menuType=${menuType}`);
+            const response = await fetch(`${API_BASE_URL}/api/menu/${user._id}?menuType=${menuType}`);
             const data = await response.json();
             
             if (response.ok) {
@@ -74,28 +74,16 @@ const ManageMenuScreen = () => {
 
         setUploading(true);
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            
-            const formData = new FormData();
-            formData.append('image', {
-                uri: selectedImage.uri,
-                type: selectedImage.type,
-                name: selectedImage.fileName || `food_${Date.now()}.jpg`,
-            } as any);
-
-            const response = await fetch(`${baseUrl}/api/upload`, {
+            const response = await fetch(`${API_BASE_URL}/api/upload`, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
             });
 
             const data = await response.json();
             if (response.ok) {
                 setItems([...items, { 
                     name: newItemName.trim(), 
-                    image: `${baseUrl}${data.image}` 
+                    image: `${API_BASE_URL}${data.image}` 
                 }]);
                 setNewItemName('');
                 setSelectedImage(null);
@@ -122,8 +110,7 @@ const ManageMenuScreen = () => {
 
         setSaving(true);
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/menu/update`, {
+            const response = await fetch(`${API_BASE_URL}/api/menu/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

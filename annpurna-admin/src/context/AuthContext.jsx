@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000/api/admin';
+import { ADMIN_API_URL as BASE_URL } from '../config';
+
 const TOKEN_KEY = 'annpurna_admin_token';
 
 const AuthContext = createContext({

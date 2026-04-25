@@ -94,7 +94,7 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
 
             console.log('Backend confirmation response status:', response.status);
             const data = await response.json();
-            
+
             if (response.ok) {
                 console.log('Payment verified successfully:', data);
                 Alert.alert('Success', 'Money added to your wallet!');
@@ -124,7 +124,7 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <Header title="Add Money" showBack onBackPress={() => navigation.goBack()} />
-            
+
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.card}>
                     <Text style={styles.label}>Enter Amount (INR)</Text>
@@ -139,11 +139,11 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
                             autoFocus
                         />
                     </View>
-                    
+
                     <View style={styles.quickAmounts}>
                         {['100', '200', '500', '1000'].map(val => (
-                            <TouchableOpacity 
-                                key={val} 
+                            <TouchableOpacity
+                                key={val}
                                 style={styles.chip}
                                 onPress={() => setAmount(val)}
                             >
@@ -168,12 +168,12 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
                     </View>
                 </View>
 
-                <AppButton 
-                    title={loading ? "Processing..." : `Proceed to Pay ₹${amount || '0'}`} 
+                <AppButton
+                    title={loading ? "Processing..." : `Proceed to Pay ₹${amount || '0'}`}
                     onPress={handleRecharge}
                     disabled={loading || !amount}
                 />
-                
+
                 <View style={styles.secureBadge}>
                     <Text style={styles.secureText}>🔒 Secure SSL Encrypted Payment</Text>
                 </View>

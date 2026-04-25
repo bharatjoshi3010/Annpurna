@@ -8,8 +8,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 import { io } from 'socket.io-client';
-
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+import { API_BASE_URL as BASE_URL } from '../../config';
 
 const MEAL_SECTIONS = [
     { type: 'Breakfast', emoji: '🌅', time: '08:00 – 10:30 AM', color: '#FF9800', bg: '#FFF3E0' },

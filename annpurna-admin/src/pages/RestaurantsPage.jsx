@@ -4,6 +4,7 @@ import { Pencil, Trash2, Search, RefreshCw, UtensilsCrossed, ImageIcon, X } from
 import EditModal from '../components/EditModal';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
+import { API_BASE_URL as BASE_IMG } from '../config';
 
 const KYC_BADGE = {
   pending: <span className="badge-pending">⏳ Pending</span>,
@@ -34,7 +35,6 @@ const RESTAURANT_FIELDS = [
   },
 ];
 
-const BASE_IMG = 'http://localhost:5000';
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState([]);

@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { getAdminToken } from '../context/AuthContext';
-
-const BASE_URL = 'http://localhost:5000/api/admin';
+import { ADMIN_API_URL } from '../config';
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: ADMIN_API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
