@@ -9,7 +9,9 @@ const registerUser = async (req, res) => {
     const {
         email, password, role,
         name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
-        ownerName, restaurantName, openingYear, maxCapacity
+        studentIdCard,
+        ownerName, restaurantName, openingYear, maxCapacity,
+        fssaiCertificate, registrationCertificate
     } = req.body;
 
     if (!email || !password || !role) {
@@ -37,12 +39,15 @@ const registerUser = async (req, res) => {
             user = await Student.create({
                 email, password, role,
                 name, address, phoneNumber, localGuardianName, localGuardianPhone, hometownAddress,
+                studentIdCard: studentIdCard || null,
                 isProfileComplete: (name && address && phoneNumber && localGuardianName && localGuardianPhone && hometownAddress) ? true : false
             });
         } else {
             user = await Restaurant.create({
                 email, password, role,
                 ownerName, restaurantName, openingYear, address, phoneNumber, maxCapacity,
+                fssaiCertificate: fssaiCertificate || null,
+                registrationCertificate: registrationCertificate || null,
                 isProfileComplete: (ownerName && restaurantName && openingYear && address && phoneNumber && maxCapacity) ? true : false
             });
         }

@@ -26,6 +26,7 @@ const studentSchema = new mongoose.Schema({
     }],
     walletBalance: { type: Number, default: 0 },
     defaultRestaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' },
+    studentIdCard: { type: String },          // URL path to uploaded student ID card image
     kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'student' }

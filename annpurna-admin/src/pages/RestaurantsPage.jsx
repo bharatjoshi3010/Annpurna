@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchRestaurants, updateRestaurant, deleteRestaurant } from '../api/adminApi';
-import { Pencil, Trash2, Search, RefreshCw, UtensilsCrossed } from 'lucide-react';
+import { Pencil, Trash2, Search, RefreshCw, UtensilsCrossed, ImageIcon, X } from 'lucide-react';
 import EditModal from '../components/EditModal';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
@@ -34,6 +34,8 @@ const RESTAURANT_FIELDS = [
   },
 ];
 
+const BASE_IMG = 'http://localhost:5000';
+
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,7 @@ export default function RestaurantsPage() {
   const [kycFilter, setKycFilter] = useState('all');
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [viewingImg, setViewingImg] = useState(null); // { url, label }
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
@@ -93,6 +96,25 @@ export default function RestaurantsPage() {
   return (
     <div className="p-8 space-y-6">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
+      {/* Image lightbox */}
+      {viewingImg && (
+        <div
+          style={{
+            position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.85)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+          }}
+          onClick={() => setViewingImg(null)}
+        >
+          <div style={{background:'#1e293b',borderRadius:12,padding:16,maxWidth:'90vw',maxHeight:'90vh',overflow:'auto'}} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <span style={{color:'#fff',fontWeight:600,fontSize:15}}>{viewingImg.label}</span>
+              <button onClick={() => setViewingImg(null)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer'}}><X size={20}/></button>
+            </div>
+            <img src={viewingImg.url} alt={viewingImg.label} style={{maxWidth:'80vw',maxHeight:'75vh',borderRadius:8,objectFit:'contain'}} />
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -179,6 +201,36 @@ export default function RestaurantsPage() {
                 <Detail label="FSSAI" value={r.fssaiLicense} />
                 <Detail label="Wallet" value={`₹${r.walletBalance ?? 0}`} />
               </div>
+
+              {/* Document viewers */}
+              {(r.fssaiCertificate || r.registrationCertificate) && (
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {r.fssaiCertificate && (
+                    <button
+                      onClick={() => setViewingImg({ url: `${BASE_IMG}${r.fssaiCertificate}`, label: `${r.restaurantName} — FSSAI Certificate` })}
+                      style={{
+                        display:'flex',alignItems:'center',gap:5,padding:'5px 10px',
+                        background:'#0f172a',border:'1px solid #334155',borderRadius:8,
+                        color:'#34d399',fontSize:11,fontWeight:600,cursor:'pointer',
+                      }}
+                    >
+                      <ImageIcon size={12}/> FSSAI Cert
+                    </button>
+                  )}
+                  {r.registrationCertificate && (
+                    <button
+                      onClick={() => setViewingImg({ url: `${BASE_IMG}${r.registrationCertificate}`, label: `${r.restaurantName} — Registration Certificate` })}
+                      style={{
+                        display:'flex',alignItems:'center',gap:5,padding:'5px 10px',
+                        background:'#0f172a',border:'1px solid #334155',borderRadius:8,
+                        color:'#818cf8',fontSize:11,fontWeight:600,cursor:'pointer',
+                      }}
+                    >
+                      <ImageIcon size={12}/> Reg. Cert
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-2 pt-2 border-t border-slate-700/50">

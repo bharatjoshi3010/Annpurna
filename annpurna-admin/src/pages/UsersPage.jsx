@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchStudents, updateStudent, deleteStudent } from '../api/adminApi';
-import { Pencil, Trash2, Search, RefreshCw, User } from 'lucide-react';
+import { Pencil, Trash2, Search, RefreshCw, User, ImageIcon, X } from 'lucide-react';
 import EditModal from '../components/EditModal';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
@@ -35,6 +35,8 @@ const STUDENT_FIELDS = [
   },
 ];
 
+const BASE_IMG = 'http://localhost:5000';
+
 export default function UsersPage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,7 @@ export default function UsersPage() {
   const [kycFilter, setKycFilter] = useState('all');
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [viewingImg, setViewingImg] = useState(null); // { url, label }
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
@@ -90,9 +93,29 @@ export default function UsersPage() {
     return matchSearch && matchKyc;
   });
 
+  const th = 'text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider';
   return (
     <div className="p-8 space-y-6">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
+      {/* Image lightbox */}
+      {viewingImg && (
+        <div
+          style={{
+            position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.85)',
+            display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,
+          }}
+          onClick={() => setViewingImg(null)}
+        >
+          <div style={{background:'#1e293b',borderRadius:12,padding:16,maxWidth:'90vw',maxHeight:'90vh',overflow:'auto',position:'relative'}} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <span style={{color:'#fff',fontWeight:600,fontSize:15}}>{viewingImg.label}</span>
+              <button onClick={() => setViewingImg(null)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer'}}><X size={20}/></button>
+            </div>
+            <img src={viewingImg.url} alt={viewingImg.label} style={{maxWidth:'80vw',maxHeight:'75vh',borderRadius:8,objectFit:'contain'}} />
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -146,25 +169,26 @@ export default function UsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-700/50">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Plan</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Wallet</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">KYC Status</th>
+                <th className={th}>Student</th>
+                <th className={th}>Phone</th>
+                <th className={th}>Plan</th>
+                <th className={th}>Wallet</th>
+                <th className={th}>ID Card</th>
+                <th className={th}>KYC Status</th>
                 <th className="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-16 text-slate-500">
+                  <td colSpan={7} className="text-center py-16 text-slate-500">
                     <RefreshCw className="animate-spin w-6 h-6 mx-auto mb-2" />
                     Loading students...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-16 text-slate-500">
+                  <td colSpan={7} className="text-center py-16 text-slate-500">
                     <User className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     No students found
                   </td>
@@ -189,6 +213,24 @@ export default function UsersPage() {
                     <td className="px-6 py-4 text-slate-300">{student.phoneNumber || '-'}</td>
                     <td className="px-6 py-4 text-slate-300">{student.selectedPlan || '-'}</td>
                     <td className="px-6 py-4 text-slate-300">₹{student.walletBalance ?? 0}</td>
+                    {/* Student ID Card */}
+                    <td className="px-6 py-4">
+                      {student.studentIdCard ? (
+                        <button
+                          onClick={() => setViewingImg({ url: `${BASE_IMG}${student.studentIdCard}`, label: `${student.name} — ID Card` })}
+                          style={{
+                            display:'flex',alignItems:'center',gap:6,padding:'4px 10px',
+                            background:'#0f172a',border:'1px solid #334155',borderRadius:8,
+                            color:'#60a5fa',fontSize:12,fontWeight:600,cursor:'pointer',
+                          }}
+                          title="View student ID card"
+                        >
+                          <ImageIcon size={13}/> View
+                        </button>
+                      ) : (
+                        <span style={{color:'#475569',fontSize:12}}>—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">{KYC_BADGE[student.kycStatus] ?? student.kycStatus}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">

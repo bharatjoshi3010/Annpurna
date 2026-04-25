@@ -19,6 +19,8 @@ const restaurantSchema = new mongoose.Schema({
         lunch: { type: String, default: '10:00' },
         dinner: { type: String, default: '17:00' }
     },
+    fssaiCertificate: { type: String },           // URL path to uploaded FSSAI certificate image
+    registrationCertificate: { type: String },    // URL path to uploaded business registration cert image
     kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'restaurant' }
