@@ -32,17 +32,28 @@ const MEAL_REFUND = {
 const PLAN_CAN_CHANGE  = ['Standard', 'Premium'];
 const PLAN_CAN_CANCEL  = ['Premium'];
 
+// Get current minutes of the day in IST (Indian Standard Time)
+const getISTMinutes = () => {
+    const now = new Date();
+    const options = { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: 'numeric', hour12: false };
+    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
+    
+    let hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+    const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+    
+    if (hour === 24) hour = 0;
+    return hour * 60 + minute;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const isCutoffPassed = (mealType) => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = getISTMinutes();
     const { cutoffHour, cutoffMinute } = MEAL_TIMES[mealType];
     return currentMinutes >= cutoffHour * 60 + cutoffMinute;
 };
 
 const isMealPast = (mealType) => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = getISTMinutes();
     const { endHour, endMinute } = MEAL_TIMES[mealType];
     return currentMinutes >= endHour * 60 + endMinute;
 };
@@ -57,8 +68,7 @@ const MEAL_SERVICE_START = {
 };
 
 const isMealServing = (mealType) => {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = getISTMinutes();
     const { startHour, startMinute } = MEAL_SERVICE_START[mealType];
     const { endHour,   endMinute   } = MEAL_TIMES[mealType];
     const start = startHour * 60 + startMinute;
@@ -67,8 +77,11 @@ const isMealServing = (mealType) => {
 };
 
 const todayRange = () => {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end   = new Date(); end.setHours(23, 59, 59, 999);
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }); 
+    const dateStr = formatter.format(new Date()); // "YYYY-MM-DD"
+    
+    const start = new Date(`${dateStr}T00:00:00+05:30`);
+    const end = new Date(`${dateStr}T23:59:59.999+05:30`);
     return { start, end };
 };
 
