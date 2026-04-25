@@ -20,6 +20,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const mealType = route.params?.mealType;
     const purpose = route.params?.purpose;   // 'changeRestaurant' | 'viewMenu' | undefined
     const bookingId = route.params?.bookingId;
+    const currentRestaurantId = route.params?.currentRestaurantId;
 
     useEffect(() => {
         fetchRestaurants();
@@ -34,8 +35,12 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
             const response = await fetch(url);
             const data = await response.json();
             if (response.ok) {
-                setRestaurants(data);
-                if (data.length > 0) setSelectedId(data[0]._id);
+                let available = data;
+                if (currentRestaurantId) {
+                    available = data.filter((r: any) => r._id !== currentRestaurantId);
+                }
+                setRestaurants(available);
+                if (available.length > 0) setSelectedId(available[0]._id);
             }
         } catch (error) {
             console.error('Error fetching restaurants:', error);

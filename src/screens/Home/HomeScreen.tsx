@@ -171,7 +171,11 @@ const HomeScreen = ({ navigation }: any) => {
             [
                 ...switchable.map(meal => ({
                     text: `${meal.mealType}  (before ${CUTOFF_DISPLAY[meal.mealType]})`,
-                    onPress: () => navigation.navigate('Restaurants', { mealType: meal.mealType }),
+                    onPress: () => navigation.navigate('Restaurants', { 
+                        mealType: meal.mealType,
+                        purpose: 'changeRestaurant',
+                        currentRestaurantId: meal.restaurantId
+                    }),
                 })),
                 { text: 'Dismiss', style: 'cancel' },
             ]

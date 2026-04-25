@@ -96,6 +96,7 @@ const MealDetailScreen = ({ navigation, route }: any) => {
             mealType,
             purpose: 'changeRestaurant',
             bookingId,
+            currentRestaurantId: restaurantId,
         });
     };
 
