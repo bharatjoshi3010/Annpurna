@@ -10,6 +10,7 @@ import {
     deleteRestaurant,
 } from '../controllers/adminController.js';
 import { protectAdmin } from '../middleware/adminMiddleware.js';
+import { runStartupBookings } from '../cronJobs.js';
 
 const router = express.Router();
 
@@ -28,5 +29,16 @@ router.delete('/students/:id', protectAdmin, deleteStudent);
 router.get('/restaurants',        protectAdmin, getAllRestaurants);
 router.put('/restaurants/:id',    protectAdmin, updateRestaurant);
 router.delete('/restaurants/:id', protectAdmin, deleteRestaurant);
+
+// ── Manual trigger: create today's missing bookings for all active subscribers ─
+// POST /api/admin/run-booking-job
+router.post('/run-booking-job', protectAdmin, async (req, res) => {
+    try {
+        const result = await runStartupBookings(req.io);
+        res.json({ message: 'Booking job completed', ...result });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 export default router;
