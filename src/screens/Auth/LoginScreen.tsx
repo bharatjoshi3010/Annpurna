@@ -14,6 +14,7 @@ import {
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
 const LoginScreen = ({ navigation }: any) => {
     const [email, setEmail] = useState('');
@@ -31,8 +32,7 @@ const LoginScreen = ({ navigation }: any) => {
 
         setLoading(true);
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/auth/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, role }),
