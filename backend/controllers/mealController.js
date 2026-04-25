@@ -411,11 +411,29 @@ export const getIncomingStudents = async (req, res) => {
 export const getStudentBookings = async (req, res) => {
     try {
         const { studentId } = req.params;
+        console.log(`[MealHistory] Fetching bookings for student: ${studentId}`);
+
         const bookings = await Booking.find({ student: studentId })
             .populate('restaurant', 'restaurantName address location')
             .sort({ date: -1 });
-        res.json(bookings);
+
+        console.log(`[MealHistory] Found ${bookings.length} booking(s)`);
+
+        // Sanitize response: replace null restaurant (deleted) with a placeholder
+        const safe = bookings.map(b => ({
+            _id:        b._id,
+            date:       b.date,
+            mealType:   b.mealType,
+            status:     b.status,
+            restaurantSwitched: b.restaurantSwitched,
+            restaurant: b.restaurant
+                ? { restaurantName: b.restaurant.restaurantName, address: b.restaurant.address, location: b.restaurant.location }
+                : { restaurantName: 'Deleted Restaurant', address: '', location: '' },
+        }));
+
+        res.json(safe);
     } catch (error) {
+        console.error('[MealHistory] Error:', error.message);
         res.status(500).json({ message: error.message });
     }
 };

@@ -15,8 +15,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, SafeAreaView, ScrollView,
-    TouchableOpacity, Modal, Platform, RefreshControl,
-    FlatList,
+    TouchableOpacity, Platform, RefreshControl,
+    Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, BorderRadius, Typography } from '../../styles/theme';
@@ -39,8 +39,27 @@ const MONTH_NAMES = [
     'July','August','September','October','November','December',
 ];
 
-const toDateKey = (d: Date) =>
+/**
+ * Convert a Date to a "YYYY-MM-DD" string.
+ * • For CALENDAR cells (created via `new Date(year, month, day)`) we use LOCAL
+ *   methods because those dates are already in device-local midnight.
+ * • For BOOKING dates coming from the server we use UTC methods because the
+ *   server normalises booking dates to UTC midnight (`setHours(0,0,0,0)` on
+ *   server running in UTC/IST). Using UTC prevents IST-offset from shifting
+ *   the date by one day.
+ */
+const toDateKey = (d: Date): string =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+// For booking dates received from server (ISO strings stored as UTC)
+const bookingDateKey = (isoStr: string): string => {
+    const d = new Date(isoStr);
+    // Use UTC parts so a midnight-UTC date never flips to the previous day in IST
+    const y  = d.getUTCFullYear();
+    const m  = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+};
 
 const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
@@ -91,11 +110,18 @@ const MealHistoryScreen = ({ navigation }: any) => {
         if (!user?._id) return;
         try {
             const base = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const res  = await fetch(`${base}/api/meals/student/${user._id}`);
+            const url  = `${base}/api/meals/student/${user._id}`;
+            console.log('[MealHistory] Fetching:', url);
+            const res  = await fetch(url);
             const data = await res.json();
-            if (res.ok) setBookings(data);
+            console.log('[MealHistory] status:', res.status, 'count:', Array.isArray(data) ? data.length : data);
+            if (res.ok) {
+                setBookings(Array.isArray(data) ? data : []);
+            } else {
+                console.error('[MealHistory] API error:', data);
+            }
         } catch (e) {
-            console.error('MealHistory fetch error:', e);
+            console.error('[MealHistory] Network error:', e);
         }
     };
 
@@ -107,7 +133,8 @@ const MealHistoryScreen = ({ navigation }: any) => {
     const byDay = useMemo(() => {
         const map: Record<string, Booking[]> = {};
         bookings.forEach(b => {
-            const key = toDateKey(new Date(b.date));
+            // Use UTC-based key so server-stored UTC-midnight dates don't shift in IST
+            const key = bookingDateKey(b.date);
             if (!map[key]) map[key] = [];
             map[key].push(b);
         });
@@ -126,17 +153,25 @@ const MealHistoryScreen = ({ navigation }: any) => {
     }, [viewYear, viewMonth]);
 
     // ── Subscription period bounds ────────────────────────────────────────────
-    const subStart = user?.subscriptionDate ? new Date(user.subscriptionDate) : null;
-    const subEnd   = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+    // IMPORTANT: compare date-ONLY strings, not full timestamps.
+    // subStart may include a time (e.g. 10:39 AM). If we compare the Date
+    // objects directly, the subscription START DAY itself (which is midnight
+    // 00:00 in the calendar) would appear to be BEFORE subStart and get greyed.
+    const subStart    = user?.subscriptionDate    ? new Date(user.subscriptionDate)    : null;
+    const subEnd      = user?.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+    const subStartKey = subStart ? toDateKey(subStart) : null;
+    const subEndKey   = subEnd   ? toDateKey(subEnd)   : null;
 
-    const isInSubscription = (d: Date) => {
-        if (!subStart) return true; // no sub info — show everything
-        if (d < subStart) return false;
-        if (subEnd && d > subEnd) return false;
+    const isInSubscription = (d: Date): boolean => {
+        if (!subStartKey) return true;             // no subscription info — show all
+        const dk = toDateKey(d);
+        if (dk < subStartKey) return false;        // before start
+        if (subEndKey && dk > subEndKey) return false; // after end
         return true;
     };
 
     // ── Month navigation ──────────────────────────────────────────────────────
+    const todayKey = toDateKey(new Date()); // "YYYY-MM-DD" for today
     const prevMonth = () => {
         if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
         else setViewMonth(m => m - 1);
@@ -245,9 +280,19 @@ const MealHistoryScreen = ({ navigation }: any) => {
                         <TouchableOpacity onPress={prevMonth} style={styles.navBtn}>
                             <Text style={styles.navArrow}>‹</Text>
                         </TouchableOpacity>
-                        <Text style={styles.monthTitle}>
-                            {MONTH_NAMES[viewMonth]} {viewYear}
-                        </Text>
+                        <View style={{ alignItems: 'center' }}>
+                            <Text style={styles.monthTitle}>
+                                {MONTH_NAMES[viewMonth]} {viewYear}
+                            </Text>
+                            {bookings.length > 0 && (
+                                <Text style={styles.calSubtitle}>
+                                    {bookings.filter(b => {
+                                        const k = bookingDateKey(b.date);
+                                        return k.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`);
+                                    }).length} meals this month
+                                </Text>
+                            )}
+                        </View>
                         <TouchableOpacity onPress={nextMonth} style={styles.navBtn}>
                             <Text style={styles.navArrow}>›</Text>
                         </TouchableOpacity>
@@ -269,12 +314,14 @@ const MealHistoryScreen = ({ navigation }: any) => {
                             const dayBooks = byDay[key] || [];
                             const consumed = dayBooks.filter(b => b.status === 'consumed').length;
                             const inSub    = isInSubscription(day);
-                            const isFuture = day > today;
-                            const isToday  = isSameDay(day, today);
-                            const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
+                            // Compare date strings — immune to time-of-day and timezone issues
+                            const isFuture   = key > todayKey;
+                            const isToday    = key === todayKey;
+                            const isSelected = selectedDay ? toDateKey(selectedDay) === key : false;
 
                             const bg   = (!inSub || isFuture) ? 'transparent' : dayBgColor(consumed, dayBooks.length);
                             const txtC = (!inSub || isFuture) ? '#CCC'        : dayTextColor(consumed);
+
 
                             return (
                                 <TouchableOpacity
@@ -404,7 +451,11 @@ const MealHistoryScreen = ({ navigation }: any) => {
     );
 };
 
-const CELL_SIZE = 44;
+// Calendar cell size — exactly 1/7 of screen minus card padding (16 each side × 2 + card margin 16 × 2)
+const SCREEN_W  = Dimensions.get('window').width;
+const CARD_PAD  = Spacing.md * 2;   // padding inside card (left + right)
+const CARD_MRG  = Spacing.md * 2;   // card margin (left + right)
+const CELL_SIZE = Math.floor((SCREEN_W - CARD_PAD - CARD_MRG) / 7);
 
 const styles = StyleSheet.create({
     container: {
@@ -503,29 +554,33 @@ const styles = StyleSheet.create({
     monthTitle: {
         fontSize: 17, fontWeight: '700', color: Colors.text,
     },
+    calSubtitle: {
+        fontSize: 11, color: Colors.textLight, fontWeight: '500', marginTop: 1,
+    },
     weekRow: {
         flexDirection: 'row',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     weekLabel: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 11,
-        fontWeight: '700',
-        color: Colors.textLight,
-        letterSpacing: 0.5,
+        width:      CELL_SIZE,
+        textAlign:  'center',
+        fontSize:   10,
+        fontWeight: '800',
+        color:      Colors.textLight,
+        letterSpacing: 0.3,
+        paddingVertical: 4,
     },
     gridWrap: {
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
     dayCell: {
-        width: `${100 / 7}%` as any,
-        aspectRatio: 1,
-        alignItems:   'center',
+        width:          CELL_SIZE,
+        height:         CELL_SIZE,
+        alignItems:     'center',
         justifyContent: 'center',
-        borderRadius: 8,
-        marginVertical: 2,
+        borderRadius:   6,
+        marginVertical: 1,
     },
     todayCell: {
         borderWidth: 2,

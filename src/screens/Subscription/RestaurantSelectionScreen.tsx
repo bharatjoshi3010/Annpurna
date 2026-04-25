@@ -1,210 +1,202 @@
 /**
- * RestaurantSelectionScreen.tsx
- *
- * Step 2 of subscription onboarding: choose a default restaurant.
- * Each card now has a "VIEW WEEKLY MENU" button that opens a
- * bottom-sheet Modal showing the full 7-day × 3-meal schedule.
+ * RestaurantSelectionScreen.tsx — Step 2 of subscription.
+ * KEY FIX: Modal rendered OUTSIDE SafeAreaView to avoid Android clipping.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
-    Platform, ActivityIndicator, Alert, Modal, ScrollView,
-    SafeAreaView as RNSafeAreaView,
+    Platform, ActivityIndicator, Alert, Modal, ScrollView, Image, Dimensions,
 } from 'react-native';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Spacing, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
 
-// ── Constants ────────────────────────────────────────────────────────────────
 const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 
-const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const MEALS     = ['Breakfast', 'Lunch', 'Dinner'] as const;
-const MEAL_EMOJI: Record<string, string> = { Breakfast: '🍳', Lunch: '🍱', Dinner: '🌙' };
-const DAY_SHORT: Record<string, string>  = {
-    Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed',
-    Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun',
+const DAY_ORDER  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const MEALS      = ['Breakfast','Lunch','Dinner'] as const;
+const MEAL_EMOJI: Record<string,string> = { Breakfast:'🍳', Lunch:'🍱', Dinner:'🌙' };
+const DAY_SHORT : Record<string,string> = {
+    Monday:'Mon', Tuesday:'Tue', Wednesday:'Wed',
+    Thursday:'Thu', Friday:'Fri', Saturday:'Sat', Sunday:'Sun',
 };
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface MenuItem { name: string; description?: string }
+interface FoodItem  { name: string; description?: string; image?: string }
 interface MenuEntry {
     menuType: 'weekly' | 'single';
     dayOfWeek?: string;
+    date?: string;
     mealType: string;
-    items: MenuItem[];
+    items: FoodItem[];
 }
 interface Restaurant {
     _id: string;
-    restaurantName: string;
+    restaurantName?: string;
     name?: string;
     address?: string;
     location?: string;
     kycStatus: string;
 }
 
-// ── Weekly Menu Bottom Sheet ─────────────────────────────────────────────────
+// ── Weekly Menu Sheet (full-screen modal) ─────────────────────────────────────
 const WeeklyMenuSheet = ({
     visible, restaurant, onClose,
-}: {
-    visible: boolean;
-    restaurant: Restaurant | null;
-    onClose: () => void;
-}) => {
-    const [menuEntries, setMenuEntries] = useState<MenuEntry[]>([]);
-    const [loading,     setLoading]     = useState(false);
-    const [activeDay,   setActiveDay]   = useState('Monday');
+}: { visible: boolean; restaurant: Restaurant | null; onClose: () => void }) => {
+    const [entries,   setEntries]   = useState<MenuEntry[]>([]);
+    const [loading,   setLoading]   = useState(false);
+    const [activeDay, setActiveDay] = useState('Monday');
 
     useEffect(() => {
-        if (visible && restaurant) {
-            loadMenu();
+        if (visible && restaurant?._id) {
+            setEntries([]);
             setActiveDay('Monday');
+            loadMenu(restaurant._id);
         }
-    }, [visible, restaurant]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible, restaurant?._id]);
 
-    const loadMenu = async () => {
-        if (!restaurant) return;
+    const loadMenu = async (id: string) => {
         setLoading(true);
         try {
-            // Fetch ALL entries (no date param) which returns full weekly + single menus
-            const res  = await fetch(`${BASE_URL}/api/menu/${restaurant._id}`);
+            const res  = await fetch(`${BASE_URL}/api/menu/${id}`);
             const data = await res.json();
-            if (res.ok) setMenuEntries(Array.isArray(data) ? data : []);
-        } catch {
-            Alert.alert('Error', 'Could not load menu. Please try again.');
+            if (res.ok && Array.isArray(data)) {
+                setEntries(data);
+            } else {
+                setEntries([]);
+                Alert.alert('Menu Error', data?.message || `Error ${res.status}`);
+            }
+        } catch (e: any) {
+            setEntries([]);
+            Alert.alert('Network Error', 'Could not load menu.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Group weekly entries: day → mealType → items
-    const weeklyByDay: Record<string, Record<string, MenuItem[]>> = {};
-    menuEntries
-        .filter(e => e.menuType === 'weekly' && e.dayOfWeek)
-        .forEach(e => {
-            if (!weeklyByDay[e.dayOfWeek!]) weeklyByDay[e.dayOfWeek!] = {};
-            weeklyByDay[e.dayOfWeek!][e.mealType] = e.items;
-        });
+    // Build: day → meal → items[]
+    const byDay: Record<string, Record<string, FoodItem[]>> = {};
+    entries.forEach(e => {
+        let day = e.dayOfWeek;
+        if (!day && e.date) {
+            const d = new Date(e.date);
+            day = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+        }
+        if (!day) return;
+        if (!byDay[day]) byDay[day] = {};
+        byDay[day][e.mealType] = e.items;
+    });
 
-    const activeMeals = weeklyByDay[activeDay] || {};
-    const hasAnyMenu  = DAY_ORDER.some(d => weeklyByDay[d]);
+    const hasMenu = DAY_ORDER.some(d => byDay[d]);
+    const todayMeals = byDay[activeDay] || {};
 
     if (!restaurant) return null;
 
     return (
-        <Modal
-            visible={visible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={onClose}
-        >
-            <View style={mStyles.overlay}>
-                <View style={mStyles.sheet}>
-                    {/* Handle bar */}
-                    <View style={mStyles.handle} />
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+            <View style={ms.overlay}>
+                <View style={ms.sheet}>
+                    {/* Handle */}
+                    <View style={ms.handle} />
 
-                    {/* Sheet header */}
-                    <View style={mStyles.sheetHeader}>
+                    {/* Header */}
+                    <View style={ms.header}>
                         <View style={{ flex: 1 }}>
-                            <Text style={mStyles.sheetRestName}>
-                                {restaurant.restaurantName || restaurant.name}
+                            <Text style={ms.restName} numberOfLines={1}>
+                                {restaurant.restaurantName || restaurant.name || 'Restaurant'}
                             </Text>
-                            <Text style={mStyles.sheetSubtitle}>Weekly Menu Schedule</Text>
+                            <Text style={ms.subtitle}>Weekly Schedule</Text>
                         </View>
-                        <TouchableOpacity onPress={onClose} style={mStyles.closeBtn}>
-                            <Text style={mStyles.closeBtnText}>✕</Text>
+                        <TouchableOpacity onPress={onClose} style={ms.closeBtn} hitSlop={{ top:10, bottom:10, left:10, right:10 }}>
+                            <Text style={ms.closeTxt}>✕</Text>
                         </TouchableOpacity>
                     </View>
 
                     {loading ? (
-                        <View style={mStyles.loader}>
+                        <View style={ms.center}>
                             <ActivityIndicator size="large" color={Colors.primary} />
-                            <Text style={mStyles.loaderText}>Loading menu…</Text>
+                            <Text style={ms.loadTxt}>Loading menu…</Text>
                         </View>
-                    ) : !hasAnyMenu ? (
-                        <View style={mStyles.emptyWrap}>
-                            <Text style={mStyles.emptyIcon}>🍽️</Text>
-                            <Text style={mStyles.emptyTitle}>No Weekly Menu Set</Text>
-                            <Text style={mStyles.emptyDesc}>
-                                This restaurant hasn't uploaded their weekly schedule yet.
+                    ) : !hasMenu ? (
+                        <View style={ms.center}>
+                            <Text style={{ fontSize: 40 }}>🍽️</Text>
+                            <Text style={ms.emptyTitle}>No Menu Uploaded</Text>
+                            <Text style={ms.emptyDesc}>
+                                This restaurant hasn't set their weekly schedule yet.
                             </Text>
                         </View>
                     ) : (
-                        <>
-                            {/* Day tabs */}
+                        <View style={ms.contentArea}>
+                            {/* Day tabs — fixed height, does NOT flex */}
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={mStyles.dayTabs}
+                                contentContainerStyle={ms.tabs}
+                                style={ms.tabsRow}
                             >
                                 {DAY_ORDER.map(day => {
-                                    const hasMeals = !!weeklyByDay[day];
+                                    const active = activeDay === day;
+                                    const has    = !!byDay[day];
                                     return (
                                         <TouchableOpacity
                                             key={day}
                                             onPress={() => setActiveDay(day)}
-                                            style={[
-                                                mStyles.dayTab,
-                                                activeDay === day && mStyles.dayTabActive,
-                                                !hasMeals && mStyles.dayTabEmpty,
-                                            ]}
+                                            style={[ms.tab, active && ms.tabActive, !has && ms.tabDim]}
                                         >
-                                            <Text style={[
-                                                mStyles.dayTabText,
-                                                activeDay === day && mStyles.dayTabTextActive,
-                                                !hasMeals && mStyles.dayTabTextEmpty,
-                                            ]}>
+                                            <Text style={[ms.tabTxt, active && ms.tabTxtActive]}>
                                                 {DAY_SHORT[day]}
                                             </Text>
+                                            {has && <View style={[ms.tabDot, { backgroundColor: active ? '#FFF' : Colors.primary }]} />}
                                         </TouchableOpacity>
                                     );
                                 })}
                             </ScrollView>
 
-                            {/* Meals for active day */}
+                            {/* Meal sections — takes all remaining space and scrolls */}
                             <ScrollView
-                                style={{ flex: 1 }}
+                                style={ms.mealScroll}
                                 showsVerticalScrollIndicator={false}
-                                contentContainerStyle={mStyles.mealsContent}
+                                contentContainerStyle={ms.mealScrollContent}
                             >
-                                {MEALS.map(mealType => {
-                                    const items = activeMeals[mealType] || [];
+                                {MEALS.map(meal => {
+                                    const items: FoodItem[] = todayMeals[meal] || [];
                                     return (
-                                        <View key={mealType} style={mStyles.mealSection}>
-                                            <View style={mStyles.mealHeader}>
-                                                <Text style={mStyles.mealEmoji}>{MEAL_EMOJI[mealType]}</Text>
-                                                <Text style={mStyles.mealTitle}>{mealType}</Text>
+                                        <View key={meal} style={ms.mealBox}>
+                                            <View style={ms.mealHead}>
+                                                <Text style={ms.mealEmoji}>{MEAL_EMOJI[meal]}</Text>
+                                                <Text style={ms.mealTitle}>{meal}</Text>
                                                 {items.length === 0 && (
-                                                    <View style={mStyles.noMenuBadge}>
-                                                        <Text style={mStyles.noMenuBadgeText}>No menu set</Text>
+                                                    <View style={ms.badge}>
+                                                        <Text style={ms.badgeTxt}>Not set</Text>
                                                     </View>
                                                 )}
                                             </View>
                                             {items.length > 0 ? (
                                                 items.map((item, idx) => (
-                                                    <View key={idx} style={mStyles.menuItemRow}>
-                                                        <View style={mStyles.itemDot} />
+                                                    <View key={idx} style={ms.itemRow}>
+                                                        {item.image ? (
+                                                            <Image source={{ uri: item.image }} style={ms.itemImg} />
+                                                        ) : (
+                                                            <View style={ms.itemDot} />
+                                                        )}
                                                         <View style={{ flex: 1 }}>
-                                                            <Text style={mStyles.itemName}>{item.name}</Text>
-                                                            {item.description ? (
-                                                                <Text style={mStyles.itemDesc}>{item.description}</Text>
-                                                            ) : null}
+                                                            <Text style={ms.itemName}>{item.name}</Text>
+                                                            {item.description ? <Text style={ms.itemDesc}>{item.description}</Text> : null}
                                                         </View>
                                                     </View>
                                                 ))
                                             ) : (
-                                                <Text style={mStyles.noMenuText}>
-                                                    Not available on this day
-                                                </Text>
+                                                <Text style={ms.noItem}>Nothing listed for this meal</Text>
                                             )}
                                         </View>
                                     );
                                 })}
-                                <View style={{ height: 30 }} />
                             </ScrollView>
-                        </>
+                        </View>
                     )}
                 </View>
             </View>
@@ -216,332 +208,217 @@ const WeeklyMenuSheet = ({
 const RestaurantSelectionScreen = ({ route, navigation }: any) => {
     const { plan } = route.params;
     const { user, setUser } = useAuth();
+
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
     const [loading,     setLoading]     = useState(true);
     const [submitting,  setSubmitting]  = useState(false);
     const [selectedId,  setSelectedId]  = useState<string | null>(null);
-    const [menuSheet,   setMenuSheet]   = useState<Restaurant | null>(null);
+    const [menuForRest, setMenuForRest] = useState<Restaurant | null>(null);
 
     useEffect(() => { fetchRestaurants(); }, []);
 
     const fetchRestaurants = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/api/auth/restaurants`);
-            const data = await response.json();
-            if (response.ok) {
-                setRestaurants(data.filter((r: Restaurant) => r.kycStatus === 'approved'));
-            } else {
-                Alert.alert('Error', 'Could not load restaurants. Please try again.');
-            }
-        } catch {
-            Alert.alert('Network Error', 'Check your connection and try again.');
-        } finally {
-            setLoading(false);
-        }
+            const res  = await fetch(`${BASE_URL}/api/auth/restaurants`);
+            const data = await res.json();
+            if (res.ok) setRestaurants(data.filter((r: Restaurant) => r.kycStatus === 'approved'));
+            else Alert.alert('Error', 'Could not load restaurants.');
+        } catch { Alert.alert('Network Error', 'Check your connection.'); }
+        finally  { setLoading(false); }
     };
 
-    const handleConfirmSelection = async () => {
+    const handleConfirm = async () => {
         if (!selectedId) {
-            Alert.alert('Selection Required', 'Please select a default restaurant to continue.');
+            Alert.alert('Select a Restaurant', 'Please choose your default mess first.');
             return;
         }
         setSubmitting(true);
         try {
-            const response = await fetch(`${BASE_URL}/api/payment/subscribe`, {
-                method: 'POST',
+            const res  = await fetch(`${BASE_URL}/api/payment/subscribe`, {
+                method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body:    JSON.stringify({
                     studentId:           user._id,
                     planName:            plan.name,
                     price:               plan.priceNum,
                     defaultRestaurantId: selectedId,
                 }),
             });
-            const data = await response.json();
-            if (response.ok) {
+            const data = await res.json();
+            if (res.ok) {
                 setUser(data.student);
-                Alert.alert(
-                    '✅ SUCCESS',
-                    'Subscription activated! Your default mess is now set.',
-                    [{ text: 'GO TO DASHBOARD', onPress: () => navigation.navigate('Main') }]
-                );
+                Alert.alert('✅ Subscribed!', 'Your default mess is now set.', [
+                    { text: 'Go to Dashboard', onPress: () => navigation.navigate('Main') },
+                ]);
             } else {
-                Alert.alert('ERROR', data.message || 'Subscription failed');
+                Alert.alert('Error', data.message || 'Subscription failed');
             }
-        } catch {
-            Alert.alert('ERROR', 'Network error occurred. Please try again.');
-        } finally {
-            setSubmitting(false);
-        }
+        } catch { Alert.alert('Error', 'Network error. Please try again.'); }
+        finally  { setSubmitting(false); }
     };
 
-    const renderRestaurantItem = ({ item }: { item: Restaurant }) => {
-        const isSelected = selectedId === item._id;
+    const renderItem = ({ item }: { item: Restaurant }) => {
+        const sel = selectedId === item._id;
+        const name = item.restaurantName || item.name || 'Restaurant';
         return (
-            <TouchableOpacity
-                style={[styles.restaurantCard, isSelected && styles.selectedCard]}
-                onPress={() => setSelectedId(item._id)}
-                activeOpacity={0.85}
-            >
-                <View style={styles.cardHeader}>
-                    <View style={styles.resInfo}>
-                        <Text style={styles.resName}>{item.restaurantName || item.name}</Text>
-                        {item.address ? <Text style={styles.resAddress}>📍 {item.address}</Text> : null}
-                        {item.location ? <Text style={styles.resLocation}>🗺  {item.location}</Text> : null}
+            <View style={[s.card, sel && s.cardSel]}>
+                <View style={s.cardTop}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={s.restName}>{name}</Text>
+                        {item.address  ? <Text style={s.restSub}>📍 {item.address}</Text>  : null}
+                        {item.location ? <Text style={s.restSub}>🗺️  {item.location}</Text> : null}
                     </View>
-                    <View style={styles.cardRight}>
-                        {isSelected && (
-                            <View style={styles.selectedBadge}>
-                                <Text style={styles.selectedBadgeText}>✓</Text>
-                            </View>
-                        )}
-                    </View>
+                    {sel && <View style={s.checkCircle}><Text style={{ color: '#FFF', fontSize: 14, fontWeight: '900' }}>✓</Text></View>}
                 </View>
 
-                {/* Action buttons row */}
-                <View style={styles.cardActions}>
+                <View style={s.cardActions}>
+                    {/* View full weekly menu */}
                     <TouchableOpacity
-                        style={[styles.actionBtn, styles.menuBtn]}
-                        onPress={() => setMenuSheet(item)}
+                        style={s.menuBtn}
+                        onPress={() => setMenuForRest(item)}
                     >
-                        <Text style={styles.menuBtnText}>📋  VIEW WEEKLY MENU</Text>
+                        <Text style={s.menuBtnTxt}>📋 View Weekly Menu</Text>
                     </TouchableOpacity>
 
+                    {/* Select / Deselect */}
                     <TouchableOpacity
-                        style={[styles.actionBtn, isSelected ? styles.unselectBtn : styles.selectBtn]}
-                        onPress={() => setSelectedId(isSelected ? null : item._id)}
+                        style={[s.selBtn, sel && s.selBtnActive]}
+                        onPress={() => setSelectedId(sel ? null : item._id)}
                     >
-                        <Text style={isSelected ? styles.unselectBtnText : styles.selectBtnText}>
-                            {isSelected ? 'DESELECT' : 'SELECT'}
+                        <Text style={[s.selBtnTxt, sel && s.selBtnTxtActive]}>
+                            {sel ? 'Selected ✓' : 'Select'}
                         </Text>
                     </TouchableOpacity>
                 </View>
-            </TouchableOpacity>
+            </View>
         );
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <Header
-                title="SELECT DEFAULT MESS"
-                showBack
-                onBackPress={() => navigation.goBack()}
-            />
+        <>
+            {/* ── Main content ── */}
+            <SafeAreaView style={s.container} edges={['top']}>
+                <Header title="SELECT DEFAULT MESS" showBack onBackPress={() => navigation.goBack()} />
 
-            <View style={styles.content}>
-                <View style={styles.stepHeader}>
-                    <Text style={styles.stepBadge}>STEP 2 OF 2</Text>
-                    <Text style={styles.stepTitle}>Choose Your Default Mess</Text>
-                    <Text style={styles.stepDesc}>
-                        Tap a restaurant to select it as your default. View their weekly menu before choosing.
+                <View style={s.body}>
+                    <Text style={s.stepLabel}>STEP 2 OF 2</Text>
+                    <Text style={s.stepTitle}>Choose Your Default Mess</Text>
+                    <Text style={s.stepDesc}>
+                        Tap a card to explore the weekly menu before choosing.
                     </Text>
                 </View>
 
                 {loading ? (
-                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 50 }} />
+                    <ActivityIndicator size="large" color={Colors.primary} style={{ flex: 1 }} />
                 ) : (
                     <FlatList
                         data={restaurants}
-                        keyExtractor={item => item._id}
-                        renderItem={renderRestaurantItem}
-                        contentContainerStyle={styles.listContent}
+                        keyExtractor={r => r._id}
+                        renderItem={renderItem}
+                        contentContainerStyle={s.list}
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
-                            <View style={styles.emptyState}>
-                                <Text style={styles.emptyIcon}>🏪</Text>
-                                <Text style={styles.emptyTitle}>No restaurants available</Text>
-                                <Text style={styles.emptyDesc}>Please check back soon.</Text>
+                            <View style={{ alignItems: 'center', paddingVertical: 60 }}>
+                                <Text style={{ fontSize: 36 }}>🏪</Text>
+                                <Text style={{ fontSize: 15, color: '#666', marginTop: 12 }}>No approved restaurants</Text>
                             </View>
                         }
                     />
                 )}
 
-                <TouchableOpacity
-                    style={[styles.confirmBtn, !selectedId && styles.disabledBtn]}
-                    onPress={handleConfirmSelection}
-                    disabled={submitting || !selectedId}
-                >
-                    <Text style={styles.confirmBtnText}>
-                        {submitting ? 'ACTIVATING PLAN…' : 'FINALIZE SUBSCRIPTION →'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                <View style={s.footer}>
+                    <TouchableOpacity
+                        style={[s.confirmBtn, !selectedId && s.confirmDisabled]}
+                        onPress={handleConfirm}
+                        disabled={submitting || !selectedId}
+                    >
+                        <Text style={s.confirmTxt}>
+                            {submitting ? 'Activating…' : 'FINALIZE SUBSCRIPTION →'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
 
-            {/* Weekly menu bottom sheet */}
+            {/* ── Modal OUTSIDE SafeAreaView so Android doesn't clip it ── */}
             <WeeklyMenuSheet
-                visible={!!menuSheet}
-                restaurant={menuSheet}
-                onClose={() => setMenuSheet(null)}
+                visible={!!menuForRest}
+                restaurant={menuForRest}
+                onClose={() => setMenuForRest(null)}
             />
-        </SafeAreaView>
+        </>
     );
 };
 
-// ── Styles — Main Screen ──────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFF' },
-    content:   { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
-    stepHeader: { marginBottom: 20 },
-    stepBadge: {
-        fontSize: 10, fontWeight: '900', letterSpacing: 2,
-        color: Colors.primary, marginBottom: 4,
-    },
-    stepTitle: { fontSize: 20, fontWeight: '900', color: '#000', marginBottom: 6 },
-    stepDesc:  { fontSize: 14, color: '#666', lineHeight: 20 },
-    listContent: { paddingBottom: 16 },
+// ── Styles — main screen ──────────────────────────────────────────────────────
+const s = StyleSheet.create({
+    container:       { flex: 1, backgroundColor: '#FFF' },
+    body:            { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+    stepLabel:       { fontSize: 10, fontWeight: '900', letterSpacing: 2, color: Colors.primary, marginBottom: 4 },
+    stepTitle:       { fontSize: 20, fontWeight: '900', color: '#000', marginBottom: 6 },
+    stepDesc:        { fontSize: 14, color: '#777', lineHeight: 20 },
+    list:            { paddingHorizontal: 16, paddingBottom: 16 },
 
-    restaurantCard: {
-        backgroundColor: '#FFF',
-        borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: '#EEE',
-        padding: 16,
-        marginBottom: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
-    },
-    selectedCard: {
-        borderColor: '#000',
-        borderWidth: 2,
-        backgroundColor: '#FAFAFA',
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems:     'flex-start',
-        marginBottom:   14,
-    },
-    resInfo: { flex: 1 },
-    resName: { fontSize: 17, fontWeight: '900', color: '#000' },
-    resAddress: { fontSize: 12, color: '#888', marginTop: 4 },
-    resLocation: { fontSize: 12, color: '#888', marginTop: 2 },
-    cardRight: { marginLeft: 8 },
-    selectedBadge: {
-        width: 28, height: 28, borderRadius: 14,
-        backgroundColor: '#000',
-        alignItems: 'center', justifyContent: 'center',
-    },
-    selectedBadgeText: { color: '#FFF', fontSize: 14, fontWeight: '900' },
+    card:            { backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#EEE', padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width:0, height:2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+    cardSel:         { borderColor: '#000', borderWidth: 2, backgroundColor: '#FAFAFA' },
+    cardTop:         { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
+    restName:        { fontSize: 17, fontWeight: '900', color: '#000', marginBottom: 4 },
+    restSub:         { fontSize: 12, color: '#888', marginTop: 2 },
+    checkCircle:     { width: 28, height: 28, borderRadius: 14, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+    cardActions:     { flexDirection: 'row', gap: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
+    menuBtn:         { flex: 1, backgroundColor: '#F5F5F5', borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
+    menuBtnTxt:      { fontSize: 12, fontWeight: '700', color: '#444' },
+    selBtn:          { flex: 1, backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#DDD', borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
+    selBtnActive:    { backgroundColor: '#000', borderColor: '#000' },
+    selBtnTxt:       { fontSize: 12, fontWeight: '800', color: '#666', letterSpacing: 0.5 },
+    selBtnTxtActive: { color: '#FFF' },
 
-    cardActions: {
-        flexDirection: 'row',
-        gap: 10,
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-        paddingTop: 12,
-    },
-    actionBtn: {
-        flex: 1, paddingVertical: 9, borderRadius: 8,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    menuBtn:          { backgroundColor: '#F5F5F5' },
-    menuBtnText:      { fontSize: 11, fontWeight: '800', color: '#444', letterSpacing: 0.5 },
-    selectBtn:        { backgroundColor: '#000' },
-    selectBtnText:    { fontSize: 11, fontWeight: '900', color: '#FFF', letterSpacing: 1 },
-    unselectBtn:      { backgroundColor: '#FFF', borderWidth: 1.5, borderColor: '#CCC' },
-    unselectBtnText:  { fontSize: 11, fontWeight: '800', color: '#666', letterSpacing: 1 },
-
-    emptyState: { alignItems: 'center', paddingVertical: 60 },
-    emptyIcon:  { fontSize: 40, marginBottom: 12 },
-    emptyTitle: { fontSize: 16, fontWeight: '700', color: '#444' },
-    emptyDesc:  { fontSize: 13, color: '#AAA', marginTop: 4 },
-
-    confirmBtn: {
-        backgroundColor: '#000', paddingVertical: 18,
-        borderRadius: 10, alignItems: 'center', marginTop: 8, marginBottom: 16,
-    },
-    disabledBtn:     { backgroundColor: '#CCC' },
-    confirmBtnText:  { color: '#FFF', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
+    footer:          { paddingHorizontal: 16, paddingBottom: 20, paddingTop: 8 },
+    confirmBtn:      { backgroundColor: '#000', borderRadius: 10, paddingVertical: 18, alignItems: 'center' },
+    confirmDisabled: { backgroundColor: '#CCC' },
+    confirmTxt:      { color: '#FFF', fontSize: 14, fontWeight: '900', letterSpacing: 1.5 },
 });
 
-// ── Styles — Weekly Menu Sheet ────────────────────────────────────────────────
-const mStyles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
-    },
-    sheet: {
-        backgroundColor: '#FFF',
-        borderTopLeftRadius:  24,
-        borderTopRightRadius: 24,
-        maxHeight: '88%',
-        paddingBottom: 20,
-    },
-    handle: {
-        width: 40, height: 4, borderRadius: 2,
-        backgroundColor: '#DDD',
-        alignSelf: 'center', marginTop: 12, marginBottom: 8,
-    },
-    sheetHeader: {
-        flexDirection: 'row', alignItems: 'flex-start',
-        paddingHorizontal: 20, paddingVertical: 12,
-        borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
-    },
-    sheetRestName: { fontSize: 18, fontWeight: '900', color: '#000' },
-    sheetSubtitle: { fontSize: 12, color: '#888', marginTop: 2, fontWeight: '600' },
-    closeBtn: {
-        width: 32, height: 32, borderRadius: 16,
-        backgroundColor: '#F5F5F5',
-        alignItems: 'center', justifyContent: 'center',
-        marginTop: 2,
-    },
-    closeBtnText: { fontSize: 14, color: '#444', fontWeight: '700' },
-
-    loader:     { padding: 60, alignItems: 'center' },
-    loaderText: { marginTop: 12, color: '#888', fontSize: 14 },
-
-    emptyWrap:  { padding: 60, alignItems: 'center' },
-    emptyIcon:  { fontSize: 40, marginBottom: 12 },
-    emptyTitle: { fontSize: 17, fontWeight: '800', color: '#444', marginBottom: 6 },
-    emptyDesc:  { fontSize: 13, color: '#888', textAlign: 'center', lineHeight: 20 },
-
-    // Day tabs
-    dayTabs: {
-        paddingHorizontal: 16, paddingVertical: 12, gap: 8, flexDirection: 'row',
-    },
-    dayTab: {
-        paddingHorizontal: 14, paddingVertical: 7,
-        borderRadius: 20, backgroundColor: '#F5F5F5',
-    },
-    dayTabActive:   { backgroundColor: '#000' },
-    dayTabEmpty:    { opacity: 0.4 },
-    dayTabText:     { fontSize: 12, fontWeight: '700', color: '#444' },
-    dayTabTextActive: { color: '#FFF' },
-    dayTabTextEmpty:  { color: '#999' },
-
-    mealsContent: { paddingHorizontal: 20, paddingBottom: 24 },
-
-    mealSection: {
-        marginBottom: 20,
-        backgroundColor: '#FAFAFA',
-        borderRadius: 12,
-        padding: 14,
-    },
-    mealHeader: {
-        flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8,
-    },
-    mealEmoji: { fontSize: 20 },
-    mealTitle: { fontSize: 15, fontWeight: '800', color: '#000', flex: 1 },
-    noMenuBadge: {
-        backgroundColor: '#FFF3E0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6,
-    },
-    noMenuBadgeText: { fontSize: 10, color: '#E65100', fontWeight: '700' },
-
-    menuItemRow: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8,
-    },
-    itemDot: {
-        width: 6, height: 6, borderRadius: 3,
-        backgroundColor: Colors.primary, marginTop: 6,
-    },
-    itemName: { fontSize: 14, fontWeight: '600', color: '#222' },
-    itemDesc: { fontSize: 12, color: '#888', marginTop: 2 },
-
-    noMenuText: { fontSize: 13, color: '#BBB', fontStyle: 'italic', paddingLeft: 4 },
+// ── Styles — modal sheet ──────────────────────────────────────────────────────
+const ms = StyleSheet.create({
+    overlay:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+    // Sheet: always opens at 62% of screen height, can grow up to 90%
+    sheet:            { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%', minHeight: SCREEN_HEIGHT * 0.62, flexShrink: 1 },
+    handle:           { width: 40, height: 4, borderRadius: 2, backgroundColor: '#DDD', alignSelf: 'center', marginTop: 12, marginBottom: 4 },
+    header:           { flexDirection: 'row', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+    restName:         { fontSize: 18, fontWeight: '900', color: '#000' },
+    subtitle:         { fontSize: 12, color: '#888', marginTop: 2 },
+    closeBtn:         { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+    closeTxt:         { fontSize: 14, color: '#444', fontWeight: '700' },
+    center:           { padding: 60, alignItems: 'center' },
+    loadTxt:          { marginTop: 12, color: '#888', fontSize: 14 },
+    emptyTitle:       { fontSize: 17, fontWeight: '800', color: '#444', marginTop: 12 },
+    emptyDesc:        { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 6, lineHeight: 20 },
+    // contentArea fills whatever height remains inside the sheet after the header
+    contentArea:      { flex: 1 },
+    // The horizontal tabs row — fixed, does not grow
+    tabsRow:          { flexGrow: 0, flexShrink: 0 },
+    tabs:             { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+    tab:              { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F3F3F3', alignItems: 'center' },
+    tabActive:        { backgroundColor: Colors.primary },
+    tabDim:           { opacity: 0.45 },
+    tabTxt:           { fontSize: 12, fontWeight: '700', color: '#555' },
+    tabTxtActive:     { color: '#FFF' },
+    tabDot:           { width: 4, height: 4, borderRadius: 2, marginTop: 3 },
+    // mealScroll takes all remaining space in contentArea so it scrolls properly
+    mealScroll:       { flex: 1 },
+    mealScrollContent:{ padding: 16, paddingBottom: 40 },
+    mealBox:          { backgroundColor: '#FAFAFA', borderRadius: 12, padding: 14, marginBottom: 12 },
+    mealHead:         { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+    mealEmoji:        { fontSize: 20 },
+    mealTitle:        { fontSize: 15, fontWeight: '800', color: '#000', flex: 1 },
+    badge:            { backgroundColor: '#FFF3E0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+    badgeTxt:         { fontSize: 10, color: '#E65100', fontWeight: '700' },
+    itemRow:          { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    itemImg:          { width: 46, height: 46, borderRadius: 8, backgroundColor: '#EEE' },
+    itemDot:          { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary, marginTop: 2 },
+    itemName:         { fontSize: 14, fontWeight: '600', color: '#222' },
+    itemDesc:         { fontSize: 12, color: '#888', marginTop: 1 },
+    noItem:           { fontSize: 13, color: '#BBB', fontStyle: 'italic', paddingLeft: 4 },
 });
 
 export default RestaurantSelectionScreen;

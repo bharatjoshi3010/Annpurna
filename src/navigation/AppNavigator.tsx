@@ -22,6 +22,7 @@ import MealHistoryScreen from '../screens/MealHistory/MealHistoryScreen';
 import AddMoneyScreen from '../screens/Wallet/AddMoneyScreen';
 import PlanDetailScreen from '../screens/Subscription/PlanDetailScreen';
 import RestaurantSelectionScreen from '../screens/Subscription/RestaurantSelectionScreen';
+import SubscriptionHistoryScreen from '../screens/Profile/SubscriptionHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -134,11 +135,12 @@ const AppNavigator = () => {
                 <Stack.Screen name="Menu" component={MenuScreen} />
                 <Stack.Screen name="MealDetail" component={MealDetailScreen} />
                 <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
-                <Stack.Screen name="MealHistory" component={MealHistoryScreen} />
-                <Stack.Screen name="ManageMenu" component={ManageMenuScreen} />
-                <Stack.Screen name="AddMoney" component={AddMoneyScreen} />
-                <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
-                <Stack.Screen name="RestaurantSelection" component={RestaurantSelectionScreen} />
+                <Stack.Screen name="MealHistory"             component={MealHistoryScreen} />
+                <Stack.Screen name="ManageMenu"              component={ManageMenuScreen} />
+                <Stack.Screen name="AddMoney"                component={AddMoneyScreen} />
+                <Stack.Screen name="PlanDetail"              component={PlanDetailScreen} />
+                <Stack.Screen name="RestaurantSelection"     component={RestaurantSelectionScreen} />
+                <Stack.Screen name="SubscriptionHistory"     component={SubscriptionHistoryScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

@@ -20,7 +20,12 @@ const ProfileScreen = ({ navigation }: any) => {
 
     const MENU_OPTIONS = [
         { title: 'Personal Information', icon: '👤' },
-        { title: 'My Subscriptions', icon: '💳', subtitle: user?.role === 'student' ? (user?.selectedPlan || 'No active plan') : 'Manage Plans' },
+        { title: 'My Subscriptions', icon: '💳',
+          subtitle: user?.role === 'student'
+            ? (user?.selectedPlan
+                ? `${user.selectedPlan} · ${user.subscriptionStatus?.toUpperCase()}`
+                : 'No active plan')
+            : 'Manage Plans' },
         { title: 'Meal History', icon: '🍽️' },
         { title: user?.role === 'restaurant' ? 'Restaurant Settings' : 'Default Restaurant', icon: '🏪', subtitle: user?.role === 'restaurant' ? (user?.restaurantName || 'Set Info') : (user?.location || 'Not set') },
         { title: 'Notifications', icon: '🔔' },
@@ -61,6 +66,8 @@ const ProfileScreen = ({ navigation }: any) => {
                                     navigation.navigate('PersonalDetails');
                                 } else if (item.title === 'Meal History') {
                                     navigation.navigate('MealHistory');
+                                } else if (item.title === 'My Subscriptions') {
+                                    navigation.navigate('SubscriptionHistory');
                                 }
                             }}
                         >
