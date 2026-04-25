@@ -119,7 +119,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <Header title="Select Restaurant" showBack onBackPress={() => navigation.goBack()} />
 
             <View style={styles.searchContainer}>
@@ -188,7 +188,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                     />
                 </View>
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, BorderRadius, Typography } from '../styles/theme';
+import { API_BASE_URL } from '../config';
 
 interface RestaurantCardProps {
     name: string;
@@ -43,6 +44,18 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
         }
     };
 
+    const getSafeUrl = (url?: string) => {
+        if (!url) return undefined;
+        if (url.includes('10.0.2.2') || url.includes('localhost')) {
+            const match = url.match(/:\d+(\/.*)/);
+            if (match) return `${API_BASE_URL}${match[1]}`;
+        }
+        if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+        return url;
+    };
+
+    const displayImage = getSafeUrl(menuItemImage) || getSafeUrl(imageUrl);
+
     return (
         <TouchableOpacity
             style={[styles.container, isSelected && styles.selectedContainer]}
@@ -50,8 +63,8 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
             activeOpacity={0.9}
         >
             <View style={styles.imageContainer}>
-                {menuItemImage || imageUrl ? (
-                    <Image source={{ uri: menuItemImage || imageUrl }} style={styles.image} />
+                {displayImage ? (
+                    <Image source={{ uri: displayImage }} style={styles.image} />
                 ) : (
                     <View style={styles.placeholderImage}>
                         <Text style={styles.placeholderText}>{name.charAt(0)}</Text>

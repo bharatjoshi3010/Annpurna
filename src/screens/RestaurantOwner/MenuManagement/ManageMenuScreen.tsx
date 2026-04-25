@@ -74,6 +74,13 @@ const ManageMenuScreen = () => {
 
         setUploading(true);
         try {
+            const formData = new FormData();
+            formData.append('image', {
+                uri: selectedImage.uri,
+                type: selectedImage.type,
+                name: selectedImage.fileName || `food_${Date.now()}.jpg`,
+            } as any);
+
             const response = await fetch(`${API_BASE_URL}/api/upload`, {
                 method: 'POST',
                 body: formData,

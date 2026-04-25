@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL as BASE_URL } from '../config';
+import { API_BASE_URL, initApiConfig } from '../config';
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 const TOKEN_KEY = '@annpurna_token';
@@ -32,13 +32,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const restoreSession = async () => {
             try {
+                await initApiConfig();
+
                 const token = await AsyncStorage.getItem(TOKEN_KEY);
                 if (!token) { setIsLoading(false); return; }
 
-                // Validate the stored token against the backend
-                const res = await fetch(`${BASE_URL}/api/auth/profile`, {
+                // Validate the stored token against the backend (with timeout so it doesn't hang)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+                
+                const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (res.ok) {
                     const profile = await res.json();
@@ -61,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // ── Socket lifecycle ──────────────────────────────────────────────────────
     useEffect(() => {
         if (user && user._id) {
-            const newSocket = io(BASE_URL);
+            const newSocket = io(API_BASE_URL);
 
             newSocket.on('connect', () => {
                 newSocket.emit('join', user._id.toString());

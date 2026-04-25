@@ -62,6 +62,11 @@ app.use((req, res, next) => {
     next();
 });
 
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
