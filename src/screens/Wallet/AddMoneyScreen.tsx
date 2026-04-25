@@ -6,6 +6,7 @@ import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
 import AppButton from '../../components/AppButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_BASE_URL } from '../../config';
 
 const AddMoneyScreen = ({ navigation, route }: any) => {
     const { user, setUser } = useAuth();
@@ -15,8 +16,7 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
     const [loading, setLoading] = useState(false);
 
     const fetchPaymentSheetParams = async () => {
-        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-        const response = await fetch(`${baseUrl}/api/payment/create-intent`, {
+        const response = await fetch(`${API_BASE_URL}/api/payment/create-intent`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -80,8 +80,7 @@ const AddMoneyScreen = ({ navigation, route }: any) => {
     const confirmPayment = async (paymentIntentId: string) => {
         try {
             console.log('Sending confirmation to backend for:', paymentIntentId);
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/payment/confirm`, {
+            const response = await fetch(`${API_BASE_URL}/api/payment/confirm`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

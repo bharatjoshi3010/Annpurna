@@ -5,6 +5,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import Header from '../../components/Header';
 import WalletCard from '../../components/WalletCard';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
 const WalletScreen = ({ navigation }: any) => {
     const { user } = useAuth();
@@ -15,8 +16,7 @@ const WalletScreen = ({ navigation }: any) => {
     const fetchTransactions = async () => {
         if (!user?._id) return;
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/payment/history/${user._id}`);
+            const response = await fetch(`${API_BASE_URL}/api/payment/history/${user._id}`);
             const data = await response.json();
             if (response.ok) {
                 setTransactions(data);

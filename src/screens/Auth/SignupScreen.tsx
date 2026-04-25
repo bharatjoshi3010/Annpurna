@@ -13,6 +13,7 @@ import {
     Image,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { API_BASE_URL } from '../../config';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
@@ -26,8 +27,6 @@ const isNonEmpty = (v: string) => v.trim().length > 0;
 const isValidPassword = (v: string) => v.length >= 6;
 
 interface FieldError { [key: string]: string }
-
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 
 type DocField = {
     uri: string;

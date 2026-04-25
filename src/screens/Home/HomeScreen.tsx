@@ -9,6 +9,7 @@ import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 import MealStatusBadge from '../../components/MealStatusBadge';
+import { API_BASE_URL } from '../../config';
 
 const PLANS = [
     {
@@ -62,8 +63,7 @@ const HomeScreen = ({ navigation }: any) => {
     const fetchMealStatuses = async () => {
         if (!user?._id) return;
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/meals/status/${user._id}`);
+            const response = await fetch(`${API_BASE_URL}/api/meals/status/${user._id}`);
             const data = await response.json();
             if (response.ok) {
                 setMealStatuses(data);
@@ -129,8 +129,7 @@ const HomeScreen = ({ navigation }: any) => {
 
     const executeCancelMeal = async (bookingId: string, mealType: string) => {
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const response = await fetch(`${baseUrl}/api/meals/cancel`, {
+            const response = await fetch(`${API_BASE_URL}/api/meals/cancel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bookingId, studentId: user._id }),

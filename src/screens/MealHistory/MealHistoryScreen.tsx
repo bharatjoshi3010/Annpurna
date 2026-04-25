@@ -22,6 +22,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, BorderRadius, Typography } from '../../styles/theme';
 import Header from '../../components/Header';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Booking {
@@ -109,8 +110,7 @@ const MealHistoryScreen = ({ navigation }: any) => {
     const fetchHistory = async () => {
         if (!user?._id) return;
         try {
-            const base = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-            const url = `${base}/api/meals/student/${user._id}`;
+            const url  = `${API_BASE_URL}/api/meals/student/${user._id}`;
             console.log('[MealHistory] Fetching:', url);
             const res = await fetch(url);
             const data = await res.json();

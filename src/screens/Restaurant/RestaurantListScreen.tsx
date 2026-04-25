@@ -6,6 +6,7 @@ import Header from '../../components/Header';
 import RestaurantCard from '../../components/RestaurantCard';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../config';
 
 // Removed hardcoded RESTAURANTS array to ensure only database content is shown.
 
@@ -26,12 +27,9 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
 
     const fetchRestaurants = async () => {
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-
-            // Output menu with restaurants if mealType is provided
-            const url = mealType
-                ? `${baseUrl}/api/meals/restaurants-for-meal/${mealType}`
-                : `${baseUrl}/api/auth/restaurants`;
+            const url = mealType 
+                ? `${API_BASE_URL}/api/meals/restaurants-for-meal/${mealType}`
+                : `${API_BASE_URL}/api/auth/restaurants`;
 
             const response = await fetch(url);
             const data = await response.json();
@@ -83,9 +81,7 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     const processBooking = async (type: string) => {
         setBookingLoading(true);
         try {
-            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-
-            const response = await fetch(`${baseUrl}/api/meals/book`, {
+            const response = await fetch(`${API_BASE_URL}/api/meals/book`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
