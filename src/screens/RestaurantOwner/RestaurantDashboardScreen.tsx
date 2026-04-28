@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 import { io } from 'socket.io-client';
 import { API_BASE_URL as BASE_URL } from '../../config';
+import UserAvatar from '../../components/UserAvatar';
 
 const MEAL_SECTIONS = [
     { type: 'Breakfast', emoji: '🌅', time: '08:00 – 10:30 AM', color: '#FF9800', bg: '#FFF3E0' },
@@ -47,12 +48,13 @@ const BookingRow = ({ booking, onConsume }: { booking: any; onConsume: (id: stri
 
     return (
         <View style={styles.bookingRow}>
-            {/* Avatar */}
-            <View style={styles.avatarCircle}>
-                <Text style={styles.avatarLetter}>
-                    {(booking.student?.name || 'A').charAt(0).toUpperCase()}
-                </Text>
-            </View>
+            {/* Student initial avatar */}
+            <UserAvatar
+                name={booking.student?.name || 'A'}
+                size={36}
+                borderWidth={0}
+            />
+            <View style={{ width: 10 }} />
 
             {/* Student info */}
             <View style={{ flex: 1 }}>
@@ -249,7 +251,13 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
                             style={styles.profileIndicator}
                             onPress={() => navigation.navigate('PersonalDetails')}
                         >
-                            <Text style={styles.profileEmoji}>👤</Text>
+                            <UserAvatar
+                                photoUrl={user?.profilePhoto}
+                                name={user?.ownerName || user?.restaurantName || 'R'}
+                                size={40}
+                                borderWidth={1}
+                                borderColor={Colors.border}
+                            />
                             <Text style={styles.viewProfileText}>Profile</Text>
                         </TouchableOpacity>
                     </View>
@@ -310,11 +318,10 @@ const styles = StyleSheet.create({
     titleRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     subtitle:     { fontSize: 14, color: Colors.textLight, marginTop: 2 },
     profileIndicator: {
-        alignItems: 'center', padding: 8,
+        alignItems: 'center', padding: 6,
         backgroundColor: Colors.white, borderRadius: 10,
         borderWidth: 1, borderColor: Colors.border,
     },
-    profileEmoji:    { fontSize: 18 },
     viewProfileText: { fontSize: 10, fontWeight: '700', color: Colors.primary, marginTop: 2 },
 
     statsRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },

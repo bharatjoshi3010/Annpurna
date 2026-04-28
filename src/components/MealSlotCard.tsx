@@ -10,9 +10,10 @@ interface MealSlotCardProps {
     onPress: () => void;
     statusText?: string;
     locked?: boolean;
+    menuItems?: string[];
 }
 
-const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText, locked }) => {
+const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText, locked, menuItems }) => {
     // 'taken' = consumed — ALWAYS green, regardless of locked flag
     const isConsumed = status === 'taken';
 
@@ -54,6 +55,14 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaur
                         {type}
                     </Text>
                     <Text style={Typography.caption}>{time}</Text>
+
+                    {/* Menu items display */}
+                    <View style={styles.menuContainer}>
+                        <Text style={styles.menuLabel}>Food:</Text>
+                        <Text style={styles.menuText} numberOfLines={2}>
+                            {menuItems && menuItems.length > 0 ? menuItems.join(', ') : 'Surprise Meal 🎁'}
+                        </Text>
+                    </View>
                 </View>
 
                 <View style={styles.rightContent}>
@@ -98,7 +107,7 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         marginVertical: Spacing.sm,
         flexDirection: 'row',
-        height: 80,
+        minHeight: 85,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -135,6 +144,21 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         color: Colors.textLight,
         marginBottom: 4,
+    },
+    menuContainer: {
+        marginTop: 6,
+    },
+    menuLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: Colors.textLight,
+        marginBottom: 1,
+    },
+    menuText: {
+        fontSize: 12,
+        color: Colors.text,
+        fontWeight: '500',
+        lineHeight: 16,
     },
     statusBadge: {
         paddingHorizontal: 8,

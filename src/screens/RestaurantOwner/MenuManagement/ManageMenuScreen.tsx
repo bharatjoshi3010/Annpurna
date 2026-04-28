@@ -77,7 +77,7 @@ const ManageMenuScreen = () => {
             const formData = new FormData();
             formData.append('image', {
                 uri: selectedImage.uri,
-                type: selectedImage.type,
+                type: selectedImage.type || 'image/jpeg',
                 name: selectedImage.fileName || `food_${Date.now()}.jpg`,
             } as any);
 

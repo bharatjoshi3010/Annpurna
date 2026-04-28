@@ -9,6 +9,7 @@ import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 import MealStatusBadge from '../../components/MealStatusBadge';
+import UserAvatar from '../../components/UserAvatar';
 import { API_BASE_URL } from '../../config';
 
 const PLANS = [
@@ -212,6 +213,7 @@ const HomeScreen = ({ navigation }: any) => {
         const planCanCancel = mealStatus?.planCanCancel ?? false;
         const refundAmount = mealStatus?.refundAmount || 0;
         const cutoffDisplay = mealStatus?.cutoffDisplay || CUTOFF_DISPLAY[type];
+        const menuItems = mealStatus?.menuItems || [];
 
         const isServing = mealStatus?.isServing || false;
 
@@ -239,6 +241,7 @@ const HomeScreen = ({ navigation }: any) => {
                     status={cardStatus}
                     restaurant={restaurantName}
                     locked={isLocked || isModified}
+                    menuItems={menuItems}
                     onPress={() => {
                         if (isLocked) {
                             Alert.alert(
@@ -325,7 +328,13 @@ const HomeScreen = ({ navigation }: any) => {
                         style={styles.profileBadge}
                         onPress={() => navigation.navigate('Profile')}
                     >
-                        <Text style={styles.profileIcon}>👤</Text>
+                        <UserAvatar
+                            photoUrl={user?.profilePhoto}
+                            name={displayName}
+                            size={44}
+                            borderWidth={1}
+                            borderColor={Colors.border}
+                        />
                     </TouchableOpacity>
                 </View>
 
@@ -436,17 +445,8 @@ const styles = StyleSheet.create({
         color: Colors.text,
     },
     profileBadge: {
-        width: 44,
-        height: 44,
         borderRadius: 22,
-        backgroundColor: Colors.white,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: Colors.border,
-    },
-    profileIcon: {
-        fontSize: 20,
+        overflow: 'hidden',
     },
     mealSlotWrapper: {
         marginVertical: 0,

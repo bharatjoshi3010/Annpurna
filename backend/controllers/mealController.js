@@ -283,6 +283,10 @@ export const getStudentMealStatus = async (req, res) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
         const { start, end } = todayRange();
+        const now = new Date();
+        const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const dayName   = DAY_NAMES[now.getDay()];
+
         const bookings = await Booking.find({
             student: studentId,
             date: { $gte: start, $lte: end }
@@ -299,6 +303,35 @@ export const getStudentMealStatus = async (req, res) => {
             // Plan-level feature flags
             const planCanChange = PLAN_CAN_CHANGE.includes(plan);
             const planCanCancel = PLAN_CAN_CANCEL.includes(plan);
+
+            let resolvedRestaurantId = null;
+            if (booking) {
+                resolvedRestaurantId = booking.restaurant._id;
+            } else if (student.subscriptionStatus === 'active' && student.defaultRestaurantId) {
+                resolvedRestaurantId = student.defaultRestaurantId._id;
+            }
+
+            let menuItems = [];
+            if (resolvedRestaurantId) {
+                let menu = await Menu.findOne({
+                    restaurant: resolvedRestaurantId,
+                    mealType: type,
+                    menuType: 'single',
+                    date: { $gte: start, $lte: end }
+                });
+                if (!menu) {
+                    menu = await Menu.findOne({
+                        restaurant: resolvedRestaurantId,
+                        mealType: type,
+                        menuType: 'weekly',
+                        dayOfWeek: dayName
+                    });
+                }
+                if (menu && menu.items && menu.items.length > 0) {
+                    menuItems = menu.items;
+                }
+            }
+
 
             if (booking) {
                 const isActive   = booking.status === 'booked';
@@ -354,6 +387,7 @@ export const getStudentMealStatus = async (req, res) => {
                     planCanChange,
                     planCanCancel,
                     cutoffDisplay:       CUTOFF_DISPLAY[type],
+                    menuItems:           menuItems,
                 };
             } else {
                 // No booking yet — fall back to default restaurant
@@ -375,6 +409,7 @@ export const getStudentMealStatus = async (req, res) => {
                         planCanChange,
                         planCanCancel,
                         cutoffDisplay:  CUTOFF_DISPLAY[type],
+                        menuItems:      menuItems,
                     };
                 }
                 return {
@@ -390,6 +425,7 @@ export const getStudentMealStatus = async (req, res) => {
                     planCanChange,
                     planCanCancel,
                     cutoffDisplay: CUTOFF_DISPLAY[type],
+                    menuItems:     menuItems,
                 };
             }   // end else (no booking)
         }));   // end Promise.all map

@@ -107,7 +107,8 @@ const updateProfile = async (req, res) => {
         name, phoneNumber, college, location, budget, selectedPlan,
         address, localGuardianName, localGuardianPhone, hometownAddress,
         walletBalance, kycStatus,
-        ownerName, restaurantName, fssaiLicense, specifications, maxCapacity, openingYear
+        ownerName, restaurantName, fssaiLicense, specifications, maxCapacity, openingYear,
+        profilePhoto
     } = req.body;
 
     try {
@@ -128,6 +129,7 @@ const updateProfile = async (req, res) => {
                 user.selectedPlan = selectedPlan || user.selectedPlan;
                 user.walletBalance = walletBalance !== undefined ? walletBalance : user.walletBalance;
                 user.kycStatus = kycStatus || user.kycStatus;
+                if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
 
                 // Check if ALL essential details for a student are filled
                 if (user.name && user.address && user.phoneNumber && user.localGuardianName && user.localGuardianPhone && user.hometownAddress) {
@@ -154,6 +156,7 @@ const updateProfile = async (req, res) => {
                     kycStatus: updatedUser.kycStatus,
                     isProfileComplete: updatedUser.isProfileComplete,
                     role: updatedUser.role,
+                    profilePhoto: updatedUser.profilePhoto,
                     token: generateToken(updatedUser._id, updatedUser.role),
                 });
             } else {
@@ -173,6 +176,7 @@ const updateProfile = async (req, res) => {
                 user.maxCapacity = maxCapacity || user.maxCapacity;
                 user.walletBalance = walletBalance !== undefined ? walletBalance : user.walletBalance;
                 user.kycStatus = kycStatus || user.kycStatus;
+                if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
 
                 if (user.ownerName && user.restaurantName && user.openingYear && user.address && user.phoneNumber && user.maxCapacity && user.fssaiLicense) {
                     user.isProfileComplete = true;
@@ -197,6 +201,7 @@ const updateProfile = async (req, res) => {
                     kycStatus: updatedUser.kycStatus,
                     isProfileComplete: updatedUser.isProfileComplete,
                     role: updatedUser.role,
+                    profilePhoto: updatedUser.profilePhoto,
                     token: generateToken(updatedUser._id, updatedUser.role),
                 });
             } else {

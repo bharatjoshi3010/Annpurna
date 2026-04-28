@@ -21,6 +21,7 @@ const restaurantSchema = new mongoose.Schema({
     },
     fssaiCertificate: { type: String },           // URL path to uploaded FSSAI certificate image
     registrationCertificate: { type: String },    // URL path to uploaded business registration cert image
+    profilePhoto: { type: String },               // URL path to profile photo
     kycStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     isProfileComplete: { type: Boolean, default: false },
     role: { type: String, default: 'restaurant' }
