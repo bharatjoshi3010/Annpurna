@@ -408,11 +408,22 @@ export const getIncomingStudents = async (req, res) => {
         const { start, end } = todayRange();
 
         // Return ALL statuses so the dashboard can show consumed/cancelled too
-        const bookings = await Booking.find({
+        let bookings = await Booking.find({
             restaurant: restaurantId,
             date: { $gte: start, $lte: end },
         }).populate('student', 'name email phoneNumber')
           .sort({ mealType: 1, createdAt: 1 }); // ordered: Breakfast → Lunch → Dinner
+
+        // Auto-mark not_consumed for past meals that were never scanned
+        let updated = false;
+        bookings = await Promise.all(bookings.map(async (b) => {
+            if (b.status === 'booked' && isMealPast(b.mealType)) {
+                b.status = 'not_consumed';
+                await b.save();
+                updated = true;
+            }
+            return b;
+        }));
 
         res.json(bookings);
     } catch (error) {
@@ -426,9 +437,29 @@ export const getStudentBookings = async (req, res) => {
         const { studentId } = req.params;
         console.log(`[MealHistory] Fetching bookings for student: ${studentId}`);
 
-        const bookings = await Booking.find({ student: studentId })
+        const { start } = todayRange();
+
+        // 1. Auto-mark any bookings from PREVIOUS days that are still 'booked'
+        await Booking.updateMany({
+            student: studentId,
+            status: 'booked',
+            date: { $lt: start }
+        }, {
+            $set: { status: 'not_consumed' }
+        });
+
+        let bookings = await Booking.find({ student: studentId })
             .populate('restaurant', 'restaurantName address location')
             .sort({ date: -1 });
+
+        // 2. Auto-mark any bookings from TODAY where the serving window has passed
+        bookings = await Promise.all(bookings.map(async (b) => {
+            if (b.status === 'booked' && b.date >= start && isMealPast(b.mealType)) {
+                b.status = 'not_consumed';
+                await b.save();
+            }
+            return b;
+        }));
 
         console.log(`[MealHistory] Found ${bookings.length} booking(s)`);
 

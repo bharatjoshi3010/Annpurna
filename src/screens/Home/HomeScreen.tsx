@@ -274,9 +274,11 @@ const HomeScreen = ({ navigation }: any) => {
                         });
                     }}
                     statusText={
-                        isLocked ? 'LOCKED'
-                            : isModified ? 'SWITCHED'
-                                : status
+                        (status === 'Consumed' || status === 'Not Consumed' || status === 'Cancelled')
+                            ? status.toUpperCase()
+                            : isLocked ? 'LOCKED'
+                                : isModified ? 'SWITCHED'
+                                    : status
                     }
                 />
 

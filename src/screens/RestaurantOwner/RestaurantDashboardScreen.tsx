@@ -74,13 +74,20 @@ const BookingRow = ({ booking, onConsume }: { booking: any; onConsume: (id: stri
             ) : (
                 <View style={[
                     styles.statusBadge,
-                    { backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : '#FFEBEE' }
+                    { 
+                        backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : 
+                                         booking.status === 'not_consumed' ? '#FFF3E0' : '#FFEBEE' 
+                    }
                 ]}>
                     <Text style={[
                         styles.statusBadgeText,
-                        { color: booking.status === 'consumed' ? '#2E7D32' : '#C62828' }
+                        { 
+                            color: booking.status === 'consumed' ? '#2E7D32' : 
+                                   booking.status === 'not_consumed' ? '#E65100' : '#C62828' 
+                        }
                     ]}>
-                        {booking.status === 'consumed' ? 'Done' : 'Cancelled'}
+                        {booking.status === 'consumed' ? 'Done' : 
+                         booking.status === 'not_consumed' ? 'Not Consumed' : 'Cancelled'}
                     </Text>
                 </View>
             )}
