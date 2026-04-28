@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Spacing, Typography } from '../../styles/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import Header from '../../components/Header';
 import RestaurantCard from '../../components/RestaurantCard';
 import AppButton from '../../components/AppButton';
@@ -120,15 +120,20 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
 
     return (
         <View style={styles.container}>
-            <Header title="Select Restaurant" showBack onBackPress={() => navigation.goBack()} />
+            <Header title="Select Restaurant" showBack onBackPress={() => navigation.goBack()}
+                subtitle={mealType ? `For your ${mealType}` : undefined} />
 
             <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search restaurants..."
-                    value={search}
-                    onChangeText={setSearch}
-                />
+                <View style={styles.searchInputWrapper}>
+                    <Text style={styles.searchIcon}>🔍</Text>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search restaurants..."
+                        placeholderTextColor={Colors.textLight}
+                        value={search}
+                        onChangeText={setSearch}
+                    />
+                </View>
             </View>
 
             <View style={{ flex: 1 }}>
@@ -167,12 +172,13 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                         contentContainerStyle={styles.listContent}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyEmoji}>🍽️</Text>
                                 <Text style={styles.emptyText}>No restaurants found in our network yet.</Text>
                             </View>
                         }
                         ListHeaderComponent={
                             <View style={styles.listHeader}>
-                                <Text style={Typography.body}>Choose where you want to have your next meal.</Text>
+                                <Text style={styles.listHeaderText}>Choose where you want to have your next meal.</Text>
                             </View>
                         }
                     />
@@ -192,43 +198,44 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
     );
 };
 
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.background,
-    },
+    container: { flex: 1, backgroundColor: Colors.background },
     searchContainer: {
-        padding: Spacing.md,
-        backgroundColor: Colors.white,
-    },
-    searchInput: {
-        height: 48,
-        backgroundColor: '#F5F5F5',
-        borderRadius: 12,
         paddingHorizontal: Spacing.md,
-        fontSize: 16,
+        paddingVertical: Spacing.sm,
+        backgroundColor: Colors.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.border,
     },
-    listContent: {
-        padding: Spacing.md,
-    },
-    listHeader: {
-        marginBottom: Spacing.md,
-    },
-    emptyContainer: {
-        padding: 40,
+    searchInputWrapper: {
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: Colors.surfaceAlt,
+        borderRadius: BorderRadius.round,
+        paddingHorizontal: Spacing.md,
+        height: 46,
+        gap: 8,
     },
-    emptyText: {
-        fontSize: 16,
-        color: Colors.textLight,
-        textAlign: 'center',
+    searchIcon: { fontSize: 16, color: Colors.textLight },
+    searchInput: {
+        flex: 1,
+        fontSize: 15,
+        color: Colors.text,
+        paddingVertical: 0,
     },
+    listContent: { padding: Spacing.md, paddingBottom: 100 },
+    listHeader: { marginBottom: Spacing.md },
+    listHeaderText: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+    emptyContainer: { paddingTop: 60, alignItems: 'center', gap: 10 },
+    emptyEmoji: { fontSize: 40 },
+    emptyText: { fontSize: 15, color: Colors.textLight, textAlign: 'center' },
     footer: {
         padding: Spacing.md,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.surface,
         borderTopWidth: 1,
         borderTopColor: Colors.border,
     },
 });
 
-export default RestaurantListScreen;
+export default RestaurantListScreen;

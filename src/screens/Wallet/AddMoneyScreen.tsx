@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         marginTop: Spacing.lg,
     },
     chip: {
-        backgroundColor: '#F5F5F5',
+        backgroundColor: Colors.surfaceAlt,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 20,

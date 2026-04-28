@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing, Typography } from '../../styles/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import WalletCard from '../../components/WalletCard';
 import MealSlotCard from '../../components/MealSlotCard';
 import AppButton from '../../components/AppButton';
@@ -429,317 +429,257 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background,
     },
     scrollContent: {
-        padding: Spacing.md,
-        paddingBottom: Spacing.xl,
+        paddingHorizontal: Spacing.md,
+        paddingTop: Spacing.sm,
+        paddingBottom: 40,
     },
+
+    // ── Header ────────────────────────────────────────────────────────────────
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: Spacing.lg,
+        marginBottom: Spacing.md,
         marginTop: Spacing.sm,
     },
     welcomeText: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: '800',
         color: Colors.text,
+        letterSpacing: -0.5,
+    },
+    greetingSub: {
+        fontSize: 13,
+        color: Colors.textLight,
+        marginTop: 2,
     },
     profileBadge: {
-        borderRadius: 22,
+        borderRadius: 24,
         overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: Colors.primaryLight,
     },
-    mealSlotWrapper: {
-        marginVertical: 0,
-    },
-    mealActions: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginTop: 4,
-        marginBottom: 8,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 3,
-    },
-    mealActionBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-    },
-    cancelActionBtn: {
-        // subtle red tint for cancel
-    },
-    mealActionDivider: {
-        height: 1,
-        backgroundColor: '#F5F5F5',
-        marginHorizontal: 16,
-    },
-    mealActionIcon: {
-        fontSize: 18,
-        marginRight: 12,
-    },
-    mealActionText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#1A1A1A',
-    },
-    mealActionNote: {
-        fontSize: 11,
-        color: '#999',
-        marginTop: 1,
-    },
-    mealActionArrow: {
-        fontSize: 20,
-        color: '#CCC',
-        marginLeft: 8,
-    },
-    switchedBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E8F5E9',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        marginBottom: 8,
-    },
-    switchedIcon: {
-        fontSize: 14,
-        color: '#2E7D32',
-        fontWeight: '900',
-        marginRight: 8,
-    },
-    switchedText: {
-        fontSize: 12,
-        color: '#2E7D32',
-        flex: 1,
-        lineHeight: 16,
-    },
-    // ── Serving window banner ─────────────────────────────────────────────────
+
+    // ── Meal slot wrappers ────────────────────────────────────────────────────
+    mealSlotWrapper: { marginVertical: 0 },
+
+    // ── Serving & switched banners ────────────────────────────────────────────
     servingBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF3E0',
-        borderRadius: 10,
+        backgroundColor: Colors.warningLight,
+        borderRadius: BorderRadius.md,
         borderWidth: 1.5,
-        borderColor: '#FFCC02',
+        borderColor: Colors.secondary,
         paddingHorizontal: 14,
         paddingVertical: 10,
-        marginBottom: 8,
+        marginBottom: 6,
         gap: 10,
     },
-    servingIcon: {
-        fontSize: 22,
-    },
-    servingTextBlock: {
-        flex: 1,
-    },
+    servingIcon: { fontSize: 22 },
+    servingTextBlock: { flex: 1 },
     servingTitle: {
         fontSize: 13,
         fontWeight: '800',
-        color: '#E65100',
+        color: Colors.warning,
         lineHeight: 18,
     },
     servingSubtitle: {
         fontSize: 11,
-        color: '#BF360C',
+        color: Colors.textSecondary,
         marginTop: 2,
     },
-    section: {
-        marginTop: Spacing.lg,
-    },
-    sectionHeader: {
-        marginBottom: Spacing.sm,
-    },
-    quickActions: {
-        marginTop: Spacing.xl,
-    },
-    actionRow: {
+    switchedBanner: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    actionButton: {
-        width: '30%',
         alignItems: 'center',
+        backgroundColor: Colors.successLight,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 6,
+        gap: 8,
     },
-    actionIconBg: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
+    switchedIcon: { fontSize: 14, color: Colors.success, fontWeight: '900' },
+    switchedText: { fontSize: 12, color: Colors.success, flex: 1, lineHeight: 16 },
+
+    // ── Section headers ───────────────────────────────────────────────────────
+    section: { marginTop: Spacing.lg },
+    sectionHeader: { marginBottom: Spacing.sm },
+    sectionTitle: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: Colors.textLight,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
     },
-    actionIcon: {
-        fontSize: 24,
-    },
-    actionLabel: {
-        fontSize: 12,
+    sectionSubtitle: {
+        fontSize: 15,
         fontWeight: '600',
-        color: Colors.text,
-        textAlign: 'center',
+        color: Colors.textSecondary,
+        marginTop: 4,
+        marginBottom: 16,
     },
+
+    // ── Onboarding banner ─────────────────────────────────────────────────────
+    onboardingBanner: {
+        backgroundColor: Colors.primaryLight,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.lg,
+        marginTop: Spacing.lg,
+        borderLeftWidth: 4,
+        borderLeftColor: Colors.primary,
+    },
+    bannerInfo: { flex: 1 },
+    bannerTitle: {
+        fontSize: 11,
+        fontWeight: '900',
+        color: Colors.primaryDark,
+        letterSpacing: 1.5,
+        marginBottom: 6,
+    },
+    bannerDesc: {
+        fontSize: 14,
+        color: Colors.primaryDark,
+        lineHeight: 20,
+    },
+
+    // ── Subscription section ──────────────────────────────────────────────────
     subscriptionSection: {
         marginTop: Spacing.xl,
         paddingBottom: 40,
     },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: '900',
-        color: '#000',
-        letterSpacing: 2,
-    },
-    sectionSubtitle: {
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#666',
-        marginTop: 2,
-        marginBottom: 20,
-    },
+
+    // ── Active plan card ──────────────────────────────────────────────────────
     activePlanCard: {
-        backgroundColor: '#000',
-        borderRadius: 2,
-        padding: 24,
-        minHeight: 140,
+        backgroundColor: Colors.primary,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.lg,
+        minHeight: 130,
         justifyContent: 'center',
+        overflow: 'hidden',
     },
     statusBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
+        gap: 6,
     },
     statusText: {
-        color: '#FFF',
+        color: 'rgba(255,255,255,0.8)',
         fontSize: 10,
-        fontWeight: '900',
+        fontWeight: '800',
         letterSpacing: 1.5,
-        marginRight: 8,
     },
     pulseDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#4CAF50',
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: Colors.successLight,
     },
     activePlanName: {
-        color: '#FFF',
-        fontSize: 32,
+        color: Colors.white,
+        fontSize: 34,
         fontWeight: '900',
         letterSpacing: -1,
     },
     activePlanDesc: {
-        color: '#AAA',
+        color: 'rgba(255,255,255,0.7)',
         fontSize: 12,
-        marginTop: 8,
+        marginTop: 6,
     },
-    tiersContainer: {
-        gap: 20,
-    },
+
+    // ── Plan tier cards ───────────────────────────────────────────────────────
+    tiersContainer: { gap: 14 },
     tierCard: {
-        backgroundColor: '#FFF',
-        borderWidth: 2,
-        borderColor: '#000',
-        borderRadius: 2,
-        padding: 20,
+        backgroundColor: Colors.surface,
+        borderWidth: 1.5,
+        borderColor: Colors.border,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
         position: 'relative',
+        ...Shadows.sm,
     },
     popularBadge: {
         position: 'absolute',
-        top: -12,
-        right: 20,
-        backgroundColor: '#000',
+        top: -11,
+        right: 16,
+        backgroundColor: Colors.primary,
         paddingHorizontal: 12,
         paddingVertical: 4,
-        borderRadius: 2,
+        borderRadius: BorderRadius.round,
     },
     popularText: {
-        color: '#FFF',
-        fontSize: 10,
+        color: Colors.white,
+        fontSize: 9,
         fontWeight: '900',
-        letterSpacing: 1,
+        letterSpacing: 0.8,
     },
     tierHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 24,
+        marginBottom: Spacing.md,
     },
-    tierInfo: {
-        flex: 1,
-        paddingRight: 10,
-    },
+    tierInfo: { flex: 1, paddingRight: 10 },
     tierName: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '900',
-        color: '#000',
-        letterSpacing: -0.5,
+        color: Colors.text,
+        letterSpacing: -0.4,
     },
     tierTagline: {
-        fontSize: 13,
-        color: '#666',
+        fontSize: 12,
+        color: Colors.textSecondary,
         marginTop: 4,
-        lineHeight: 18,
+        lineHeight: 17,
     },
-    tierIcon: {
-        fontSize: 32,
-    },
+    tierIcon: { fontSize: 30 },
     tierFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: '#EEE',
-        paddingTop: 16,
+        borderTopColor: Colors.borderLight,
+        paddingTop: 12,
     },
     tierPrice: {
         fontSize: 20,
         fontWeight: '900',
-        color: '#000',
+        color: Colors.text,
     },
     perMonth: {
         fontSize: 12,
         fontWeight: '400',
-        color: '#666',
+        color: Colors.textLight,
     },
     viewBtn: {
-        backgroundColor: '#000',
+        backgroundColor: Colors.primaryLight,
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 2,
+        borderRadius: BorderRadius.round,
     },
     viewBtnText: {
-        color: '#FFF',
+        color: Colors.primary,
         fontSize: 11,
-        fontWeight: '900',
-        letterSpacing: 1,
+        fontWeight: '800',
+        letterSpacing: 0.5,
     },
-    onboardingBanner: {
-        backgroundColor: '#F5F5F5',
-        borderRadius: 2,
-        padding: 24,
-        marginTop: 24,
-        borderLeftWidth: 4,
-        borderLeftColor: '#000',
-    },
-    bannerInfo: {
-        flex: 1,
-    },
-    bannerTitle: {
-        fontSize: 12,
-        fontWeight: '900',
-        color: '#000',
-        letterSpacing: 1,
-        marginBottom: 8,
-    },
-    bannerDesc: {
-        fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
-    },
-});
 
-export default HomeScreen;
+    // Unused but preserved so old references don't crash
+    mealActions: {},
+    mealActionBtn: {},
+    cancelActionBtn: {},
+    mealActionDivider: {},
+    mealActionIcon: {},
+    mealActionText: {},
+    mealActionNote: {},
+    mealActionArrow: {},
+    quickActions: {},
+    actionRow: {},
+    actionButton: {},
+    actionIconBg: {},
+    actionIcon: {},
+    actionLabel: {},
+} as any);
+
+export default HomeScreen;

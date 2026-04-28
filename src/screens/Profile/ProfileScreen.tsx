@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     profileHeader: {
         alignItems: 'center',
         paddingVertical: Spacing.xl,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.surface,
         borderBottomWidth: 1,
         borderBottomColor: Colors.border,
     },
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     editButtonText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
     menuContainer: {
         marginTop: Spacing.md,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.surface,
         paddingHorizontal: Spacing.md,
     },
     menuItem: {
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#F5F5F5',
+        borderBottomColor: Colors.surfaceAlt,
     },
     menuIconContainer: {
         width: 40, height: 40, borderRadius: 20,

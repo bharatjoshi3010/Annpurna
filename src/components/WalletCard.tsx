@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing, BorderRadius, Typography } from '../styles/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../styles/theme';
 
 interface WalletCardProps {
     balance: number;
@@ -11,27 +11,43 @@ interface WalletCardProps {
 const WalletCard: React.FC<WalletCardProps> = ({ balance, onRecharge, compact = false }) => {
     if (compact) {
         return (
-            <View style={styles.compactContainer}>
-                <View>
+            <TouchableOpacity style={styles.compactContainer} onPress={onRecharge} activeOpacity={0.85}>
+                <View style={styles.compactLeft}>
                     <Text style={styles.compactLabel}>Wallet Balance</Text>
                     <Text style={styles.compactBalance}>₹{balance.toFixed(2)}</Text>
                 </View>
-                <TouchableOpacity style={styles.rechargeButton} onPress={onRecharge}>
-                    <Text style={styles.rechargeText}>Recharge</Text>
-                </TouchableOpacity>
-            </View>
+                <View style={styles.rechargeBtn}>
+                    <Text style={styles.rechargeText}>+ Add</Text>
+                </View>
+            </TouchableOpacity>
         );
     }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Total Balance</Text>
-            <Text style={styles.balance}>₹{balance.toFixed(2)}</Text>
+            {/* Decorative circles */}
+            <View style={styles.circle1} />
+            <View style={styles.circle2} />
+
+            <View style={styles.topRow}>
+                <View>
+                    <Text style={styles.label}>Meal Wallet</Text>
+                    <Text style={styles.balance}>₹{balance.toFixed(2)}</Text>
+                </View>
+                <View style={styles.walletIcon}>
+                    <Text style={styles.walletEmoji}>👛</Text>
+                </View>
+            </View>
+
             <View style={styles.divider} />
+
             <View style={styles.footer}>
-                <Text style={styles.footerText}>Monthly Subscription active</Text>
-                <TouchableOpacity style={styles.fullRechargeButton} onPress={onRecharge}>
-                    <Text style={styles.fullRechargeText}>Add Money</Text>
+                <View>
+                    <Text style={styles.footerLabel}>STATUS</Text>
+                    <Text style={styles.footerValue}>Active Plan</Text>
+                </View>
+                <TouchableOpacity style={styles.addBtn} onPress={onRecharge} activeOpacity={0.85}>
+                    <Text style={styles.addBtnText}>＋ Add Money</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -41,30 +57,61 @@ const WalletCard: React.FC<WalletCardProps> = ({ balance, onRecharge, compact = 
 const styles = StyleSheet.create({
     container: {
         backgroundColor: Colors.primary,
-        borderRadius: BorderRadius.lg,
+        borderRadius: BorderRadius.xl,
         padding: Spacing.lg,
         marginVertical: Spacing.md,
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 8,
+        overflow: 'hidden',
+        ...Shadows.primary,
     },
+    circle1: {
+        position: 'absolute',
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        top: -60,
+        right: -30,
+    },
+    circle2: {
+        position: 'absolute',
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        bottom: -20,
+        left: 20,
+    },
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.md,
+    },
+    walletIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    walletEmoji: { fontSize: 22 },
     label: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 4,
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        marginBottom: 6,
     },
     balance: {
         color: Colors.white,
-        fontSize: 36,
+        fontSize: 38,
         fontWeight: '800',
-        marginBottom: Spacing.md,
+        letterSpacing: -1,
     },
     divider: {
         height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(255,255,255,0.2)',
         marginBottom: Spacing.md,
     },
     footer: {
@@ -72,52 +119,64 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    footerText: {
-        color: Colors.white,
-        fontSize: 12,
-        flex: 1,
-    },
-    fullRechargeButton: {
-        backgroundColor: Colors.white,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.sm,
-    },
-    fullRechargeText: {
-        color: Colors.primary,
-        fontSize: 14,
+    footerLabel: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 10,
         fontWeight: '700',
+        letterSpacing: 1,
     },
+    footerValue: {
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: '700',
+        marginTop: 2,
+    },
+    addBtn: {
+        backgroundColor: Colors.white,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.round,
+    },
+    addBtnText: {
+        color: Colors.primary,
+        fontSize: 13,
+        fontWeight: '800',
+    },
+
+    // Compact
     compactContainer: {
-        backgroundColor: Colors.cardBg,
+        backgroundColor: Colors.surface,
         borderRadius: BorderRadius.md,
         padding: Spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: Colors.border,
+        borderWidth: 1.5,
+        borderColor: Colors.primaryLight,
+        ...Shadows.sm,
     },
+    compactLeft: {},
     compactLabel: {
-        fontSize: 12,
+        fontSize: 11,
         color: Colors.textLight,
+        fontWeight: '600',
         marginBottom: 2,
     },
     compactBalance: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 22,
+        fontWeight: '800',
         color: Colors.text,
     },
-    rechargeButton: {
-        backgroundColor: Colors.secondary,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: BorderRadius.sm,
+    rechargeBtn: {
+        backgroundColor: Colors.primaryLight,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: BorderRadius.round,
     },
     rechargeText: {
         color: Colors.primary,
-        fontSize: 12,
-        fontWeight: '700',
+        fontSize: 13,
+        fontWeight: '800',
     },
 });
 

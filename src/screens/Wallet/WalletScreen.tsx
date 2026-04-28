@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity, Platform, RefreshControl, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import Header from '../../components/Header';
 import WalletCard from '../../components/WalletCard';
 import { useAuth } from '../../context/AuthContext';
@@ -123,63 +123,35 @@ const WalletScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.background,
-    },
-    content: {
-        flex: 1,
-        padding: Spacing.md,
-    },
-    transactionSection: {
-        flex: 1,
-        marginTop: Spacing.lg,
-    },
+    container: { flex: 1, backgroundColor: Colors.background },
+    content: { flex: 1, padding: Spacing.md },
+    transactionSection: { flex: 1, marginTop: Spacing.lg },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: Spacing.md,
     },
-    viewAll: {
-        color: Colors.primary,
-        fontSize: 14,
-        fontWeight: '600',
-    },
+    viewAll: { color: Colors.primary, fontSize: 14, fontWeight: '700' },
     transactionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 14,
     },
     iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#F5F5F5',
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: Colors.surfaceAlt,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: Spacing.md,
     },
-    txnEmoji: {
-        fontSize: 20,
-    },
-    txnInfo: {
-        flex: 1,
-    },
-    txnTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.text,
-    },
-    txnDate: {
-        fontSize: 12,
-        color: Colors.textLight,
-        marginTop: 2,
-    },
-    txnAmount: {
-        fontSize: 16,
-        fontWeight: '700',
-    },
+    txnEmoji: { fontSize: 20 },
+    txnInfo: { flex: 1 },
+    txnTitle: { fontSize: 15, fontWeight: '600', color: Colors.text },
+    txnDate: { fontSize: 12, color: Colors.textLight, marginTop: 2 },
+    txnAmount: { fontSize: 16, fontWeight: '800' },
     statusText: {
         fontSize: 10,
         fontWeight: '700',
@@ -188,34 +160,21 @@ const styles = StyleSheet.create({
     },
     separator: {
         height: 1,
-        backgroundColor: Colors.border,
-        opacity: 0.5,
+        backgroundColor: Colors.borderLight,
     },
     rechargeButton: {
         backgroundColor: Colors.primary,
         height: 54,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.round,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: Spacing.md,
         marginBottom: Spacing.sm,
+        ...Shadows.primary,
     },
-    rechargeButtonText: {
-        color: Colors.white,
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingTop: 40,
-    },
-    emptyText: {
-        color: Colors.textLight,
-        fontSize: 14,
-        fontStyle: 'italic',
-    },
+    rechargeButtonText: { color: Colors.surface, fontSize: 16, fontWeight: '800' },
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
+    emptyText: { color: Colors.textLight, fontSize: 15, fontStyle: 'italic' },
 });
 
 export default WalletScreen;

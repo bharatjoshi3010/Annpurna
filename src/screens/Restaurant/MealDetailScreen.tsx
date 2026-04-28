@@ -242,7 +242,7 @@ const MealDetailScreen = ({ navigation, route }: any) => {
                         <View style={[styles.planBadge, {
                             backgroundColor: plan === 'Premium' ? '#FFF8E1'
                                            : plan === 'Standard' ? '#E3F2FD'
-                                           :                        '#F5F5F5'
+                                           :                        Colors.surfaceAlt
                         }]}>
                             <Text style={[styles.planBadgeText, {
                                 color: plan === 'Premium' ? '#F57F17'
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     lockBadge: {
-        backgroundColor: '#F5F5F5',
+        backgroundColor: Colors.surfaceAlt,
         borderRadius: 8,
         padding: 6,
         marginLeft: 8,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#F5F5F5',
+        borderBottomColor: Colors.surfaceAlt,
     },
     menuItemImageWrap: {
         width: 56,

@@ -27,7 +27,7 @@ const statusColor = (status: string) => {
     switch (status) {
         case 'active':    return { bg: '#E8F5E9', fg: '#2E7D32', dot: '#4CAF50' };
         case 'cancelled': return { bg: '#FFEBEE', fg: '#C62828', dot: '#F44336' };
-        default:          return { bg: '#F5F5F5', fg: '#666',    dot: '#999'    };
+        default:          return { bg: Colors.surfaceAlt, fg: '#666',    dot: '#999'    };
     }
 };
 
@@ -229,7 +229,7 @@ const s = StyleSheet.create({
     historyCardLatest: {},
     timelineDot:       { alignItems: 'center', marginRight: 12, paddingTop: 4 },
     tlDot:             { width: 12, height: 12, borderRadius: 6 },
-    tlLine:            { width: 2, flex: 1, backgroundColor: '#E0E0E0', marginTop: 4 },
+    tlLine:            { width: 2, flex: 1, backgroundColor: Colors.border, marginTop: 4 },
 
     historyBody: {
         flex: 1, backgroundColor: '#FFF', borderRadius: 12, padding: 14,

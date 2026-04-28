@@ -453,13 +453,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#F5F5F5',
+        borderBottomColor: Colors.surfaceAlt,
     },
     itemThumb: {
         width: 40,
         height: 40,
         borderRadius: 8,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: Colors.surfaceAlt,
         marginRight: 10,
     },
     itemBullet: {

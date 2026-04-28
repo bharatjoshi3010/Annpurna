@@ -73,7 +73,7 @@ const dayBgColor = (consumed: number, total: number): string => {
     if (consumed === 3) return '#166534'; // deep green  — all 3
     if (consumed === 2) return '#4CAF50'; // medium green — 2/3
     if (consumed === 1) return '#A8D5B5'; // very light green — 1/3
-    return '#F5F5F5'; // had bookings but none consumed
+    return Colors.surfaceAlt; // had bookings but none consumed
 };
 
 const dayTextColor = (consumed: number): string => {
@@ -89,7 +89,7 @@ const statusColor = (status: string) => {
         case 'booked': return { bg: '#E3F2FD', text: '#1565C0' };
         case 'cancelled': return { bg: '#FFEBEE', text: '#C62828' };
         case 'not_consumed': return { bg: '#FFF8E1', text: '#F57F17' };
-        default: return { bg: '#F5F5F5', text: '#666' };
+        default: return { bg: Colors.surfaceAlt, text: '#666' };
     }
 };
 
@@ -373,10 +373,10 @@ const MealHistoryScreen = ({ navigation }: any) => {
                             { color: '#166534', label: '3 meals' },
                             { color: '#4CAF50', label: '2 meals' },
                             { color: '#A8D5B5', label: '1 meal' },
-                            { color: '#F5F5F5', label: 'Skipped' },
+                            { color: Colors.surfaceAlt, label: 'Skipped' },
                         ].map(l => (
                             <View key={l.label} style={styles.legendItem}>
-                                <View style={[styles.legendDot, { backgroundColor: l.color, borderWidth: l.color === '#F5F5F5' ? 1 : 0, borderColor: '#DDD' }]} />
+                                <View style={[styles.legendDot, { backgroundColor: l.color, borderWidth: l.color === Colors.surfaceAlt ? 1 : 0, borderColor: '#DDD' }]} />
                                 <Text style={styles.legendLabel}>{l.label}</Text>
                             </View>
                         ))}
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
     navBtn: {
         width: 36, height: 36,
         borderRadius: 18,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: Colors.surfaceAlt,
         alignItems: 'center', justifyContent: 'center',
     },
     navArrow: {

@@ -11,7 +11,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';

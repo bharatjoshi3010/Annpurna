@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     card: {
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.surface,
         borderRadius: BorderRadius.md,
         padding: Spacing.md,
         borderWidth: 1,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#F5F5F5',
+        borderBottomColor: Colors.surfaceAlt,
     },
     infoLabel: {
         fontSize: 14,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     },
     editButton: {
         marginTop: Spacing.xl,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.surface,
         borderWidth: 1,
         borderColor: Colors.primary,
         height: 50,

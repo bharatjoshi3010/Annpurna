@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     },
     mapMock: {
         height: 250,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: Colors.surfaceAlt,
         borderRadius: 2,
         borderWidth: 1,
         borderColor: '#EEE',

@@ -40,8 +40,8 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => {
     };
 
     return (
-        <View style={styles.tabIconContainer}>
-            <Text style={[styles.tabIcon, { opacity: focused ? 1 : 0.5 }]}>
+        <View style={[styles.tabIconContainer, focused && styles.tabIconContainerFocused]}>
+            <Text style={[styles.tabIcon, { opacity: focused ? 1 : 0.45 }]}>
                 {getIcon()}
             </Text>
             <Text style={[styles.tabLabel, { color: focused ? Colors.primary : Colors.textLight }]}>
@@ -148,24 +148,37 @@ const AppNavigator = () => {
 
 const styles = StyleSheet.create({
     tabBar: {
-        height: 70,
-        backgroundColor: Colors.white,
+        height: 72,
+        backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: Colors.border,
-        paddingBottom: 10,
-        paddingTop: 10,
+        paddingBottom: 8,
+        paddingTop: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 10,
     },
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 4,
+        borderRadius: 12,
+        minWidth: 56,
+    },
+    tabIconContainerFocused: {
+        backgroundColor: Colors.primaryLight,
     },
     tabIcon: {
         fontSize: 22,
-        marginBottom: 4,
+        marginBottom: 3,
     },
     tabLabel: {
         fontSize: 10,
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
 });
 

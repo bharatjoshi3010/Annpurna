@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Spacing, BorderRadius, Typography } from '../styles/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../styles/theme';
 
 interface MealSlotCardProps {
     type: 'Breakfast' | 'Lunch' | 'Dinner';
@@ -13,181 +13,203 @@ interface MealSlotCardProps {
     menuItems?: string[];
 }
 
-const MealSlotCard: React.FC<MealSlotCardProps> = ({ type, time, status, restaurant, onPress, statusText, locked, menuItems }) => {
-    // 'taken' = consumed — ALWAYS green, regardless of locked flag
-    const isConsumed = status === 'taken';
+const MEAL_CONFIG = {
+    Breakfast: { emoji: '🌅', gradient: '#FFF7ED', accent: '#FB923C' },
+    Lunch:     { emoji: '☀️', gradient: '#F0FDF4', accent: '#22C55E' },
+    Dinner:    { emoji: '🌙', gradient: '#EFF6FF', accent: '#6366F1' },
+};
 
-    // A meal is visually "locked grey" only when locked AND not consumed
-    const showLocked = locked && !isConsumed;
+const MealSlotCard: React.FC<MealSlotCardProps> = ({
+    type, time, status, restaurant, onPress, statusText, locked, menuItems,
+}) => {
+    const isConsumed  = status === 'taken';
+    const isMissed    = status === 'missed';
+    const isAvailable = status === 'available';
+    const showLocked  = locked && !isConsumed;
 
-    const getStatusColor = () => {
-        switch (status) {
-            case 'booked':  return Colors.primary;
-            case 'taken':   return Colors.success;   // green
-            case 'skipped':
-            case 'missed':  return Colors.error;
-            default:        return Colors.textLight;
-        }
+    const config = MEAL_CONFIG[type] || MEAL_CONFIG.Lunch;
+
+    const accentColor = isConsumed
+        ? Colors.success
+        : isMissed
+            ? Colors.error
+            : showLocked
+                ? '#9CA3AF'
+                : status === 'booked'
+                    ? config.accent
+                    : Colors.textLight;
+
+    const getBadgeLabel = () => {
+        if (isConsumed) return '✓  CONSUMED';
+        if (showLocked)  return '🔒 LOCKED';
+        if (statusText)  return statusText.toUpperCase();
+        return status.toUpperCase();
     };
 
-    const color = getStatusColor();
+    const getBadgeBg = () => {
+        if (isConsumed) return Colors.successLight;
+        if (isMissed)   return Colors.errorLight;
+        if (showLocked) return '#F3F4F6';
+        if (status === 'booked') return config.gradient;
+        return Colors.surfaceAlt;
+    };
 
     return (
         <TouchableOpacity
             style={[
-                styles.container,
-                showLocked  && styles.lockedContainer,
-                isConsumed  && styles.consumedContainer,   // ← light green card tint
+                styles.card,
+                isConsumed && styles.consumedCard,
+                isMissed   && styles.missedCard,
+                showLocked && styles.lockedCard,
             ]}
             onPress={showLocked ? undefined : onPress}
-            activeOpacity={showLocked ? 1 : 0.7}
+            activeOpacity={showLocked ? 1 : 0.78}
         >
-            {/* Left colour bar — always green for consumed */}
-            <View style={[styles.statusIndicator, { backgroundColor: showLocked ? '#999' : color }]} />
+            {/* Left accent bar */}
+            <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
-            <View style={styles.content}>
-                <View style={styles.leftContent}>
-                    <Text style={[
-                        Typography.h3,
-                        showLocked  && styles.lockedText,
-                        isConsumed  && styles.consumedTitle,
-                    ]}>
-                        {type}
-                    </Text>
-                    <Text style={Typography.caption}>{time}</Text>
-
-                    {/* Menu items display */}
-                    <View style={styles.menuContainer}>
-                        <Text style={styles.menuLabel}>Food:</Text>
-                        <Text style={styles.menuText} numberOfLines={2}>
-                            {menuItems && menuItems.length > 0 ? menuItems.join(', ') : 'Surprise Meal 🎁'}
-                        </Text>
-                    </View>
-                </View>
-
-                <View style={styles.rightContent}>
-                    {restaurant && restaurant !== 'Not selected' ? (
-                        <Text
-                            style={[
-                                styles.restaurantName,
-                                showLocked && styles.lockedText,
-                                isConsumed && styles.consumedRestaurant,
-                            ]}
-                            numberOfLines={1}
-                        >
-                            {restaurant}
-                        </Text>
-                    ) : (
-                        <Text style={styles.placeholderText}>Not selected</Text>
-                    )}
-
-                    {/* Status badge */}
-                    <View style={[
-                        styles.statusBadge,
-                        showLocked ? { backgroundColor: '#F0F0F0' } : { backgroundColor: color + '22' },
-                    ]}>
-                        <Text style={[styles.statusText, { color: showLocked ? '#888' : color }]}>
-                            {isConsumed
-                                ? '✓  CONSUMED'
-                                : showLocked
-                                    ? '🔒 LOCKED'
-                                    : (statusText ? statusText.toUpperCase() : status.toUpperCase())
-                            }
-                        </Text>
-                    </View>
-                </View>
+            {/* Emoji bubble */}
+            <View style={[styles.emojiBox, { backgroundColor: isConsumed ? Colors.successLight : config.gradient }]}>
+                <Text style={styles.emoji}>{config.emoji}</Text>
             </View>
+
+            {/* Main content */}
+            <View style={styles.content}>
+                <View style={styles.topRow}>
+                    <Text style={[styles.mealType, showLocked && styles.dimText]}>{type}</Text>
+                    <View style={[styles.badge, { backgroundColor: getBadgeBg() }]}>
+                        <Text style={[styles.badgeText, { color: accentColor }]}>{getBadgeLabel()}</Text>
+                    </View>
+                </View>
+
+                <Text style={[styles.time, showLocked && styles.dimText]}>{time}</Text>
+
+                {restaurant && restaurant !== 'Not selected' ? (
+                    <Text style={[styles.restaurant, showLocked && styles.dimText]} numberOfLines={1}>
+                        🏪 {restaurant}
+                    </Text>
+                ) : isAvailable ? (
+                    <Text style={styles.tapHint}>Tap to select restaurant →</Text>
+                ) : null}
+
+                {menuItems && menuItems.length > 0 ? (
+                    <Text style={[styles.menuText, showLocked && styles.dimText]} numberOfLines={1}>
+                        🍽 {menuItems.join(' · ')}
+                    </Text>
+                ) : restaurant && restaurant !== 'Not selected' && (
+                    <Text style={styles.surpriseText}>🎁 Surprise Meal</Text>
+                )}
+            </View>
+
+            {/* Arrow for interactive cards */}
+            {!showLocked && !isConsumed && !isMissed && (
+                <Text style={styles.arrow}>›</Text>
+            )}
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: Colors.white,
-        borderRadius: BorderRadius.md,
-        marginVertical: Spacing.sm,
+    card: {
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        marginVertical: 6,
         flexDirection: 'row',
-        minHeight: 85,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
-    },
-    statusIndicator: {
-        width: 6,
-        height: '100%',
-    },
-    content: {
-        flex: 1,
-        flexDirection: 'row',
-        paddingHorizontal: Spacing.md,
         alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    leftContent: {
-        flex: 1,
-    },
-    rightContent: {
-        alignItems: 'flex-end',
-        flex: 1,
-    },
-    restaurantName: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: Colors.text,
-        marginBottom: 4,
-    },
-    placeholderText: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        color: Colors.textLight,
-        marginBottom: 4,
-    },
-    menuContainer: {
-        marginTop: 6,
-    },
-    menuLabel: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: Colors.textLight,
-        marginBottom: 1,
-    },
-    menuText: {
-        fontSize: 12,
-        color: Colors.text,
-        fontWeight: '500',
-        lineHeight: 16,
-    },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    statusText: {
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    lockedContainer: {
-        backgroundColor: '#FCFCFC',
-        opacity: 0.75,
-    },
-    lockedText: {
-        color: '#999',
-    },
-    // ── Consumed / green theme ────────────────────────────────────────────────
-    consumedContainer: {
-        backgroundColor: '#F0FDF4',   // very light green card
+        overflow: 'hidden',
         borderWidth: 1,
+        borderColor: Colors.border,
+        minHeight: 88,
+        ...Shadows.sm,
+    },
+    consumedCard: {
+        backgroundColor: '#F0FDF4',
         borderColor: '#BBF7D0',
     },
-    consumedTitle: {
-        color: '#166534',             // dark green meal name
-        fontWeight: '700' as const,
+    missedCard: {
+        backgroundColor: '#FFF5F5',
+        borderColor: '#FECACA',
+        opacity: 0.85,
     },
-    consumedRestaurant: {
-        color: '#16a34a',             // medium green restaurant name
+    lockedCard: {
+        backgroundColor: Colors.surfaceAlt,
+        opacity: 0.75,
+    },
+
+    accentBar: {
+        width: 4,
+        alignSelf: 'stretch',
+    },
+
+    emojiBox: {
+        width: 48,
+        height: 48,
+        borderRadius: BorderRadius.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 12,
+    },
+    emoji: { fontSize: 22 },
+
+    content: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingRight: 6,
+        gap: 3,
+    },
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 2,
+    },
+    mealType: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: Colors.text,
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: BorderRadius.round,
+    },
+    badgeText: {
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    time: {
+        fontSize: 11,
+        color: Colors.textLight,
+        fontWeight: '500',
+    },
+    restaurant: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+        fontWeight: '600',
+    },
+    menuText: {
+        fontSize: 11,
+        color: Colors.textSecondary,
+        fontStyle: 'italic',
+    },
+    surpriseText: {
+        fontSize: 11,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    tapHint: {
+        fontSize: 11,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    dimText: {
+        color: Colors.textLight,
+    },
+    arrow: {
+        fontSize: 22,
+        color: Colors.textLight,
+        paddingHorizontal: 12,
     },
 });
 

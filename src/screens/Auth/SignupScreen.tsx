@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { API_BASE_URL } from '../../config';
-import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 
@@ -415,12 +415,12 @@ const styles = StyleSheet.create({
     label: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 6, marginLeft: 4 },
     hintText: { fontSize: 12, color: Colors.textLight, marginBottom: 6, marginLeft: 4 },
     input: { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border, color: Colors.text },
-    inputError: { borderColor: '#e53935', borderWidth: 1.5 },
-    errorText: { fontSize: 12, color: '#e53935', marginTop: 4, marginLeft: 4 },
+    inputError: { borderColor: Colors.error, borderWidth: 1.5 },
+    errorText: { fontSize: 12, color: Colors.error, marginTop: 4, marginLeft: 4 },
 
     // Document picker
     docPickerBtn: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },
-    docPlaceholder: { color: '#aaa', fontSize: 14, textAlign: 'center' },
+    docPlaceholder: { color: Colors.textLight, fontSize: 14, textAlign: 'center' },
     docRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     docThumb: { width: 48, height: 48, borderRadius: 6, resizeMode: 'cover' },
     docName: { fontSize: 13, color: Colors.text, fontWeight: '500' },
