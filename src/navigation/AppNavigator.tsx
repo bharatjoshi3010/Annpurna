@@ -44,7 +44,10 @@ const TabIcon = ({ label, focused }: { label: string; focused: boolean }) => {
             <Text style={[styles.tabIcon, { opacity: focused ? 1 : 0.45 }]}>
                 {getIcon()}
             </Text>
-            <Text style={[styles.tabLabel, { color: focused ? Colors.primary : Colors.textLight }]}>
+            <Text
+                style={[styles.tabLabel, { color: focused ? Colors.primary : Colors.textLight }]}
+                numberOfLines={1}
+            >
                 {label}
             </Text>
         </View>
@@ -163,10 +166,11 @@ const styles = StyleSheet.create({
     tabIconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 14,
         paddingVertical: 4,
+        paddingHorizontal: 6,
         borderRadius: 12,
-        minWidth: 56,
+        minWidth: 52,
+        maxWidth: 80,
     },
     tabIconContainerFocused: {
         backgroundColor: Colors.primaryLight,
@@ -178,7 +182,8 @@ const styles = StyleSheet.create({
     tabLabel: {
         fontSize: 10,
         fontWeight: '700',
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
+        textAlign: 'center',
     },
 });
 

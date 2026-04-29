@@ -41,6 +41,7 @@ const MAX_FILE_BYTES = 1 * 1024 * 1024; // 1 MB
 const SignupScreen = ({ navigation }: any) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [role, setRole] = useState('student');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<FieldError>({});
@@ -99,7 +100,7 @@ const SignupScreen = ({ navigation }: any) => {
         const form = new FormData();
         form.append(fieldName, { uri: doc.uri, name: doc.name, type: doc.type } as any);
 
-        const res = await fetch(`${BASE_URL}/api/upload/${endpoint}`, {
+        const res = await fetch(`${API_BASE_URL}/api/upload/${endpoint}`, {
             method: 'POST',
             body: form,
             // Do NOT set Content-Type manually — fetch auto-sets multipart/form-data
@@ -111,11 +112,23 @@ const SignupScreen = ({ navigation }: any) => {
     };
 
     // ── Inline field validation ───────────────────────────────────────────────
-    const validate = (field: string, value: string) => {
+    const validate = (field: string, value: string, otherPassword?: string) => {
         let msg = '';
         switch (field) {
             case 'email': msg = isValidEmail(value) ? '' : 'Enter a valid email address'; break;
-            case 'password': msg = isValidPassword(value) ? '' : 'Password must be at least 6 characters'; break;
+            case 'password':
+                msg = isValidPassword(value) ? '' : 'Password must be at least 6 characters';
+                // Also re-validate confirmPassword whenever password changes
+                setErrors((prev) => ({
+                    ...prev,
+                    password: msg,
+                    confirmPassword:
+                        prev.confirmPassword !== undefined && confirmPassword.length > 0
+                            ? value !== confirmPassword ? 'Passwords do not match' : ''
+                            : prev.confirmPassword,
+                }));
+                return;
+            case 'confirmPassword': msg = value === (otherPassword ?? password) ? '' : 'Passwords do not match'; break;
             case 'phoneNumber': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
             case 'localGuardianPhone': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
             case 'openingYear': msg = isValidYear(value) ? '' : 'Enter a valid year (e.g. 2010)'; break;
@@ -131,6 +144,7 @@ const SignupScreen = ({ navigation }: any) => {
 
         if (!isValidEmail(email)) errs.email = 'Enter a valid email address';
         if (!isValidPassword(password)) errs.password = 'Password must be at least 6 characters';
+        if (confirmPassword !== password) errs.confirmPassword = 'Passwords do not match';
         if (!isValidPhone(phoneNumber)) errs.phoneNumber = 'Enter a valid 10-digit mobile number';
         if (!isNonEmpty(address)) errs.address = 'This field is required';
 
@@ -194,7 +208,7 @@ const SignupScreen = ({ navigation }: any) => {
             }
 
             // 3. Register user
-            const response = await fetch(`${BASE_URL}/api/auth/register`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -319,6 +333,33 @@ const SignupScreen = ({ navigation }: any) => {
                         secureTextEntry: true,
                         autoCapitalize: 'none',
                     })}
+                    {/* Confirm Password */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Confirm Password</Text>
+                        <TextInput
+                            style={[
+                                styles.input,
+                                errors.confirmPassword ? styles.inputError : null,
+                                confirmPassword.length > 0 && !errors.confirmPassword ? styles.inputSuccess : null,
+                            ]}
+                            placeholder="Re-enter your password"
+                            placeholderTextColor="#aaa"
+                            value={confirmPassword}
+                            onChangeText={(v) => {
+                                setConfirmPassword(v);
+                                validate('confirmPassword', v);
+                            }}
+                            onBlur={() => validate('confirmPassword', confirmPassword)}
+                            secureTextEntry
+                            autoCapitalize="none"
+                        />
+                        {!!errors.confirmPassword && (
+                            <Text style={styles.errorText}>⚠ {errors.confirmPassword}</Text>
+                        )}
+                        {confirmPassword.length > 0 && !errors.confirmPassword && (
+                            <Text style={styles.successText}>✓ Passwords match</Text>
+                        )}
+                    </View>
                     {renderField('Phone Number', phoneNumber, setPhoneNumber, 'phoneNumber', {
                         placeholder: '10-digit mobile number',
                         keyboardType: 'phone-pad',
@@ -416,7 +457,9 @@ const styles = StyleSheet.create({
     hintText: { fontSize: 12, color: Colors.textLight, marginBottom: 6, marginLeft: 4 },
     input: { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border, color: Colors.text },
     inputError: { borderColor: Colors.error, borderWidth: 1.5 },
+    inputSuccess: { borderColor: '#22c55e', borderWidth: 1.5 },
     errorText: { fontSize: 12, color: Colors.error, marginTop: 4, marginLeft: 4 },
+    successText: { fontSize: 12, color: '#22c55e', marginTop: 4, marginLeft: 4, fontWeight: '600' },
 
     // Document picker
     docPickerBtn: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },

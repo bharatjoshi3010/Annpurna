@@ -40,7 +40,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
                     : Colors.textLight;
 
     const getBadgeLabel = () => {
-        if (isConsumed) return '✓  CONSUMED';
+        if (isConsumed) return '✓ DONE';
         if (showLocked)  return '🔒 LOCKED';
         if (statusText)  return statusText.toUpperCase();
         return status.toUpperCase();
@@ -73,15 +73,8 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
                 <Text style={styles.emoji}>{config.emoji}</Text>
             </View>
 
-            {/* Main content */}
-            <View style={styles.content}>
-                <View style={styles.topRow}>
-                    <Text style={[styles.mealType, showLocked && styles.dimText]}>{type}</Text>
-                    <View style={[styles.badge, { backgroundColor: getBadgeBg() }]}>
-                        <Text style={[styles.badgeText, { color: accentColor }]}>{getBadgeLabel()}</Text>
-                    </View>
-                </View>
-
+            {/* Middle info — time, restaurant, menu */}
+            <View style={styles.middleContent}>
                 <Text style={[styles.time, showLocked && styles.dimText]}>{time}</Text>
 
                 {restaurant && restaurant !== 'Not selected' ? (
@@ -89,7 +82,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
                         🏪 {restaurant}
                     </Text>
                 ) : isAvailable ? (
-                    <Text style={styles.tapHint}>Tap to select restaurant →</Text>
+                    <Text style={styles.tapHint}>Tap to select →</Text>
                 ) : null}
 
                 {menuItems && menuItems.length > 0 ? (
@@ -101,10 +94,16 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
                 )}
             </View>
 
-            {/* Arrow for interactive cards */}
-            {!showLocked && !isConsumed && !isMissed && (
-                <Text style={styles.arrow}>›</Text>
-            )}
+            {/* Right column — meal name + badge */}
+            <View style={styles.rightCol}>
+                <Text style={[styles.mealType, showLocked && styles.dimText]}>{type}</Text>
+                <View style={[styles.badge, { backgroundColor: getBadgeBg() }]}>
+                    <Text style={[styles.badgeText, { color: accentColor }]}>{getBadgeLabel()}</Text>
+                </View>
+                {!showLocked && !isConsumed && !isMissed && (
+                    <Text style={styles.arrow}>›</Text>
+                )}
+            </View>
         </TouchableOpacity>
     );
 };
@@ -119,7 +118,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: Colors.border,
-        minHeight: 88,
+        minHeight: 84,
         ...Shadows.sm,
     },
     consumedCard: {
@@ -142,41 +141,21 @@ const styles = StyleSheet.create({
     },
 
     emojiBox: {
-        width: 48,
-        height: 48,
+        width: 44,
+        height: 44,
         borderRadius: BorderRadius.md,
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 12,
+        marginLeft: 10,
+        marginRight: 10,
     },
-    emoji: { fontSize: 22 },
+    emoji: { fontSize: 20 },
 
-    content: {
+    // Middle section — time, restaurant, menu
+    middleContent: {
         flex: 1,
         paddingVertical: 12,
-        paddingRight: 6,
         gap: 3,
-    },
-    topRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 2,
-    },
-    mealType: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: Colors.text,
-    },
-    badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: BorderRadius.round,
-    },
-    badgeText: {
-        fontSize: 9,
-        fontWeight: '800',
-        letterSpacing: 0.5,
     },
     time: {
         fontSize: 11,
@@ -203,13 +182,39 @@ const styles = StyleSheet.create({
         color: Colors.primary,
         fontWeight: '600',
     },
-    dimText: {
-        color: Colors.textLight,
+
+    // Right column — meal name + badge + arrow
+    rightCol: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        gap: 5,
+    },
+    mealType: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: Colors.text,
+        textAlign: 'right',
+    },
+    badge: {
+        paddingHorizontal: 7,
+        paddingVertical: 3,
+        borderRadius: BorderRadius.round,
+    },
+    badgeText: {
+        fontSize: 8,
+        fontWeight: '800',
+        letterSpacing: 0.4,
     },
     arrow: {
-        fontSize: 22,
+        fontSize: 18,
         color: Colors.textLight,
-        paddingHorizontal: 12,
+        marginTop: 2,
+    },
+
+    dimText: {
+        color: Colors.textLight,
     },
 });
 
