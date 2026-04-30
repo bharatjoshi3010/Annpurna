@@ -61,6 +61,10 @@ const MainTabNavigator = () => {
                 headerShown: false,
                 tabBarStyle: styles.tabBar,
                 tabBarShowLabel: false,
+                tabBarIconStyle: {
+                    width: 80,
+                    height: 56,
+                },
             }}
         >
             <Tab.Screen
@@ -95,6 +99,10 @@ const RestaurantTabNavigator = () => {
                 headerShown: false,
                 tabBarStyle: styles.tabBar,
                 tabBarShowLabel: false,
+                tabBarIconStyle: {
+                    width: 80,
+                    height: 56,
+                },
             }}
         >
             <Tab.Screen
@@ -151,39 +159,42 @@ const AppNavigator = () => {
 
 const styles = StyleSheet.create({
     tabBar: {
-        height: 72,
+        height: Platform.OS === 'ios' ? 88 : 72,
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
-        borderTopColor: Colors.border,
-        paddingBottom: 8,
-        paddingTop: 8,
+        borderTopColor: Colors.borderLight,
+        paddingBottom: Platform.OS === 'ios' ? 28 : 0,
+        paddingTop: 0,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 10,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 20,
     },
     tabIconContainer: {
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 4,
-        paddingHorizontal: 6,
-        borderRadius: 12,
-        minWidth: 52,
-        maxWidth: 80,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        minWidth: 80,
+        height: 56, 
     },
     tabIconContainerFocused: {
         backgroundColor: Colors.primaryLight,
     },
     tabIcon: {
         fontSize: 22,
-        marginBottom: 3,
+        lineHeight: 26,
+        marginBottom: 2,
     },
     tabLabel: {
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 0.2,
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
         textAlign: 'center',
+        marginTop: 2,
     },
 });
 

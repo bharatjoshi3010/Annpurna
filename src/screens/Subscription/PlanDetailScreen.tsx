@@ -28,10 +28,10 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
     // Gold screen specific states
     const [takeaway, setTakeaway] = useState(false);
     
-    // Silver countdown mock
+    // Standard countdown mock
     const [timeLeft, setTimeLeft] = useState(1800); // 30 mins
     useEffect(() => {
-        if (plan.id === 'silver' && isSubscribed) {
+        if (plan.id === 'standard' && isSubscribed) {
             const timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
             return () => clearInterval(timer);
         }
@@ -128,123 +128,40 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
 
     const renderBasicContent = () => (
         <View style={styles.detailContainer}>
-            <Text style={styles.detailLabel}>REQUEST LEAVE</Text>
-            <Text style={styles.detailDesc}>Pause your plan for 5+ days to save credits.</Text>
-            <View style={styles.calendarMock}>
-                <View style={styles.calendarHeader}>
-                    <Text style={styles.monthText}>OCTOBER 2026</Text>
-                </View>
-                <View style={styles.calendarGrid}>
-                    {[...Array(31)].map((_, i) => (
-                        <View 
-                            key={i} 
-                            style={[
-                                styles.dayBox, 
-                                i >= 15 && i <= 20 && styles.selectedDay
-                            ]}
-                        >
-                            <Text style={[styles.dayText, i >= 15 && i <= 20 && styles.selectedDayText]}>{i + 1}</Text>
-                        </View>
-                    ))}
-                </View>
-            </View>
-            <TouchableOpacity style={styles.actionBtn}>
-                <Text style={styles.actionBtnText}>CONFIRM PAUSE</Text>
-            </TouchableOpacity>
-        </View>
-    );
-
-    const renderSilverContent = () => (
-        <View style={styles.detailContainer}>
-            <View style={styles.switcherHeader}>
-                <View>
-                    <Text style={styles.detailLabel}>RESTAURANT SWITCHER</Text>
-                    <Text style={styles.detailDesc}>Choose your lunch location</Text>
-                </View>
-                <View style={styles.timerBox}>
-                    <Text style={styles.timeLeft}>{formatTime(timeLeft)}</Text>
-                    <Text style={styles.timerLabel}>REMAINING</Text>
-                </View>
-            </View>
-            
-            <View style={styles.mapMock}>
-                <View style={styles.mapMarker}>
-                    <Text style={styles.markerEmoji}>📍</Text>
-                    <View style={styles.markerLabel}><Text style={styles.markerText}>DEFAULT</Text></View>
-                </View>
-                <View style={[styles.mapMarker, { top: 100, left: 200 }]}>
-                    <Text style={styles.markerEmoji}>🏠</Text>
-                    <View style={[styles.markerLabel, { backgroundColor: '#000' }]}><Text style={[styles.markerText, { color: '#FFF' }]}>SWITCH TO</Text></View>
-                </View>
-            </View>
-            
+            <Text style={styles.detailLabel}>PLAN DASHBOARD</Text>
+            <Text style={styles.detailDesc}>Enjoy your essential meal services.</Text>
             <View style={styles.tasteInsight}>
                 <Text style={styles.insightIcon}>✨</Text>
-                <Text style={styles.insightText}>Your default has <Text style={styles.bold}>Dal</Text>, but Partner B has <Text style={styles.bold}>Butter Chicken</Text> — Switch now?</Text>
+                <Text style={styles.insightText}>Everything is running smoothly. Check your notifications for timing updates!</Text>
             </View>
         </View>
     );
 
-    const renderGoldContent = () => (
+    const renderStandardContent = () => (
         <View style={styles.detailContainer}>
-            <View style={styles.goldHeader}>
-                <Text style={styles.detailLabel}>PREMIUM DASHBOARD</Text>
-                <TouchableOpacity style={styles.cancelBtn}>
-                    <Text style={styles.cancelBtnText}>CANCEL MEAL</Text>
-                </TouchableOpacity>
+            <Text style={styles.detailLabel}>PLAN DASHBOARD</Text>
+            <Text style={styles.detailDesc}>Switch your mess location with ease.</Text>
+            <View style={styles.tasteInsight}>
+                <Text style={styles.insightIcon}>✨</Text>
+                <Text style={styles.insightText}>You can change your restaurant for any meal before the cutoff time. Enjoy your flexibility!</Text>
             </View>
+        </View>
+    );
 
-            <View style={styles.toggleRow}>
-                <View>
-                    <Text style={styles.toggleTitle}>TAKEAWAY PACKING</Text>
-                    <Text style={styles.toggleSub}>Ready for pickup on arrival</Text>
-                </View>
-                <Switch 
-                    value={takeaway} 
-                    onValueChange={setTakeaway}
-                    trackColor={{ false: '#EEE', true: '#000' }}
-                    thumbColor={takeaway ? '#FFF' : '#FFF'}
-                />
-            </View>
-
-            <View style={styles.qrContainer}>
-                <Text style={styles.qrLabel}>PRIORITY ACCESS QR</Text>
-                <View style={styles.qrMock}>
-                    <View style={styles.qrInner}>
-                        <View style={styles.qrBlock} />
-                        <Text style={styles.qrPriorityText}>GOLD PRIORITY</Text>
-                    </View>
-                </View>
-                <Text style={styles.qrDesc}>Scan this at the 'Priority Lane' to skip the queue.</Text>
+    const renderPremiumContent = () => (
+        <View style={styles.detailContainer}>
+            <Text style={styles.detailLabel}>PLAN DASHBOARD</Text>
+            <Text style={styles.detailDesc}>Premium access and full meal control.</Text>
+            
+            <View style={styles.tasteInsight}>
+                <Text style={styles.insightIcon}>👑</Text>
+                <Text style={styles.insightText}>Premium status active. You have full control over your meals and switching preferences.</Text>
             </View>
         </View>
     );
 
     const renderSelectionContent = () => (
         <View style={styles.selectionContainer}>
-            <View style={styles.featuresList}>
-                {plan.id === 'basic' && (
-                    <>
-                        <FeatureItem icon="📅" title="5-Day Absence Rule" desc="Advance notify for 5+ days and save your credits." />
-                        <FeatureItem icon="⏸️" title="The Weekend Pause" desc="Save Sat/Sun credits for next month's renewal." />
-                    </>
-                )}
-                {plan.id === 'silver' && (
-                    <>
-                        <FeatureItem icon="📍" title="30-Min Cutoff" desc="Switch your mess before the buzzer sounds." />
-                        <FeatureItem icon="✨" title="Taste Matching" desc="Intelligent suggestions based on today's specials." />
-                    </>
-                )}
-                {plan.id === 'gold' && (
-                    <>
-                        <FeatureItem icon="🔄" title="Unlimited Switching" desc="No limits. Change your mess anytime before cutoff." />
-                        <FeatureItem icon="🚫" title="Full Cancellation" desc="Can't make it? Get refund/credit for skipped meals." />
-                        <FeatureItem icon="📦" title="Takeaway Packing" desc="Not eating in? Have it packed and ready." />
-                        <FeatureItem icon="⚡" title="Priority Lane" desc="Minimize waiting time with Priority QR scan." />
-                    </>
-                )}
-            </View>
-
             <TouchableOpacity 
                 style={styles.subscribeBtn} 
                 onPress={handleSubscribe}
@@ -274,11 +191,20 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
 
+                <View style={styles.featuresListSection}>
+                    <Text style={styles.sectionTitle}>PLAN FEATURES</Text>
+                    <View style={styles.featuresList}>
+                        {plan.features && plan.features.map((feature: string, index: number) => (
+                            <FeatureItem key={index} icon="✅" title={feature} desc="Included in your plan." />
+                        ))}
+                    </View>
+                </View>
+
                 {isSubscribed ? (
                     <>
                         {plan.id === 'basic' && renderBasicContent()}
-                        {plan.id === 'silver' && renderSilverContent()}
-                        {plan.id === 'gold' && renderGoldContent()}
+                        {plan.id === 'standard' && renderStandardContent()}
+                        {plan.id === 'premium' && renderPremiumContent()}
                     </>
                 ) : (
                     renderSelectionContent()
@@ -295,7 +221,7 @@ const PlanDetailScreen = ({ route, navigation }: any) => {
                 )}
 
                 <View style={[styles.brandingFooter, isSubscribed && {marginTop: 20}]}>
-                    <Text style={styles.brandingText}>BORING EDUCATION</Text>
+                    <Text style={styles.brandingText}>ANNPURNA</Text>
                     <Text style={styles.brandingSub}>PREPAID MEAL NETWORK</Text>
                 </View>
             </ScrollView>
@@ -373,7 +299,7 @@ const styles = StyleSheet.create({
     },
     featuresList: {
         gap: 30,
-        marginBottom: 60,
+        marginBottom: 20,
     },
     featureItem: {
         flexDirection: 'row',
@@ -397,6 +323,18 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#666',
         lineHeight: 18,
+    },
+    featuresListSection: {
+        padding: 24,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEE',
+    },
+    sectionTitle: {
+        fontSize: 10,
+        fontWeight: '900',
+        letterSpacing: 2,
+        color: '#999',
+        marginBottom: 30,
     },
     subscribeBtn: {
         backgroundColor: '#000',
@@ -425,117 +363,6 @@ const styles = StyleSheet.create({
         color: '#666',
         marginBottom: 20,
     },
-    calendarMock: {
-        backgroundColor: '#F9F9F9',
-        padding: 15,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: '#EEE',
-    },
-    calendarHeader: {
-        alignItems: 'center',
-        paddingBottom: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
-        marginBottom: 15,
-    },
-    monthText: {
-        fontSize: 10,
-        fontWeight: '900',
-        letterSpacing: 1,
-    },
-    calendarGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start',
-    },
-    dayBox: {
-        width: (width - 110) / 7,
-        height: 35,
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: 2,
-    },
-    dayText: {
-        fontSize: 11,
-        color: '#AAA',
-    },
-    selectedDay: {
-        backgroundColor: '#000',
-    },
-    selectedDayText: {
-        color: '#FFF',
-        fontWeight: '900',
-    },
-    actionBtn: {
-        marginTop: 20,
-        backgroundColor: '#000',
-        paddingVertical: 15,
-        borderRadius: 2,
-        alignItems: 'center',
-    },
-    actionBtnText: {
-        color: '#FFF',
-        fontSize: 12,
-        fontWeight: '900',
-        letterSpacing: 1,
-    },
-    switcherHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-    },
-    timerBox: {
-        backgroundColor: '#000',
-        padding: 10,
-        borderRadius: 2,
-        alignItems: 'center',
-        minWidth: 80,
-    },
-    timeLeft: {
-        color: '#FFF',
-        fontSize: 18,
-        fontWeight: '900',
-        fontVariant: ['tabular-nums'],
-    },
-    timerLabel: {
-        color: '#666',
-        fontSize: 8,
-        fontWeight: '900',
-        marginTop: 2,
-    },
-    mapMock: {
-        height: 250,
-        backgroundColor: Colors.surfaceAlt,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: '#EEE',
-        overflow: 'hidden',
-        position: 'relative',
-        marginTop: 10,
-    },
-    mapMarker: {
-        position: 'absolute',
-        top: 60,
-        left: 50,
-        alignItems: 'center',
-    },
-    markerEmoji: {
-        fontSize: 32,
-    },
-    markerLabel: {
-        backgroundColor: '#FFF',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: '#DDD',
-        marginTop: 4,
-    },
-    markerText: {
-        fontSize: 8,
-        fontWeight: '900',
-    },
     tasteInsight: {
         marginTop: 24,
         flexDirection: 'row',
@@ -556,84 +383,6 @@ const styles = StyleSheet.create({
     },
     bold: {
         fontWeight: '900',
-    },
-    goldHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-    cancelBtn: {
-        borderWidth: 1,
-        borderColor: '#000',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-    },
-    cancelBtnText: {
-        fontSize: 10,
-        fontWeight: '900',
-    },
-    toggleRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEE',
-        paddingBottom: 20,
-        marginBottom: 30,
-    },
-    toggleTitle: {
-        fontSize: 14,
-        fontWeight: '900',
-    },
-    toggleSub: {
-        fontSize: 12,
-        color: '#666',
-    },
-    qrContainer: {
-        alignItems: 'center',
-        paddingTop: 10,
-    },
-    qrLabel: {
-        fontSize: 10,
-        fontWeight: '900',
-        letterSpacing: 2,
-        marginBottom: 20,
-    },
-    qrMock: {
-        width: 200,
-        height: 200,
-        borderWidth: 10,
-        borderColor: '#000',
-        padding: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    qrInner: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#000',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    qrBlock: {
-        width: 80,
-        height: 80,
-        borderWidth: 2,
-        borderColor: '#FFF',
-        marginBottom: 10,
-    },
-    qrPriorityText: {
-        color: '#FFF',
-        fontSize: 10,
-        fontWeight: '900',
-        letterSpacing: 3,
-    },
-    qrDesc: {
-        marginTop: 20,
-        fontSize: 11,
-        color: '#666',
-        textAlign: 'center',
     },
     brandingFooter: {
         padding: 40,

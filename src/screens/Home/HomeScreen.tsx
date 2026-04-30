@@ -19,10 +19,14 @@ const PLANS = [
         fullName: 'The Essential Plan',
         price: '2,999',
         priceNum: 2999,
-        tagline: 'Fixed restaurant, simple daily meals.',
+        tagline: 'Better management of offline mess system in online manner.',
         icon: '📅',
         color: '#000000',
-        features: ['View meals anytime', 'Fixed partner restaurant', 'Reliable daily service']
+        features: [
+            'Offline mess management',
+            'Timings notifications',
+            'Daily menu viewing'
+        ]
     },
     {
         id: 'standard',
@@ -30,10 +34,13 @@ const PLANS = [
         fullName: 'The Explorer Plan',
         price: '3,749',
         priceNum: 3749,
-        tagline: 'Flexibility to switch restaurants before cutoff.',
+        tagline: 'Basic features plus one-time meal switching.',
         icon: '📍',
         color: '#000000',
-        features: ['View meals anytime', 'Change restaurant before cutoff', 'One-time switch per meal']
+        features: [
+            'All Basic features',
+            'Meal switch (one-time switch per meal)'
+        ]
     },
     {
         id: 'premium',
@@ -41,11 +48,14 @@ const PLANS = [
         fullName: 'The Freedom Plan',
         price: '3,949',
         priceNum: 3949,
-        tagline: 'Full control — switch or cancel before cutoff.',
+        tagline: 'Basic features + switch + cancellation.',
         icon: '📦',
         color: '#000000',
         isPopular: true,
-        features: ['View meals anytime', 'Change restaurant before cutoff', 'Cancel meal + instant refund', 'Priority QR Access']
+        features: [
+            'All Standard features',
+            'Cancellation of any meal before cutoff time'
+        ]
     }
 ];
 
