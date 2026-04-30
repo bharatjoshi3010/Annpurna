@@ -562,3 +562,18 @@ export const getRestaurantsForMeal = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// ─── Get Restaurant Full Meal History ────────────────────────────────────────
+export const getRestaurantMealHistory = async (req, res) => {
+    try {
+        const { restaurantId } = req.params;
+
+        // Fetch all bookings for this restaurant (all time), newest first
+        const bookings = await Booking.find({ restaurant: restaurantId })
+            .populate('student', 'name email phoneNumber')
+            .sort({ date: -1 });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

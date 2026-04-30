@@ -260,4 +260,17 @@ const getAllRestaurants = async (req, res) => {
 // restaurants = array of all restaurant data without passwords
 
 
-export { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants };
+// @desc    Get students whose defaultRestaurantId matches the logged-in restaurant
+// @route   GET /api/auth/my-students
+// @access  Private (restaurant only)
+const getMyStudents = async (req, res) => {
+    try {
+        const students = await Student.find({ defaultRestaurantId: req.user._id })
+            .select('name email phoneNumber selectedPlan subscriptionStatus kycStatus profilePhoto createdAt');
+        res.json(students);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export { registerUser, loginUser, updateProfile, getProfile, getAllRestaurants, getMyStudents };

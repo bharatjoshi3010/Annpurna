@@ -84,19 +84,18 @@ const ProfileScreen = ({ navigation }: any) => {
                 ? (user?.selectedPlan
                     ? `${user.selectedPlan} · ${user.subscriptionStatus?.toUpperCase()}`
                     : 'No active plan')
-                : 'Manage Plans',
+                : 'View enrolled students',
         },
         { title: 'Meal History', icon: '🍽️' },
         {
-            title: user?.role === 'restaurant' ? 'Restaurant Settings' : 'Default Restaurant',
+            title: 'Default Restaurant',
             icon: '🏪',
-            subtitle: user?.role === 'restaurant'
-                ? (user?.restaurantName || 'Set Info')
-                : (user?.location || 'Not set'),
+            subtitle: user?.location || 'Not set',
+            hidden: user?.role !== 'student'
         },
         { title: 'Settings', icon: '⚙️' },
         { title: 'Help & Support', icon: '❓' },
-    ];
+    ].filter(option => !option.hidden);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -147,14 +146,21 @@ const ProfileScreen = ({ navigation }: any) => {
                             onPress={() => {
                                 if (
                                     item.title === 'Personal Information' ||
-                                    item.title === 'Restaurant Settings' ||
                                     item.title === 'Default Restaurant'
                                 ) {
                                     navigation.navigate('PersonalDetails');
                                 } else if (item.title === 'Meal History') {
-                                    navigation.navigate('MealHistory');
+                                    if (user?.role === 'restaurant') {
+                                        navigation.navigate('RestaurantMealHistory');
+                                    } else {
+                                        navigation.navigate('MealHistory');
+                                    }
                                 } else if (item.title === 'My Subscriptions') {
-                                    navigation.navigate('SubscriptionHistory');
+                                    if (user?.role === 'restaurant') {
+                                        navigation.navigate('MyStudents');
+                                    } else {
+                                        navigation.navigate('SubscriptionHistory');
+                                    }
                                 } else if (item.title === 'Help & Support') {
                                     navigation.navigate('Support');
                                 }

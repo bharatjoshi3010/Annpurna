@@ -23,6 +23,8 @@ import AddMoneyScreen from '../screens/Wallet/AddMoneyScreen';
 import PlanDetailScreen from '../screens/Subscription/PlanDetailScreen';
 import RestaurantSelectionScreen from '../screens/Subscription/RestaurantSelectionScreen';
 import SupportScreen from '../screens/Profile/SupportScreen';
+import MyStudentsScreen from '../screens/RestaurantOwner/MyStudentsScreen';
+import RestaurantMealHistoryScreen from '../screens/RestaurantOwner/RestaurantMealHistoryScreen';
 import SubscriptionHistoryScreen from '../screens/Profile/SubscriptionHistoryScreen';
 
 const Stack = createNativeStackNavigator();
@@ -153,6 +155,8 @@ const AppNavigator = () => {
                 <Stack.Screen name="PlanDetail"              component={PlanDetailScreen} />
                 <Stack.Screen name="RestaurantSelection"     component={RestaurantSelectionScreen} />
                 <Stack.Screen name="SubscriptionHistory"     component={SubscriptionHistoryScreen} />
+                <Stack.Screen name="MyStudents"             component={MyStudentsScreen} />
+                <Stack.Screen name="RestaurantMealHistory"  component={RestaurantMealHistoryScreen} />
                 <Stack.Screen name="Support"                 component={SupportScreen} />
             </Stack.Navigator>
         </NavigationContainer>
