@@ -94,7 +94,6 @@ const ProfileScreen = ({ navigation }: any) => {
                 ? (user?.restaurantName || 'Set Info')
                 : (user?.location || 'Not set'),
         },
-        { title: 'Notifications', icon: '🔔' },
         { title: 'Settings', icon: '⚙️' },
         { title: 'Help & Support', icon: '❓' },
     ];
@@ -156,6 +155,8 @@ const ProfileScreen = ({ navigation }: any) => {
                                     navigation.navigate('MealHistory');
                                 } else if (item.title === 'My Subscriptions') {
                                     navigation.navigate('SubscriptionHistory');
+                                } else if (item.title === 'Help & Support') {
+                                    navigation.navigate('Support');
                                 }
                             }}
                         >

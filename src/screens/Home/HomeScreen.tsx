@@ -336,7 +336,7 @@ const HomeScreen = ({ navigation }: any) => {
                     </View>
                     <TouchableOpacity
                         style={styles.profileBadge}
-                        onPress={() => navigation.navigate('Profile')}
+                        onPress={() => navigation.navigate('ProfileTab')}
                     >
                         <UserAvatar
                             photoUrl={user?.profilePhoto}

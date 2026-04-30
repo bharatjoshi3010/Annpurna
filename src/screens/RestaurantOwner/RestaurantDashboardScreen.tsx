@@ -248,17 +248,14 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
                             <Text style={styles.subtitle}>Welcome back, {user?.ownerName || 'Owner'}</Text>
                         </View>
                         <TouchableOpacity
-                            style={styles.profileIndicator}
-                            onPress={() => navigation.navigate('PersonalDetails')}
+                            style={styles.profileBadge}
+                            onPress={() => navigation.navigate('ProfileTab')}
                         >
                             <UserAvatar
                                 photoUrl={user?.profilePhoto}
                                 name={user?.ownerName || user?.restaurantName || 'R'}
-                                size={40}
-                                borderWidth={1}
-                                borderColor={Colors.border}
+                                size={48}
                             />
-                            <Text style={styles.viewProfileText}>Profile</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -317,15 +314,12 @@ const styles = StyleSheet.create({
     header:   { marginBottom: Spacing.lg },
     titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     subtitle: { fontSize: 13, color: Colors.textLight, marginTop: 3 },
-    profileIndicator: {
-        alignItems: 'center',
-        padding: 6,
-        backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.border,
+    profileBadge: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: Colors.primaryLight,
     },
-    viewProfileText: { fontSize: 10, fontWeight: '700', color: Colors.primary, marginTop: 2 },
 
     statsRow: { flexDirection: 'row', gap: 8, marginBottom: Spacing.md },
     statCard: {
