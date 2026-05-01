@@ -32,7 +32,14 @@ const bookingSchema = new mongoose.Schema({
     restaurantSwitched: {
         type: Boolean,
         default: false
-    }
+    },
+
+    // ─── QR Validation ───────────────────────────────────────────────────────
+    // One-time token generated when restaurant owner clicks "Consumed".
+    // Student must enter this token within qrTokenExpiry to confirm receipt.
+    qrToken:       { type: String,  default: null },
+    qrTokenExpiry: { type: Date,    default: null },
+    qrTokenUsed:   { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Ensure a student can only book one restaurant per meal per day

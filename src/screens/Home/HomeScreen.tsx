@@ -371,9 +371,29 @@ const HomeScreen = ({ navigation }: any) => {
                                 <Text style={Typography.h2}>Today's Meals</Text>
                             </View>
 
-                            {renderMealSlot('Breakfast', '08:00 AM - 10:30 AM')}
-                            {renderMealSlot('Lunch', '12:30 PM - 03:30 PM')}
-                            {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
+                        {/* QR Verify banner — shown when a meal is currently being served */}
+                        {mealStatuses.some(m => m.isServing) && (
+                            <TouchableOpacity
+                                style={styles.qrVerifyBanner}
+                                onPress={() => navigation.navigate('QRScan')}
+                                activeOpacity={0.85}
+                            >
+                                <View style={styles.qrVerifyLeft}>
+                                    <Text style={styles.qrVerifyIcon}>📲</Text>
+                                </View>
+                                <View style={styles.qrVerifyBody}>
+                                    <Text style={styles.qrVerifyTitle}>Verify Your Meal</Text>
+                                    <Text style={styles.qrVerifyDesc}>
+                                        At the restaurant? Get the code from the owner and confirm here.
+                                    </Text>
+                                </View>
+                                <Text style={styles.qrVerifyArrow}>›</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {renderMealSlot('Breakfast', '08:00 AM - 10:30 AM')}
+                        {renderMealSlot('Lunch', '12:30 PM - 03:30 PM')}
+                        {renderMealSlot('Dinner', '07:30 PM - 10:30 PM')}
                         </View>
 
                     </>
@@ -515,6 +535,33 @@ const styles = StyleSheet.create({
     // ── Section headers ───────────────────────────────────────────────────────
     section: { marginTop: Spacing.lg },
     sectionHeader: { marginBottom: Spacing.sm },
+
+    // QR Verify Banner
+    qrVerifyBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary,
+        borderRadius: BorderRadius.lg,
+        padding: 14,
+        marginBottom: 12,
+        gap: 12,
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    qrVerifyLeft: {
+        width: 44, height: 44, borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center', alignItems: 'center',
+    },
+    qrVerifyIcon:  { fontSize: 22 },
+    qrVerifyBody:  { flex: 1 },
+    qrVerifyTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
+    qrVerifyDesc:  { fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 17 },
+    qrVerifyArrow: { fontSize: 24, color: 'rgba(255,255,255,0.7)' },
+
     sectionTitle: {
         fontSize: 11,
         fontWeight: '800',

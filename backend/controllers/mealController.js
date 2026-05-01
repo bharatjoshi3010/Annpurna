@@ -577,3 +577,129 @@ export const getRestaurantMealHistory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── Generate QR Token (Restaurant Side) ─────────────────────────────────────
+// Called when restaurant owner taps "Consumed" on a booking.
+// Returns a short-lived one-time token that the student must submit to confirm.
+export const generateQR = async (req, res) => {
+    try {
+        const { bookingId } = req.body;
+        if (!bookingId) return res.status(400).json({ message: 'bookingId is required.' });
+
+        const booking = await Booking.findById(bookingId);
+        if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+
+        if (booking.status !== 'booked') {
+            return res.status(400).json({
+                message: booking.status === 'consumed'
+                    ? 'This meal has already been consumed.'
+                    : booking.status === 'cancelled'
+                        ? 'This meal has been cancelled.'
+                        : 'This meal is no longer active.'
+            });
+        }
+
+        // Generate a random 8-char uppercase alphanumeric token
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous I/1/O/0
+        let token = '';
+        for (let i = 0; i < 8; i++) {
+            token += chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        // Token is valid for 10 minutes
+        const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+        booking.qrToken       = token;
+        booking.qrTokenExpiry = expiry;
+        booking.qrTokenUsed   = false;
+        await booking.save();
+
+        // The QR data is a URI that encodes the token — student app parses this
+        const qrData = `annpurna://meal/validate/${token}`;
+
+        res.json({
+            token,
+            qrData,
+            expiresAt:    expiry.toISOString(),
+            expiresInSec: 600,
+            bookingId:    booking._id,
+            mealType:     booking.mealType,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// ─── Validate QR Token (Student Side) ────────────────────────────────────────
+// Called when the student submits the token they see on the restaurant's screen.
+// Marks the booking as consumed and notifies both parties via sockets.
+export const validateQR = async (req, res) => {
+    try {
+        const { token, studentId } = req.body;
+        if (!token || !studentId) {
+            return res.status(400).json({ message: 'token and studentId are required.' });
+        }
+
+        // Find the booking that has this token
+        const booking = await Booking.findOne({ qrToken: token.toUpperCase().trim() });
+        if (!booking) {
+            return res.status(400).json({ message: 'Invalid code. Please check and try again.' });
+        }
+
+        // Security: ensure this booking belongs to the student scanning it
+        if (booking.student.toString() !== studentId) {
+            return res.status(403).json({ message: 'This code is not for your meal.' });
+        }
+
+        // Check token has not been used already
+        if (booking.qrTokenUsed) {
+            return res.status(400).json({ message: 'This code has already been used.' });
+        }
+
+        // Check token has not expired
+        if (!booking.qrTokenExpiry || new Date() > new Date(booking.qrTokenExpiry)) {
+            return res.status(400).json({
+                message: 'This code has expired. Ask the restaurant owner to generate a new one.'
+            });
+        }
+
+        // Check booking is still active
+        if (booking.status !== 'booked') {
+            return res.status(400).json({
+                message: booking.status === 'consumed'
+                    ? 'Meal is already marked as consumed.'
+                    : 'This booking is no longer active.'
+            });
+        }
+
+        // All checks passed — mark consumed and invalidate the token
+        booking.status      = 'consumed';
+        booking.qrTokenUsed = true;
+        await booking.save();
+
+        // Notify the student's socket (dashboard update)
+        req.io.to(booking.student.toString()).emit('mealConsumed', {
+            bookingId: booking._id,
+            mealType:  booking.mealType,
+            status:    'consumed',
+        });
+
+        // Notify the restaurant owner's socket (dashboard update)
+        req.io.to(booking.restaurant.toString()).emit('mealConsumed', {
+            bookingId: booking._id,
+            mealType:  booking.mealType,
+            status:    'consumed',
+        });
+
+        const populated = await Booking.findById(booking._id)
+            .populate('student', 'name email phoneNumber')
+            .populate('restaurant', 'restaurantName');
+
+        res.json({
+            message: `${booking.mealType} confirmed! Enjoy your meal. 🎉`,
+            booking: populated,
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

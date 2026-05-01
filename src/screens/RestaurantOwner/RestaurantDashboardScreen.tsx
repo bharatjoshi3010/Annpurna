@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    Platform, ActivityIndicator, Alert, RefreshControl
+    Platform, ActivityIndicator, Alert, RefreshControl, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import QRCode from 'react-native-qrcode-svg';
 import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
@@ -17,6 +18,101 @@ const MEAL_SECTIONS = [
     { type: 'Dinner',   emoji: '🌙', time: '07:30 – 10:30 PM', color: '#5C6BC0', bg: '#EDE7F6' },
 ];
 
+// ─── QR Modal ─────────────────────────────────────────────────────────────────
+interface QRInfo {
+    token: string;
+    qrData: string;
+    mealType: string;
+    studentName: string;
+    expiresInSec: number;
+}
+
+const QRModal = ({ info, onClose }: { info: QRInfo | null; onClose: () => void }) => {
+    const [secondsLeft, setSecondsLeft] = useState(info?.expiresInSec ?? 600);
+
+    useEffect(() => {
+        if (!info) return;
+        setSecondsLeft(info.expiresInSec);
+        const interval = setInterval(() => {
+            setSecondsLeft(prev => {
+                if (prev <= 1) { clearInterval(interval); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [info]);
+
+    if (!info) return null;
+
+    const mins = Math.floor(secondsLeft / 60);
+    const secs = String(secondsLeft % 60).padStart(2, '0');
+    const expired = secondsLeft === 0;
+
+    return (
+        <Modal transparent animationType="fade" visible={!!info} onRequestClose={onClose}>
+            <View style={qrStyles.overlay}>
+                <View style={qrStyles.card}>
+                    {/* Header */}
+                    <View style={qrStyles.header}>
+                        <Text style={qrStyles.title}>Show QR to Student</Text>
+                        <TouchableOpacity onPress={onClose} style={qrStyles.closeBtn}>
+                            <Text style={qrStyles.closeX}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={qrStyles.studentLabel}>
+                        🎓 {info.studentName} · {info.mealType}
+                    </Text>
+
+                    {/* QR Code */}
+                    <View style={qrStyles.qrBox}>
+                        {expired ? (
+                            <View style={qrStyles.expiredBox}>
+                                <Text style={qrStyles.expiredIcon}>⏰</Text>
+                                <Text style={qrStyles.expiredText}>QR Expired</Text>
+                                <Text style={qrStyles.expiredSub}>Close and tap Consumed again to regenerate.</Text>
+                            </View>
+                        ) : (
+                            <QRCode
+                                value={info.qrData}
+                                size={200}
+                                color="#1a1a2e"
+                                backgroundColor="#FFFFFF"
+                                logo={undefined}
+                            />
+                        )}
+                    </View>
+
+                    {/* 8-char token shown below QR */}
+                    <Text style={qrStyles.orText}>— OR enter code manually —</Text>
+                    <View style={qrStyles.tokenRow}>
+                        {info.token.split('').map((ch, i) => (
+                            <View key={i} style={qrStyles.tokenChar}>
+                                <Text style={qrStyles.tokenCharText}>{ch}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Countdown */}
+                    <View style={[qrStyles.timerRow, expired && { backgroundColor: '#FFEBEE' }]}>
+                        <Text style={[qrStyles.timerText, expired && { color: '#C62828' }]}>
+                            {expired ? '⛔ Expired' : `⏱ Expires in ${mins}:${secs}`}
+                        </Text>
+                    </View>
+
+                    <Text style={qrStyles.instruction}>
+                        Ask the student to open Annpurna app → tap "Verify Meal" → enter this code.
+                    </Text>
+
+                    <TouchableOpacity style={qrStyles.doneBtn} onPress={onClose}>
+                        <Text style={qrStyles.doneBtnText}>Done</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 // ─── Small sub-components ─────────────────────────────────────────────────────
 const StatCard = ({ title, value, color }: any) => (
     <View style={[styles.statCard, { borderLeftColor: color }]}>
@@ -25,20 +121,30 @@ const StatCard = ({ title, value, color }: any) => (
     </View>
 );
 
-const BookingRow = ({ booking, onConsume }: { booking: any; onConsume: (id: string) => void }) => {
+const BookingRow = ({
+    booking,
+    onGenerateQR,
+}: {
+    booking: any;
+    onGenerateQR: (bookingId: string, studentName: string, mealType: string) => void;
+}) => {
     const [loading, setLoading] = useState(false);
 
-    const handleConsume = async () => {
+    const handlePress = async () => {
         Alert.alert(
-            'Mark as Consumed',
-            `Confirm that ${booking.student?.name} has received their meal?`,
+            'Generate QR for Meal',
+            `Generate a one-time QR code for ${booking.student?.name || 'this student'}'s ${booking.mealType}?\n\nThe student must scan it to confirm receipt.`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Confirm',
+                    text: 'Generate QR',
                     onPress: async () => {
                         setLoading(true);
-                        await onConsume(booking._id);
+                        await onGenerateQR(
+                            booking._id,
+                            booking.student?.name || 'Student',
+                            booking.mealType
+                        );
                         setLoading(false);
                     },
                 },
@@ -48,48 +154,45 @@ const BookingRow = ({ booking, onConsume }: { booking: any; onConsume: (id: stri
 
     return (
         <View style={styles.bookingRow}>
-            {/* Student initial avatar */}
-            <UserAvatar
-                name={booking.student?.name || 'A'}
-                size={36}
-                borderWidth={0}
-            />
+            <UserAvatar name={booking.student?.name || 'A'} size={36} borderWidth={0} />
             <View style={{ width: 10 }} />
 
-            {/* Student info */}
             <View style={{ flex: 1 }}>
                 <Text style={styles.studentName}>{booking.student?.name || 'Unknown'}</Text>
-                <Text style={styles.studentSub}>{booking.student?.phoneNumber || booking.student?.email || '—'}</Text>
+                <Text style={styles.studentSub}>
+                    {booking.student?.phoneNumber || booking.student?.email || '—'}
+                </Text>
             </View>
 
-            {/* Status / Consume button */}
             {booking.status === 'booked' ? (
                 <TouchableOpacity
                     style={[styles.consumeBtn, loading && { opacity: 0.6 }]}
-                    onPress={handleConsume}
+                    onPress={handlePress}
                     disabled={loading}
                 >
                     {loading
                         ? <ActivityIndicator size="small" color="#FFF" />
-                        : <Text style={styles.consumeBtnText}>✓ Consumed</Text>}
+                        : <Text style={styles.consumeBtnText}>📲 QR</Text>}
                 </TouchableOpacity>
             ) : (
                 <View style={[
                     styles.statusBadge,
-                    { 
-                        backgroundColor: booking.status === 'consumed' ? '#E8F5E9' : 
-                                         booking.status === 'not_consumed' ? '#FFF3E0' : '#FFEBEE' 
+                    {
+                        backgroundColor:
+                            booking.status === 'consumed'   ? '#E8F5E9' :
+                            booking.status === 'not_consumed' ? '#FFF3E0' : '#FFEBEE'
                     }
                 ]}>
                     <Text style={[
                         styles.statusBadgeText,
-                        { 
-                            color: booking.status === 'consumed' ? '#2E7D32' : 
-                                   booking.status === 'not_consumed' ? '#E65100' : '#C62828' 
+                        {
+                            color:
+                                booking.status === 'consumed'   ? '#2E7D32' :
+                                booking.status === 'not_consumed' ? '#E65100' : '#C62828'
                         }
                     ]}>
-                        {booking.status === 'consumed' ? 'Done' : 
-                         booking.status === 'not_consumed' ? 'Not Consumed' : 'Cancelled'}
+                        {booking.status === 'consumed'   ? '✓ Done'  :
+                         booking.status === 'not_consumed' ? 'Missed' : 'Cancelled'}
                     </Text>
                 </View>
             )}
@@ -98,7 +201,7 @@ const BookingRow = ({ booking, onConsume }: { booking: any; onConsume: (id: stri
 };
 
 // ─── Meal Section (collapsible) ───────────────────────────────────────────────
-const MealSection = ({ section, bookings, onConsume }: any) => {
+const MealSection = ({ section, bookings, onGenerateQR }: any) => {
     const [expanded, setExpanded] = useState(false);
 
     const total     = bookings.length;
@@ -108,7 +211,6 @@ const MealSection = ({ section, bookings, onConsume }: any) => {
 
     return (
         <View style={[styles.mealSection, { borderLeftColor: section.color }]}>
-            {/* Header — tap to expand */}
             <TouchableOpacity
                 style={styles.mealSectionHeader}
                 onPress={() => setExpanded(e => !e)}
@@ -123,7 +225,6 @@ const MealSection = ({ section, bookings, onConsume }: any) => {
                     <Text style={styles.mealSectionTime}>{section.time}</Text>
                 </View>
 
-                {/* Quick count pills */}
                 <View style={styles.countRow}>
                     <View style={[styles.countPill, { backgroundColor: '#E3F2FD' }]}>
                         <Text style={[styles.countText, { color: '#1565C0' }]}>{total} total</Text>
@@ -138,14 +239,13 @@ const MealSection = ({ section, bookings, onConsume }: any) => {
                 <Text style={styles.chevron}>{expanded ? '▲' : '▼'}</Text>
             </TouchableOpacity>
 
-            {/* Student list */}
             {expanded && (
                 <View style={styles.bookingList}>
                     {total === 0 ? (
                         <Text style={styles.emptyText}>No bookings for {section.type} today.</Text>
                     ) : (
                         bookings.map((b: any) => (
-                            <BookingRow key={b._id} booking={b} onConsume={onConsume} />
+                            <BookingRow key={b._id} booking={b} onGenerateQR={onGenerateQR} />
                         ))
                     )}
                 </View>
@@ -160,6 +260,9 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
     const [allBookings, setAllBookings] = useState<any[]>([]);
     const [loading, setLoading]         = useState(true);
     const [refreshing, setRefreshing]   = useState(false);
+    const [qrInfo, setQrInfo]           = useState<QRInfo | null>(null);
+    const socketRef = useRef<any>(null);
+
     const displayName = user?.restaurantName || user?.ownerName || 'Restaurant';
 
     const fetchBookings = useCallback(async () => {
@@ -179,47 +282,63 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
         fetchBookings();
 
         const socket = io(BASE_URL);
+        socketRef.current = socket;
+
         socket.on('connect', () => socket.emit('join', user._id.toString()));
 
+        // New booking arrives
         socket.on('newBooking', (booking: any) => {
             setAllBookings(prev => {
-                // replace or prepend
                 const idx = prev.findIndex(b => b._id === booking._id);
                 if (idx >= 0) {
-                    const next = [...prev];
-                    next[idx] = booking;
-                    return next;
+                    const next = [...prev]; next[idx] = booking; return next;
                 }
                 return [booking, ...prev];
+            });
+        });
+
+        // Student confirmed via QR — update row to consumed
+        socket.on('mealConsumed', ({ bookingId }: any) => {
+            setAllBookings(prev =>
+                prev.map(b => b._id === bookingId ? { ...b, status: 'consumed' } : b)
+            );
+            // If the QR modal is open for this booking, close it
+            setQrInfo(prev => {
+                if (!prev) return prev;
+                return prev; // close handled by Done button; leave open so owner sees
             });
         });
 
         return () => { socket.disconnect(); };
     }, []);
 
-    const handleConsume = async (bookingId: string) => {
+    // ── Generate QR token and open modal ─────────────────────────────────────
+    const handleGenerateQR = async (bookingId: string, studentName: string, mealType: string) => {
         try {
-            const res = await fetch(`${BASE_URL}/api/meals/consume`, {
+            const res = await fetch(`${BASE_URL}/api/meals/generate-qr`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bookingId }),
             });
-            if (res.ok) {
-                setAllBookings(prev =>
-                    prev.map(b => b._id === bookingId ? { ...b, status: 'consumed' } : b)
-                );
-            } else {
-                Alert.alert('Error', 'Could not mark as consumed.');
+            const data = await res.json();
+            if (!res.ok) {
+                Alert.alert('Error', data.message || 'Could not generate QR.');
+                return;
             }
+            setQrInfo({
+                token:       data.token,
+                qrData:      data.qrData,
+                mealType,
+                studentName,
+                expiresInSec: data.expiresInSec,
+            });
         } catch {
             Alert.alert('Network Error', 'Please try again.');
         }
     };
 
-    // Split by meal type
     const forMeal = (type: string) => allBookings.filter(b => b.mealType === type);
 
-    // Overall stats
     const totalToday = allBookings.length;
     const consumed   = allBookings.filter(b => b.status === 'consumed').length;
     const pending    = allBookings.filter(b => b.status === 'booked').length;
@@ -227,6 +346,9 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            {/* QR Modal */}
+            <QRModal info={qrInfo} onClose={() => setQrInfo(null)} />
+
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={styles.scrollContent}
@@ -268,6 +390,7 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
                     <StatCard title="Cancelled"    value={cancelled}  color="#F44336" />
                 </View>
 
+
                 {/* Quick Actions */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
@@ -296,7 +419,7 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
                                 key={section.type}
                                 section={section}
                                 bookings={forMeal(section.type)}
-                                onConsume={handleConsume}
+                                onGenerateQR={handleGenerateQR}
                             />
                         ))
                     )}
@@ -306,7 +429,135 @@ const RestaurantDashboardScreen = ({ navigation }: any) => {
     );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── QR Modal Styles ──────────────────────────────────────────────────────────
+const qrStyles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 24,
+        width: '100%',
+        maxWidth: 360,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 20,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 6,
+    },
+    title: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1a1a2e',
+    },
+    closeBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#F5F5F5',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closeX: { fontSize: 14, color: '#666', fontWeight: '700' },
+    studentLabel: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 20,
+        alignSelf: 'flex-start',
+    },
+    qrBox: {
+        padding: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#F0F0F0',
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    expiredBox: {
+        width: 200,
+        height: 200,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    expiredIcon: { fontSize: 48, marginBottom: 8 },
+    expiredText: { fontSize: 18, fontWeight: '800', color: '#C62828' },
+    expiredSub:  { fontSize: 12, color: '#999', textAlign: 'center', marginTop: 4 },
+    orText: {
+        fontSize: 11,
+        color: '#AAA',
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        marginBottom: 12,
+    },
+    tokenRow: {
+        flexDirection: 'row',
+        gap: 6,
+        marginBottom: 16,
+    },
+    tokenChar: {
+        width: 34,
+        height: 44,
+        borderRadius: 8,
+        backgroundColor: '#1a1a2e',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tokenCharText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '900',
+        letterSpacing: 0,
+    },
+    timerRow: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 30,
+        marginBottom: 16,
+    },
+    timerText: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#2E7D32',
+    },
+    instruction: {
+        fontSize: 12,
+        color: '#888',
+        textAlign: 'center',
+        lineHeight: 18,
+        marginBottom: 20,
+        paddingHorizontal: 8,
+    },
+    doneBtn: {
+        backgroundColor: Colors.primary,
+        paddingHorizontal: 48,
+        paddingVertical: 14,
+        borderRadius: 30,
+        width: '100%',
+        alignItems: 'center',
+    },
+    doneBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+} as any);
+
+// ─── Main Styles ──────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container:     { flex: 1, backgroundColor: Colors.background },
     scrollContent: { padding: Spacing.md, paddingBottom: 40 },
@@ -337,6 +588,21 @@ const styles = StyleSheet.create({
     statTitle: { fontSize: 10, fontWeight: '700', color: Colors.textLight, marginBottom: 4, letterSpacing: 0.5 },
     statValue: { fontSize: 24, fontWeight: '900' },
 
+    qrInfoBanner: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        backgroundColor: '#EDE7F6',
+        borderRadius: BorderRadius.md,
+        padding: 12,
+        gap: 10,
+        marginBottom: Spacing.md,
+        borderLeftWidth: 4,
+        borderLeftColor: '#7C3AED',
+    },
+    qrInfoIcon:  { fontSize: 22 },
+    qrInfoTitle: { fontSize: 13, fontWeight: '800', color: '#4C1D95', marginBottom: 2 },
+    qrInfoSub:   { fontSize: 11, color: '#6D28D9', lineHeight: 16 },
+
     section:      { marginTop: Spacing.lg },
     sectionTitle: {
         fontSize: 11,
@@ -362,19 +628,15 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     actionIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 44, height: 44, borderRadius: 22,
         backgroundColor: Colors.primaryLight,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center', alignItems: 'center',
         marginRight: Spacing.md,
     },
     actionIcon:     { fontSize: 20 },
     actionTitle:    { fontSize: 15, fontWeight: '700', color: Colors.text },
     actionSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
-    // Meal section cards
     mealSection: {
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
@@ -389,17 +651,10 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 2,
     },
-    mealSectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 14,
-    },
+    mealSectionHeader: { flexDirection: 'row', alignItems: 'center', padding: 14 },
     mealEmojiBox: {
-        width: 44,
-        height: 44,
-        borderRadius: BorderRadius.sm,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: 44, height: 44, borderRadius: BorderRadius.sm,
+        justifyContent: 'center', alignItems: 'center',
     },
     mealEmoji:        { fontSize: 22 },
     mealSectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.text },
@@ -417,7 +672,6 @@ const styles = StyleSheet.create({
     },
     emptyText: { fontSize: 13, color: Colors.textLight, textAlign: 'center', paddingVertical: 16 },
 
-    // Booking row
     bookingRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -425,24 +679,19 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: Colors.borderLight,
     },
-    avatarCircle:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
-    avatarLetter:  { fontSize: 16, fontWeight: '800', color: Colors.primary },
-    studentName:   { fontSize: 14, fontWeight: '700', color: Colors.text },
-    studentSub:    { fontSize: 11, color: Colors.textLight, marginTop: 1 },
+    studentName: { fontSize: 14, fontWeight: '700', color: Colors.text },
+    studentSub:  { fontSize: 11, color: Colors.textLight, marginTop: 1 },
     consumeBtn: {
-        backgroundColor: Colors.success,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
+        backgroundColor: '#7C3AED',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
         borderRadius: BorderRadius.sm,
-        minWidth: 95,
+        minWidth: 68,
         alignItems: 'center',
     },
-    consumeBtnText: { color: Colors.white, fontSize: 12, fontWeight: '800' },
+    consumeBtnText: { color: Colors.white, fontSize: 13, fontWeight: '800' },
     statusBadge:    { paddingHorizontal: 10, paddingVertical: 4, borderRadius: BorderRadius.round },
     statusBadgeText:{ fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
 } as any);
-
-
-
 
 export default RestaurantDashboardScreen;
