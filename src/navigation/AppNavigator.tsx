@@ -27,6 +27,7 @@ import MyStudentsScreen from '../screens/RestaurantOwner/MyStudentsScreen';
 import RestaurantMealHistoryScreen from '../screens/RestaurantOwner/RestaurantMealHistoryScreen';
 import SubscriptionHistoryScreen from '../screens/Profile/SubscriptionHistoryScreen';
 import QRScanScreen from '../screens/Home/QRScanScreen';
+import ExploreRestaurantsScreen from '../screens/Home/ExploreRestaurantsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -160,6 +161,7 @@ const AppNavigator = () => {
                 <Stack.Screen name="RestaurantMealHistory"  component={RestaurantMealHistoryScreen} />
                 <Stack.Screen name="Support"                 component={SupportScreen} />
                 <Stack.Screen name="QRScan"                  component={QRScanScreen} />
+                <Stack.Screen name="ExploreRestaurants"      component={ExploreRestaurantsScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

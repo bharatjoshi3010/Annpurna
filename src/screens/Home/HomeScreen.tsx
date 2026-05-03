@@ -287,11 +287,14 @@ const HomeScreen = ({ navigation }: any) => {
                         });
                     }}
                     statusText={
-                        (status === 'Consumed' || status === 'Not Consumed' || status === 'Cancelled')
-                            ? status.toUpperCase()
-                            : isLocked ? 'LOCKED'
-                                : isModified ? 'SWITCHED'
-                                    : status
+                        status === 'Consumed'       ? 'DONE'
+                        : status === 'Not Consumed' ? 'MISSED'
+                        : status === 'Cancelled'    ? 'CANCELLED'
+                        : isLocked                 ? 'LOCKED'
+                        : isModified               ? 'SWITCHED'
+                        : status === 'Serving'     ? 'SERVING'
+                        : status === 'Select'      ? 'BOOK NOW'
+                        : 'BOOKED'
                     }
                 />
 

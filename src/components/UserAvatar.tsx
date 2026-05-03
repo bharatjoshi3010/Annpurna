@@ -1,6 +1,24 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '../styles/theme';
+import { API_BASE_URL } from '../config';
+
+/** Convert a relative DB path like '/uploads/foo.jpg' to a full URL */
+const getSafeUrl = (url?: string | null): string | undefined => {
+    if (!url) return undefined;
+    // Already a full URL
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        // Replace any hardcoded localhost/emulator IP with the current API base
+        if (url.includes('localhost') || url.includes('10.0.2.2') || url.includes('192.168')) {
+            const match = url.match(/:\/\/[^/]+(\/.*)/);
+            if (match) return `${API_BASE_URL}${match[1]}`;
+        }
+        return url;
+    }
+    // Relative path — prepend the current API base
+    if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+    return `${API_BASE_URL}/${url}`;
+};
 
 interface UserAvatarProps {
     /** Full URL or local path of the profile photo */
@@ -34,9 +52,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         { width: size, height: size, borderRadius, borderWidth, borderColor },
     ];
 
-    const content = photoUrl ? (
+    const resolvedUrl = getSafeUrl(photoUrl);
+
+    const content = resolvedUrl ? (
         <Image
-            source={{ uri: photoUrl }}
+            source={{ uri: resolvedUrl }}
             style={[styles.image, { width: size, height: size, borderRadius }]}
             resizeMode="cover"
         />
@@ -51,14 +71,14 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
             <TouchableOpacity
                 onPress={onPress}
                 activeOpacity={0.8}
-                style={photoUrl ? [styles.wrapper, { width: size, height: size, borderRadius, borderWidth, borderColor }] : undefined}
+                style={resolvedUrl ? [styles.wrapper, { width: size, height: size, borderRadius, borderWidth, borderColor }] : undefined}
             >
                 {content}
             </TouchableOpacity>
         );
     }
 
-    if (photoUrl) {
+    if (resolvedUrl) {
         return (
             <View style={[styles.wrapper, { width: size, height: size, borderRadius, borderWidth, borderColor }]}>
                 {content}

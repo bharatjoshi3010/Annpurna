@@ -163,9 +163,9 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     restaurant: {
-        fontSize: 12,
-        color: Colors.textSecondary,
-        fontWeight: '600',
+        fontSize: 13,
+        color: Colors.text,
+        fontWeight: '700',
     },
     menuText: {
         fontSize: 11,
@@ -192,8 +192,8 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     mealType: {
-        fontSize: 13,
-        fontWeight: '800',
+        fontSize: 14,
+        fontWeight: '900',
         color: Colors.text,
         textAlign: 'right',
     },
