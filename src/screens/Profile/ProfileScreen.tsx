@@ -235,8 +235,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 const uploadRes  = await fetch(`${API_BASE_URL}/api/upload`, { method: 'POST', body: formData });
                 const uploadData = await uploadRes.json();
                 if (!uploadRes.ok) throw new Error(uploadData.message || 'Upload failed');
-
-                const photoUrl = `${API_BASE_URL}${uploadData.image}`;
+                const photoUrl = uploadData.image;
 
                 const profileRes  = await fetch(`${API_BASE_URL}/api/auth/profile`, {
                     method: 'PUT',

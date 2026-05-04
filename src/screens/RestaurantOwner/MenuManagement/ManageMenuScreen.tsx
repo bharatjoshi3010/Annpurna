@@ -90,7 +90,7 @@ const ManageMenuScreen = () => {
             if (response.ok) {
                 setItems([...items, { 
                     name: newItemName.trim(), 
-                    image: `${API_BASE_URL}${data.image}` 
+                    image: data.image 
                 }]);
                 setNewItemName('');
                 setSelectedImage(null);
@@ -237,7 +237,7 @@ const ManageMenuScreen = () => {
                             items.map((item, index) => (
                                 <View key={index} style={styles.itemRow}>
                                     {item.image ? (
-                                        <Image source={{ uri: item.image }} style={styles.itemThumb} />
+                                        <Image source={{ uri: item.image.startsWith('/') ? `${API_BASE_URL}${item.image}` : item.image.includes('10.0.2.2') || item.image.includes('localhost') ? `${API_BASE_URL}${item.image.match(/:\/\/[^/]+(\/.*)/)?.[1] || ''}` : item.image }} style={styles.itemThumb} />
                                     ) : (
                                         <View style={styles.itemBullet} />
                                     )}

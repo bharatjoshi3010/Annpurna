@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext HTTP to the production backend on Render -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">annpurna-fcxb.onrender.com</domain>
-        <!-- Also allow LAN / emulator IP ranges used in development -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">192.168.0.0</domain>
-    </domain-config>
-    <!-- All other connections default to HTTPS-only -->
-    <base-config cleartextTrafficPermitted="false" />
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
