@@ -177,11 +177,7 @@ const WeeklyMenuSheet = ({
                                             {items.length > 0 ? (
                                                 items.map((item, idx) => (
                                                     <View key={idx} style={ms.itemRow}>
-                                                        {item.image ? (
-                                                            <Image source={{ uri: item.image }} style={ms.itemImg} />
-                                                        ) : (
-                                                            <View style={ms.itemDot} />
-                                                        )}
+                                                        <View style={ms.itemDot} />
                                                         <View style={{ flex: 1 }}>
                                                             <Text style={ms.itemName}>{item.name}</Text>
                                                             {item.description ? <Text style={ms.itemDesc}>{item.description}</Text> : null}

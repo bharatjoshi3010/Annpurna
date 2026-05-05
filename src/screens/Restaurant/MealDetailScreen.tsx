@@ -331,11 +331,7 @@ const MealDetailScreen = ({ navigation, route }: any) => {
                         menuItems.map((item: any, idx: number) => (
                             <View key={`${item.name}-${idx}`} style={styles.menuItem}>
                                 <View style={styles.menuItemImageWrap}>
-                                    {item.image ? (
-                                        <Image source={{ uri: item.image }} style={styles.menuItemImage} />
-                                    ) : (
                                         <Text style={styles.menuItemEmoji}>🍲</Text>
-                                    )}
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.menuItemName}>{item.name}</Text>

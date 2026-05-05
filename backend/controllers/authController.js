@@ -178,7 +178,7 @@ const updateProfile = async (req, res) => {
                 user.kycStatus = kycStatus || user.kycStatus;
                 if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
 
-                if (user.ownerName && user.restaurantName && user.openingYear && user.address && user.phoneNumber && user.maxCapacity && user.fssaiLicense) {
+                if (user.ownerName && user.restaurantName && user.openingYear && user.address && user.phoneNumber && user.maxCapacity) {
                     user.isProfileComplete = true;
                 } else {
                     user.isProfileComplete = false;

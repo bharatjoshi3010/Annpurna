@@ -154,7 +154,6 @@ const RestaurantListScreen = ({ navigation, route }: any) => {
                                     isSelected={item._id === selectedId}
                                     kycStatus={item.kycStatus}
                                     menuItemName={firstMenuItem ? firstMenuItem.name : undefined}
-                                    menuItemImage={firstMenuItem ? firstMenuItem.image : undefined}
                                     onPress={() => {
                                         if (purpose === 'viewMenu') {
                                             navigation.navigate('Menu', {

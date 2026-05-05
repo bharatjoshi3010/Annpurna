@@ -11,6 +11,8 @@ interface MealSlotCardProps {
     statusText?: string;
     locked?: boolean;
     menuItems?: string[];
+    isServing?: boolean;
+    onVerify?: () => void;
 }
 
 const MEAL_CONFIG = {
@@ -20,7 +22,7 @@ const MEAL_CONFIG = {
 };
 
 const MealSlotCard: React.FC<MealSlotCardProps> = ({
-    type, time, status, restaurant, onPress, statusText, locked, menuItems,
+    type, time, status, restaurant, onPress, statusText, locked, menuItems, isServing, onVerify
 }) => {
     const isConsumed  = status === 'taken';
     const isMissed    = status === 'missed';
@@ -91,6 +93,12 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
                     </Text>
                 ) : restaurant && restaurant !== 'Not selected' && (
                     <Text style={styles.surpriseText}>🎁 Surprise Meal</Text>
+                )}
+
+                {isServing && onVerify && !isConsumed && (
+                    <TouchableOpacity style={styles.verifyInsideBtn} onPress={onVerify}>
+                        <Text style={styles.verifyInsideText}>📲 Verify This Meal</Text>
+                    </TouchableOpacity>
                 )}
             </View>
 
@@ -215,6 +223,19 @@ const styles = StyleSheet.create({
 
     dimText: {
         color: Colors.textLight,
+    },
+    verifyInsideBtn: {
+        marginTop: 6,
+        backgroundColor: Colors.primary,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: BorderRadius.md,
+        alignSelf: 'flex-start',
+    },
+    verifyInsideText: {
+        color: Colors.white,
+        fontSize: 11,
+        fontWeight: '800',
     },
 });
 

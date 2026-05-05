@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getAdminToken } from '../context/AuthContext';
-import { ADMIN_API_URL } from '../config';
+import { ADMIN_API_URL, API_BASE_URL } from '../config';
 
 const api = axios.create({
   baseURL: ADMIN_API_URL,
@@ -39,6 +39,6 @@ export const fetchRestaurants = ()           => api.get('/restaurants');
 export const updateRestaurant = (id, data)   => api.put(`/restaurants/${id}`, data);
 export const deleteRestaurant = (id)         => api.delete(`/restaurants/${id}`);
 // Analytics
-export const fetchAnalytics   = (params)     => api.get('/analytics', { params });
+export const fetchAnalytics   = (params)     => api.get(`${API_BASE_URL}/api/analytics/admin`, { params });
 
 export default api;

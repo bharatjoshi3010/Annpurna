@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { launchImageLibrary } from 'react-native-image-picker';
 import { Colors, Spacing, Typography, BorderRadius } from '../../../styles/theme';
 import Header from '../../../components/Header';
 import { useAuth } from '../../../context/AuthContext';
@@ -18,10 +17,7 @@ const ManageMenuScreen = () => {
     const [selectedMeal, setSelectedMeal] = useState('Breakfast');
     const [items, setItems] = useState<any[]>([]);
     const [newItemName, setNewItemName] = useState('');
-    const [newItemImage, setNewItemImage] = useState('');
-    const [selectedImage, setSelectedImage] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -49,60 +45,16 @@ const ManageMenuScreen = () => {
         }
     };
 
-    const pickImage = () => {
-        launchImageLibrary({ mediaType: 'photo', quality: 0.5 }, (response) => {
-            if (response.didCancel) return;
-            if (response.errorCode) {
-                Alert.alert('Error', response.errorMessage || 'Failed to pick image');
-                return;
-            }
-            if (response.assets && response.assets.length > 0) {
-                setSelectedImage(response.assets[0]);
-            }
-        });
-    };
-
     const handleAddItem = async () => {
         if (!newItemName.trim()) {
             Alert.alert('Required', 'Please enter item name');
             return;
         }
-        if (!selectedImage) {
-            Alert.alert('Required', 'Please select a food photo. It is compulsory.');
-            return;
-        }
 
-        setUploading(true);
-        try {
-            const formData = new FormData();
-            formData.append('image', {
-                uri: selectedImage.uri,
-                type: selectedImage.type || 'image/jpeg',
-                name: selectedImage.fileName || `food_${Date.now()}.jpg`,
-            } as any);
-
-            const response = await fetch(`${API_BASE_URL}/api/upload`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await response.json();
-            if (response.ok) {
-                setItems([...items, { 
-                    name: newItemName.trim(), 
-                    image: data.image 
-                }]);
-                setNewItemName('');
-                setSelectedImage(null);
-            } else {
-                Alert.alert('Upload Failed', data.message || 'Could not upload image');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            Alert.alert('Error', 'Failed to upload photo');
-        } finally {
-            setUploading(false);
-        }
+        setItems([...items, { 
+            name: newItemName.trim() 
+        }]);
+        setNewItemName('');
     };
 
     const handleRemoveItem = (index: number) => {
@@ -193,38 +145,17 @@ const ManageMenuScreen = () => {
                 <View style={styles.itemsSection}>
                     <Text style={styles.sectionTitle}>Add Food Items</Text>
                     <View style={styles.inputContainer}>
-                        <View style={{ flex: 1 }}>
-                            <TextInput 
-                                style={styles.input}
-                                placeholder="Item Name (e.g. Thali)"
-                                value={newItemName}
-                                onChangeText={setNewItemName}
-                            />
-                            <TouchableOpacity style={styles.imagePickerBtn} onPress={pickImage}>
-                                {selectedImage ? (
-                                    <View style={styles.selectedImageRow}>
-                                        <Image source={{ uri: selectedImage.uri }} style={styles.pickerPreview} />
-                                        <Text style={styles.imageNameText} numberOfLines={1}>Photo Selected</Text>
-                                        <Text style={styles.changeText}>Change</Text>
-                                    </View>
-                                ) : (
-                                    <>
-                                        <Text style={styles.imageEmoji}>📷</Text>
-                                        <Text style={styles.imagePickerText}>Upload Food Photo (Compulsory)</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <TextInput 
+                            style={styles.input}
+                            placeholder="Item Name (e.g. Thali)"
+                            value={newItemName}
+                            onChangeText={setNewItemName}
+                        />
                         <TouchableOpacity 
-                            style={[styles.addBtn, (uploading || !newItemName.trim() || !selectedImage) && styles.disabledAddBtn]} 
+                            style={[styles.addBtn, !newItemName.trim() && styles.disabledAddBtn]} 
                             onPress={handleAddItem}
-                            disabled={uploading}
                         >
-                            {uploading ? (
-                                <ActivityIndicator color={Colors.white} size="small" />
-                            ) : (
-                                <Text style={styles.addBtnText}>+</Text>
-                            )}
+                            <Text style={styles.addBtnText}>+</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -236,11 +167,7 @@ const ManageMenuScreen = () => {
                         ) : (
                             items.map((item, index) => (
                                 <View key={index} style={styles.itemRow}>
-                                    {item.image ? (
-                                        <Image source={{ uri: item.image.startsWith('/') ? `${API_BASE_URL}${item.image}` : item.image.includes('10.0.2.2') || item.image.includes('localhost') ? `${API_BASE_URL}${item.image.match(/:\/\/[^/]+(\/.*)/)?.[1] || ''}` : item.image }} style={styles.itemThumb} />
-                                    ) : (
-                                        <View style={styles.itemBullet} />
-                                    )}
+                                    <View style={styles.itemBullet} />
                                     <Text style={styles.itemName}>{item.name}</Text>
                                     <TouchableOpacity onPress={() => handleRemoveItem(index)}>
                                         <Text style={styles.removeIcon}>✕</Text>
@@ -376,7 +303,7 @@ const styles = StyleSheet.create({
     },
     addBtn: {
         width: 60,
-        height: 120,
+        height: 50,
         backgroundColor: Colors.primary,
         borderRadius: BorderRadius.md,
         marginLeft: 10,
@@ -386,49 +313,6 @@ const styles = StyleSheet.create({
     disabledAddBtn: {
         backgroundColor: Colors.textLight,
         opacity: 0.6,
-    },
-    imagePickerBtn: {
-        marginTop: 10,
-        height: 60,
-        backgroundColor: '#F0F4F8',
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderStyle: 'dashed',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-    },
-    imageEmoji: {
-        fontSize: 20,
-        marginRight: 10,
-    },
-    imagePickerText: {
-        fontSize: 13,
-        color: Colors.textLight,
-        fontWeight: '500',
-    },
-    selectedImageRow: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    pickerPreview: {
-        width: 40,
-        height: 40,
-        borderRadius: 4,
-        marginRight: 10,
-    },
-    imageNameText: {
-        flex: 1,
-        fontSize: 14,
-        color: Colors.text,
-        fontWeight: '600',
-    },
-    changeText: {
-        fontSize: 12,
-        color: Colors.primary,
-        fontWeight: '700',
     },
     addBtnText: {
         color: Colors.white,
@@ -454,13 +338,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: Colors.surfaceAlt,
-    },
-    itemThumb: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        backgroundColor: Colors.surfaceAlt,
-        marginRight: 10,
     },
     itemBullet: {
         width: 6,

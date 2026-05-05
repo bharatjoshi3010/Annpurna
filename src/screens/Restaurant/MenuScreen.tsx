@@ -45,11 +45,7 @@ const MenuScreen = ({ navigation, route }: any) => {
     const renderFoodItem = (item: any, isLarge = false) => (
         <View style={isLarge ? styles.largeItemCard : styles.menuItem} key={item.name + Math.random()}>
             <View style={isLarge ? styles.largeItemImageContainer : styles.itemImageContainer}>
-                 {item.image ? (
-                     <Image source={{ uri: item.image }} style={styles.mealItemImage} />
-                 ) : (
-                     <Text style={styles.itemEmoji}>🍲</Text>
-                 )}
+                 <Text style={styles.itemEmoji}>🍲</Text>
             </View>
             <View style={isLarge ? styles.largeItemInfo : styles.menuItemInfo}>
                 <Text style={isLarge ? styles.largeItemName : styles.itemName}>{item.name}</Text>

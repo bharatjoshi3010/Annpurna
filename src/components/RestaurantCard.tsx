@@ -12,12 +12,11 @@ interface RestaurantCardProps {
     isSelected?: boolean;
     kycStatus?: string;
     menuItemName?: string;
-    menuItemImage?: string;
 }
 
 const RestaurantCard: React.FC<RestaurantCardProps> = ({
     name, cuisine, rating, imageUrl, onPress, isSelected,
-    kycStatus, menuItemName, menuItemImage,
+    kycStatus, menuItemName,
 }) => {
     const getSafeUrl = (url?: string) => {
         if (!url) return undefined;
@@ -29,7 +28,7 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({
         return url;
     };
 
-    const displayImage = getSafeUrl(menuItemImage) || getSafeUrl(imageUrl);
+    const displayImage = getSafeUrl(imageUrl);
     const isApproved = kycStatus === 'approved';
 
     return (

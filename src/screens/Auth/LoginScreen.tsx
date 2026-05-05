@@ -41,10 +41,6 @@ const LoginScreen = ({ navigation }: any) => {
             const data = await response.json();
 
             if (response.ok) {
-                if (!data.isProfileComplete) {
-                    Alert.alert('Incomplete Profile', 'Your profile is missing required details. You cannot sign in without them. Please register again or contact support.');
-                    return;
-                }
 
                 setUser(data);
 
