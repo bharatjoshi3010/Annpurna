@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { Users, UtensilsCrossed, LayoutDashboard, ShieldCheck, LogOut } from 'lucide-react';
+import { Users, UtensilsCrossed, LayoutDashboard, ShieldCheck, LogOut, BarChart3 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard', end: true },
+  { to: '/analytics', icon: <BarChart3 size={20} />, label: 'Financial Analytics' },
   { to: '/users', icon: <Users size={20} />, label: 'Manage Users' },
   { to: '/restaurants', icon: <UtensilsCrossed size={20} />, label: 'Manage Restaurants' },
 ];

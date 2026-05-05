@@ -25,6 +25,7 @@ import RestaurantSelectionScreen from '../screens/Subscription/RestaurantSelecti
 import SupportScreen from '../screens/Profile/SupportScreen';
 import MyStudentsScreen from '../screens/RestaurantOwner/MyStudentsScreen';
 import RestaurantMealHistoryScreen from '../screens/RestaurantOwner/RestaurantMealHistoryScreen';
+import RestaurantAnalyticsScreen from '../screens/RestaurantOwner/RestaurantAnalyticsScreen';
 import SubscriptionHistoryScreen from '../screens/Profile/SubscriptionHistoryScreen';
 import QRScanScreen from '../screens/Home/QRScanScreen';
 import ExploreRestaurantsScreen from '../screens/Home/ExploreRestaurantsScreen';
@@ -67,7 +68,7 @@ const MainTabNavigator = () => {
                 tabBarStyle: styles.tabBar,
                 tabBarShowLabel: false,
                 tabBarIconStyle: {
-                    width: 80,
+                    width: 90,
                     height: 56,
                 },
             }}
@@ -105,7 +106,7 @@ const RestaurantTabNavigator = () => {
                 tabBarStyle: styles.tabBar,
                 tabBarShowLabel: false,
                 tabBarIconStyle: {
-                    width: 80,
+                    width: 90,
                     height: 56,
                 },
             }}
@@ -159,6 +160,7 @@ const AppNavigator = () => {
                 <Stack.Screen name="SubscriptionHistory"     component={SubscriptionHistoryScreen} />
                 <Stack.Screen name="MyStudents"             component={MyStudentsScreen} />
                 <Stack.Screen name="RestaurantMealHistory"  component={RestaurantMealHistoryScreen} />
+                <Stack.Screen name="RestaurantAnalytics"     component={RestaurantAnalyticsScreen} />
                 <Stack.Screen name="Support"                 component={SupportScreen} />
                 <Stack.Screen name="QRScan"                  component={QRScanScreen} />
                 <Stack.Screen name="ExploreRestaurants"      component={ExploreRestaurantsScreen} />
@@ -186,9 +188,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 4,
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         borderRadius: 20,
-        minWidth: 80,
+        minWidth: 90,
         height: 56, 
     },
     tabIconContainerFocused: {

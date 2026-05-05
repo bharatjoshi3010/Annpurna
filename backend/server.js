@@ -10,6 +10,7 @@ import mealRoutes from './routes/mealRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import { startCronJobs } from './cronJobs.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -74,6 +75,7 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

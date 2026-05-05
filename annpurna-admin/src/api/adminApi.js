@@ -38,5 +38,7 @@ export const deleteStudent    = (id)         => api.delete(`/students/${id}`);
 export const fetchRestaurants = ()           => api.get('/restaurants');
 export const updateRestaurant = (id, data)   => api.put(`/restaurants/${id}`, data);
 export const deleteRestaurant = (id)         => api.delete(`/restaurants/${id}`);
+// Analytics
+export const fetchAnalytics   = (params)     => api.get('/analytics', { params });
 
 export default api;

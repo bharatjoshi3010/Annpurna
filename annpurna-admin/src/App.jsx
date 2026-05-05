@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import UsersPage from './pages/UsersPage';
 import RestaurantsPage from './pages/RestaurantsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 import LoginPage from './pages/LoginPage';
 
 // ── Protected layout: shows Sidebar + pages only when logged in ───────────────
@@ -79,6 +80,7 @@ function AdminLayout() {
           <div className="max-w-7xl mx-auto fade-in pb-12">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/restaurants" element={<RestaurantsPage />} />
               {/* Catch-all back to dashboard */}

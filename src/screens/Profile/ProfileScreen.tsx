@@ -265,6 +265,7 @@ const ProfileScreen = ({ navigation }: any) => {
             route: isStudent ? 'SubscriptionHistory' : 'MyStudents',
         },
         { title: 'Meal History', icon: '🍽️', route: isStudent ? 'MealHistory' : 'RestaurantMealHistory' },
+        ...(!isStudent ? [{ title: 'Financial Analytics', icon: '📈', route: 'RestaurantAnalytics' }] : []),
         { title: 'Help & Support', icon: '❓', route: 'Support' },
     ];
 
