@@ -320,17 +320,13 @@ const ProfileScreen = ({ navigation }: any) => {
                                 navigation={navigation}
                             />
                         ) : (
-                            <TouchableOpacity
-                                style={styles.noRestaurantCard}
-                                onPress={() => navigation.navigate('PersonalDetails')}
-                            >
+                            <View style={styles.noRestaurantCard}>
                                 <Text style={styles.noRestaurantIcon}>🍽️</Text>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.noRestaurantTitle}>No restaurant selected</Text>
-                                    <Text style={styles.noRestaurantSub}>Tap to set your default restaurant</Text>
+                                    <Text style={styles.noRestaurantSub}>Update your Personal Information to set one</Text>
                                 </View>
-                                <Text style={{ fontSize: 22, color: Colors.textLight }}>›</Text>
-                            </TouchableOpacity>
+                            </View>
                         )}
                     </View>
                 )}
