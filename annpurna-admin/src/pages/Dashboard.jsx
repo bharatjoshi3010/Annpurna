@@ -4,13 +4,13 @@ import { fetchStudents, fetchRestaurants } from '../api/adminApi';
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="card p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
+    <div className="card p-6 flex items-center gap-5">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color} shadow-lg shadow-black/20`}>
         {icon}
       </div>
       <div>
-        <p className="text-3xl font-bold text-white">{value}</p>
-        <p className="text-sm text-slate-400 font-medium mt-0.5">{label}</p>
+        <p className="text-3xl font-extrabold text-white tracking-tight">{value}</p>
+        <p className="text-sm text-slate-400 font-medium mt-1">{label}</p>
       </div>
     </div>
   );
@@ -49,7 +49,7 @@ export default function Dashboard() {
   const totalPending = s.pending + r.pending;
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <p className="text-slate-400 text-sm mt-1">Overview of all users and restaurants</p>
@@ -60,7 +60,7 @@ export default function Dashboard() {
       ) : (
         <>
           {/* Global Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               icon={<Users size={22} className="text-blue-400" />}
               label="Total Students"
@@ -88,7 +88,7 @@ export default function Dashboard() {
           </div>
 
           {/* Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Students breakdown */}
             <div className="card p-6 space-y-4">
               <h2 className="text-base font-semibold text-white flex items-center gap-2">

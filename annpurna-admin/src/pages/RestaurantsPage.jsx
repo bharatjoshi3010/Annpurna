@@ -94,45 +94,45 @@ export default function RestaurantsPage() {
   });
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="w-full pb-8 fade-in">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       {/* Image lightbox */}
       {viewingImg && (
         <div
-          style={{
-            position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.85)',
-            display:'flex',alignItems:'center',justifyContent:'center',
-          }}
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setViewingImg(null)}
         >
-          <div style={{background:'#1e293b',borderRadius:12,padding:16,maxWidth:'90vw',maxHeight:'90vh',overflow:'auto'}} onClick={e => e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <span style={{color:'#fff',fontWeight:600,fontSize:15}}>{viewingImg.label}</span>
-              <button onClick={() => setViewingImg(null)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer'}}><X size={20}/></button>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-w-4xl w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-white font-bold">{viewingImg.label}</span>
+              <button onClick={() => setViewingImg(null)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"><X size={20} /></button>
             </div>
-            <img src={viewingImg.url} alt={viewingImg.label} style={{maxWidth:'80vw',maxHeight:'75vh',borderRadius:8,objectFit:'contain'}} />
+            <div className="overflow-auto max-h-[75vh] flex justify-center">
+              <img src={viewingImg.url} alt={viewingImg.label} className="rounded-xl shadow-lg max-w-full object-contain" />
+            </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Manage Restaurants</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Manage Restaurants</h1>
           <p className="text-slate-400 text-sm mt-1">View, edit, and manage restaurant accounts</p>
         </div>
         <button className="btn-secondary" onClick={load}>
-          <RefreshCw size={16} /> Refresh
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
         </button>
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+      <div className="card p-5 flex flex-wrap items-center gap-4 my-6 sm:my-8 lg:my-10">
+        <div className="relative flex-1 min-w-[280px]">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
-            className="form-input pl-9"
+            className="form-input"
+            style={{ paddingLeft: '2.75rem' }}
             placeholder="Search by name, owner or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -143,18 +143,11 @@ export default function RestaurantsPage() {
             <button
               key={f}
               onClick={() => setKycFilter(f)}
-              style={{
-                padding:'0.375rem 0.875rem',
-                fontSize:'0.75rem',
-                fontWeight:600,
-                borderRadius:'0.5rem',
-                textTransform:'capitalize',
-                transition:'all 0.2s',
-                cursor:'pointer',
-                border: kycFilter === f ? 'none' : '1px solid #475569',
-                background: kycFilter === f ? 'linear-gradient(to right,#c53939,#da5353)' : '#1e293b',
-                color: kycFilter === f ? '#fff' : '#94a3b8',
-              }}
+              className={`min-w-[80px] px-4 py-2 rounded-xl text-sm font-semibold capitalize transition-all
+                ${kycFilter === f
+                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
+                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'
+                }`}
             >
               {f}
             </button>
@@ -204,29 +197,29 @@ export default function RestaurantsPage() {
 
               {/* Document viewers */}
               {(r.fssaiCertificate || r.registrationCertificate) && (
-                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {r.fssaiCertificate && (
                     <button
                       onClick={() => setViewingImg({ url: `${BASE_IMG}${r.fssaiCertificate}`, label: `${r.restaurantName} — FSSAI Certificate` })}
                       style={{
-                        display:'flex',alignItems:'center',gap:5,padding:'5px 10px',
-                        background:'#0f172a',border:'1px solid #334155',borderRadius:8,
-                        color:'#34d399',fontSize:11,fontWeight:600,cursor:'pointer',
+                        display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px',
+                        background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+                        color: '#34d399', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                       }}
                     >
-                      <ImageIcon size={12}/> FSSAI Cert
+                      <ImageIcon size={12} /> FSSAI Cert
                     </button>
                   )}
                   {r.registrationCertificate && (
                     <button
                       onClick={() => setViewingImg({ url: `${BASE_IMG}${r.registrationCertificate}`, label: `${r.restaurantName} — Registration Certificate` })}
                       style={{
-                        display:'flex',alignItems:'center',gap:5,padding:'5px 10px',
-                        background:'#0f172a',border:'1px solid #334155',borderRadius:8,
-                        color:'#818cf8',fontSize:11,fontWeight:600,cursor:'pointer',
+                        display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px',
+                        background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+                        color: '#818cf8', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                       }}
                     >
-                      <ImageIcon size={12}/> Reg. Cert
+                      <ImageIcon size={12} /> Reg. Cert
                     </button>
                   )}
                 </div>

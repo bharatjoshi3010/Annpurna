@@ -87,7 +87,7 @@ const MealSlotCard: React.FC<MealSlotCardProps> = ({
 
                 {menuItems && menuItems.length > 0 ? (
                     <Text style={[styles.menuText, showLocked && styles.dimText]} numberOfLines={1}>
-                        🍽 {menuItems.join(' · ')}
+                        🍽 {menuItems.map((item: any) => typeof item === 'string' ? item : item?.name || '').filter(Boolean).join(' · ')}
                     </Text>
                 ) : restaurant && restaurant !== 'Not selected' && (
                     <Text style={styles.surpriseText}>🎁 Surprise Meal</Text>

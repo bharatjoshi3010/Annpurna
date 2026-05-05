@@ -95,45 +95,45 @@ export default function UsersPage() {
 
   const th = 'text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider';
   return (
-    <div className="p-8 space-y-6">
+    <div className="w-full pb-8">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
       {/* Image lightbox */}
       {viewingImg && (
         <div
-          style={{
-            position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,0.85)',
-            display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,
-          }}
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setViewingImg(null)}
         >
-          <div style={{background:'#1e293b',borderRadius:12,padding:16,maxWidth:'90vw',maxHeight:'90vh',overflow:'auto',position:'relative'}} onClick={e => e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <span style={{color:'#fff',fontWeight:600,fontSize:15}}>{viewingImg.label}</span>
-              <button onClick={() => setViewingImg(null)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer'}}><X size={20}/></button>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 max-w-4xl w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-white font-bold">{viewingImg.label}</span>
+              <button onClick={() => setViewingImg(null)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"><X size={20} /></button>
             </div>
-            <img src={viewingImg.url} alt={viewingImg.label} style={{maxWidth:'80vw',maxHeight:'75vh',borderRadius:8,objectFit:'contain'}} />
+            <div className="overflow-auto max-h-[75vh] flex justify-center">
+              <img src={viewingImg.url} alt={viewingImg.label} className="rounded-xl shadow-lg max-w-full object-contain" />
+            </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Manage Users</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Manage Users</h1>
           <p className="text-slate-400 text-sm mt-1">View, edit, and manage student accounts</p>
         </div>
         <button className="btn-secondary" onClick={load}>
-          <RefreshCw size={16} /> Refresh
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
         </button>
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap items-center gap-3">
-        <div className="relative" style={{flex:'1 1 220px'}}>
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+      <div className="card p-5 flex flex-wrap items-center gap-4 my-6 sm:my-8 lg:my-10">
+        <div className="relative flex-1 min-w-[280px]">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
-            className="form-input pl-9"
+            className="form-input"
+            style={{ paddingLeft: '2.75rem' }}
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -144,18 +144,11 @@ export default function UsersPage() {
             <button
               key={f}
               onClick={() => setKycFilter(f)}
-              style={{
-                padding:'0.375rem 0.875rem',
-                fontSize:'0.75rem',
-                fontWeight:600,
-                borderRadius:'0.5rem',
-                textTransform:'capitalize',
-                transition:'all 0.2s',
-                cursor:'pointer',
-                border: kycFilter === f ? 'none' : '1px solid #475569',
-                background: kycFilter === f ? 'linear-gradient(to right,#c53939,#da5353)' : '#1e293b',
-                color: kycFilter === f ? '#fff' : '#94a3b8',
-              }}
+              className={`min-w-[80px] px-4 py-2 rounded-xl text-sm font-semibold capitalize transition-all
+                ${kycFilter === f
+                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
+                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'
+                }`}
             >
               {f}
             </button>
@@ -163,19 +156,19 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table Container */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="admin-table">
             <thead>
-              <tr className="border-b border-slate-700/50">
-                <th className={th}>Student</th>
-                <th className={th}>Phone</th>
-                <th className={th}>Plan</th>
-                <th className={th}>Wallet</th>
-                <th className={th}>ID Card</th>
-                <th className={th}>KYC Status</th>
-                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+              <tr>
+                <th>Student</th>
+                <th>Phone</th>
+                <th>Plan</th>
+                <th>Wallet</th>
+                <th>ID Card</th>
+                <th>KYC Status</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -219,16 +212,16 @@ export default function UsersPage() {
                         <button
                           onClick={() => setViewingImg({ url: `${BASE_IMG}${student.studentIdCard}`, label: `${student.name} — ID Card` })}
                           style={{
-                            display:'flex',alignItems:'center',gap:6,padding:'4px 10px',
-                            background:'#0f172a',border:'1px solid #334155',borderRadius:8,
-                            color:'#60a5fa',fontSize:12,fontWeight:600,cursor:'pointer',
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+                            background: '#0f172a', border: '1px solid #334155', borderRadius: 8,
+                            color: '#60a5fa', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                           }}
                           title="View student ID card"
                         >
-                          <ImageIcon size={13}/> View
+                          <ImageIcon size={13} /> View
                         </button>
                       ) : (
-                        <span style={{color:'#475569',fontSize:12}}>—</span>
+                        <span style={{ color: '#475569', fontSize: 12 }}>—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">{KYC_BADGE[student.kycStatus] ?? student.kycStatus}</td>
@@ -256,11 +249,6 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
-        {!loading && filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-slate-800/60 text-xs text-slate-500">
-            Showing {filtered.length} of {students.length} students
-          </div>
-        )}
       </div>
 
       {/* Modals */}

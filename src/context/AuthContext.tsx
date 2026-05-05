@@ -88,18 +88,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, [user?._id]);
 
     // ── setUser: persists token automatically ─────────────────────────────────
-    const setUser = async (valueOrUpdater: any | ((prev: any) => any)) => {
-        const newUser =
-            typeof valueOrUpdater === 'function'
-                ? valueOrUpdater(user)
-                : valueOrUpdater;
+    const setUser = (valueOrUpdater: any | ((prev: any) => any)) => {
+        _setUser((prevUser: any) => {
+            const newUser =
+                typeof valueOrUpdater === 'function'
+                    ? valueOrUpdater(prevUser)
+                    : valueOrUpdater;
 
-        _setUser(newUser);
-
-        if (newUser?.token) {
-            await AsyncStorage.setItem(TOKEN_KEY, newUser.token);
-            await AsyncStorage.setItem(ROLE_KEY, newUser.role || 'student');
-        }
+            if (newUser?.token) {
+                AsyncStorage.setItem(TOKEN_KEY, newUser.token).catch(console.error);
+                AsyncStorage.setItem(ROLE_KEY, newUser.role || 'student').catch(console.error);
+            }
+            return newUser;
+        });
     };
 
     // ── logout: clears everything ─────────────────────────────────────────────
