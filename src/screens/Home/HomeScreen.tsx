@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
+import { useThemeColors, Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import WalletCard from '../../components/WalletCard';
 import MealSlotCard from '../../components/MealSlotCard';
 import AppButton from '../../components/AppButton';
@@ -61,6 +61,7 @@ const PLANS = [
 
 const HomeScreen = ({ navigation }: any) => {
     const { user, setUser } = useAuth();
+    const C = useThemeColors();
     const [mealStatuses, setMealStatuses] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -302,20 +303,20 @@ const HomeScreen = ({ navigation }: any) => {
 
                 {/* 🚨 Serving window open — urge to go now */}
                 {isServing && (
-                    <View style={styles.servingBanner}>
+                    <View style={[styles.servingBanner, { backgroundColor: C.warningLight, borderColor: C.warning }]}>
                         <Text style={styles.servingIcon}>🏃</Text>
                         <View style={styles.servingTextBlock}>
-                            <Text style={styles.servingTitle}>Reach fast, food is waiting for you!</Text>
-                            <Text style={styles.servingSubtitle}>{type} is being served now at {restaurantName}</Text>
+                            <Text style={[styles.servingTitle, { color: C.warning }]}>Reach fast, food is waiting for you!</Text>
+                            <Text style={[styles.servingSubtitle, { color: C.textSecondary }]}>{type} is being served now at {restaurantName}</Text>
                         </View>
                     </View>
                 )}
 
                 {/* Modified/locked notice */}
                 {showModifiedNotice && (
-                    <View style={styles.switchedBanner}>
-                        <Text style={styles.switchedIcon}>✓</Text>
-                        <Text style={styles.switchedText}>Restaurant switched. This meal is now locked — no further changes or cancellations.</Text>
+                    <View style={[styles.switchedBanner, { backgroundColor: C.successLight }]}>
+                        <Text style={[styles.switchedIcon, { color: C.success }]}>✓</Text>
+                        <Text style={[styles.switchedText, { color: C.success }]}>Restaurant switched. This meal is now locked — no further changes or cancellations.</Text>
                     </View>
                 )}
             </View>
@@ -325,7 +326,7 @@ const HomeScreen = ({ navigation }: any) => {
     const isActive = user?.subscriptionStatus === 'active';
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: C.background }]}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
@@ -336,8 +337,8 @@ const HomeScreen = ({ navigation }: any) => {
                 <KYCWarning />
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.welcomeText}>Hello, {displayName}!</Text>
-                        <Text style={Typography.body}>{isActive ? 'Your healthy meal is waiting!' : 'Join a plan to start your journey'}</Text>
+                        <Text style={[styles.welcomeText, { color: C.text }]}>Hello, {displayName}!</Text>
+                        <Text style={[Typography.body, { color: C.textSecondary }]}>{isActive ? 'Your healthy meal is waiting!' : 'Join a plan to start your journey'}</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.profileBadge}
@@ -361,10 +362,10 @@ const HomeScreen = ({ navigation }: any) => {
                 />
 
                 {!isActive && (
-                    <View style={styles.onboardingBanner}>
+                    <View style={[styles.onboardingBanner, { backgroundColor: C.primaryLight, borderLeftColor: C.primary }]}>
                         <View style={styles.bannerInfo}>
-                            <Text style={styles.bannerTitle}>UNLIMITED MEALS AWAIT</Text>
-                            <Text style={styles.bannerDesc}>Unlock your personal meal dashboard by selecting a subscription tier below.</Text>
+                            <Text style={[styles.bannerTitle, { color: C.primaryDark }]}>UNLIMITED MEALS AWAIT</Text>
+                            <Text style={[styles.bannerDesc, { color: C.primaryDark }]}>Unlock your personal meal dashboard by selecting a subscription tier below.</Text>
                         </View>
                     </View>
                 )}
@@ -373,7 +374,7 @@ const HomeScreen = ({ navigation }: any) => {
                     <>
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Text style={Typography.h2}>Today's Meals</Text>
+                                <Text style={[Typography.h2, { color: C.text }]}>Today's Meals</Text>
                             </View>
 
                         {/* Replaced by inline verify button */}
@@ -388,8 +389,14 @@ const HomeScreen = ({ navigation }: any) => {
 
                 <View style={styles.subscriptionSection}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>SUBSCRIPTION TIERS</Text>
-                        <Text style={styles.sectionSubtitle}>Select your access level</Text>
+                        <Text style={[styles.sectionTitle, { color: C.textLight }]}>
+                            {user?.selectedPlan ? 'YOUR SUBSCRIPTION' : 'SUBSCRIPTION TIERS'}
+                        </Text>
+                        {!user?.selectedPlan && (
+                            <Text style={[styles.sectionSubtitle, { color: C.textSecondary }]}>
+                                Select your access level
+                            </Text>
+                        )}
                     </View>
 
                     {user?.selectedPlan ? (
@@ -409,25 +416,25 @@ const HomeScreen = ({ navigation }: any) => {
                             {PLANS.map(plan => (
                                 <TouchableOpacity
                                     key={plan.id}
-                                    style={styles.tierCard}
+                                    style={[styles.tierCard, { backgroundColor: C.surface, borderColor: C.border }]}
                                     onPress={() => navigation.navigate('PlanDetail', { plan })}
                                 >
                                     {plan.isPopular && (
-                                        <View style={styles.popularBadge}>
+                                        <View style={[styles.popularBadge, { backgroundColor: C.primary }]}>
                                             <Text style={styles.popularText}>MOST POPULAR</Text>
                                         </View>
                                     )}
                                     <View style={styles.tierHeader}>
                                         <View style={styles.tierInfo}>
-                                            <Text style={styles.tierName}>{plan.name.toUpperCase()}</Text>
-                                            <Text style={styles.tierTagline}>{plan.tagline}</Text>
+                                            <Text style={[styles.tierName, { color: C.text }]}>{plan.name.toUpperCase()}</Text>
+                                            <Text style={[styles.tierTagline, { color: C.textSecondary }]}>{plan.tagline}</Text>
                                         </View>
                                         <Text style={styles.tierIcon}>{plan.icon}</Text>
                                     </View>
-                                    <View style={styles.tierFooter}>
-                                        <Text style={styles.tierPrice}>₹{plan.price}<Text style={styles.perMonth}>/mo</Text></Text>
-                                        <View style={styles.viewBtn}>
-                                            <Text style={styles.viewBtnText}>VIEW DETAILS</Text>
+                                    <View style={[styles.tierFooter, { borderTopColor: C.borderLight }]}>
+                                        <Text style={[styles.tierPrice, { color: C.text }]}>₹{plan.price}<Text style={[styles.perMonth, { color: C.textLight }]}>/mo</Text></Text>
+                                        <View style={[styles.viewBtn, { backgroundColor: C.primaryLight }]}>
+                                            <Text style={[styles.viewBtnText, { color: C.primary }]}>VIEW DETAILS</Text>
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -443,7 +450,6 @@ const HomeScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
     },
     scrollContent: {
         paddingHorizontal: Spacing.md,
@@ -484,10 +490,8 @@ const styles = StyleSheet.create({
     servingBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.warningLight,
         borderRadius: BorderRadius.md,
         borderWidth: 1.5,
-        borderColor: Colors.secondary,
         paddingHorizontal: 14,
         paddingVertical: 10,
         marginBottom: 6,
@@ -498,26 +502,23 @@ const styles = StyleSheet.create({
     servingTitle: {
         fontSize: 13,
         fontWeight: '800',
-        color: Colors.warning,
         lineHeight: 18,
     },
     servingSubtitle: {
         fontSize: 11,
-        color: Colors.textSecondary,
         marginTop: 2,
     },
     switchedBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.successLight,
         borderRadius: BorderRadius.sm,
         paddingHorizontal: 12,
         paddingVertical: 8,
         marginBottom: 6,
         gap: 8,
     },
-    switchedIcon: { fontSize: 14, color: Colors.success, fontWeight: '900' },
-    switchedText: { fontSize: 12, color: Colors.success, flex: 1, lineHeight: 16 },
+    switchedIcon: { fontSize: 14, fontWeight: '900' },
+    switchedText: { fontSize: 12, flex: 1, lineHeight: 16 },
 
     // ── Section headers ───────────────────────────────────────────────────────
     section: { marginTop: Spacing.lg },
@@ -542,24 +543,20 @@ const styles = StyleSheet.create({
 
     // ── Onboarding banner ─────────────────────────────────────────────────────
     onboardingBanner: {
-        backgroundColor: Colors.primaryLight,
         borderRadius: BorderRadius.lg,
         padding: Spacing.lg,
         marginTop: Spacing.lg,
         borderLeftWidth: 4,
-        borderLeftColor: Colors.primary,
     },
     bannerInfo: { flex: 1 },
     bannerTitle: {
         fontSize: 11,
         fontWeight: '900',
-        color: Colors.primaryDark,
         letterSpacing: 1.5,
         marginBottom: 6,
     },
     bannerDesc: {
         fontSize: 14,
-        color: Colors.primaryDark,
         lineHeight: 20,
     },
 
@@ -611,9 +608,7 @@ const styles = StyleSheet.create({
     // ── Plan tier cards ───────────────────────────────────────────────────────
     tiersContainer: { gap: 14 },
     tierCard: {
-        backgroundColor: Colors.surface,
         borderWidth: 1.5,
-        borderColor: Colors.border,
         borderRadius: BorderRadius.lg,
         padding: Spacing.md,
         position: 'relative',
@@ -623,7 +618,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -11,
         right: 16,
-        backgroundColor: Colors.primary,
         paddingHorizontal: 12,
         paddingVertical: 4,
         borderRadius: BorderRadius.round,
@@ -644,12 +638,10 @@ const styles = StyleSheet.create({
     tierName: {
         fontSize: 20,
         fontWeight: '900',
-        color: Colors.text,
         letterSpacing: -0.4,
     },
     tierTagline: {
         fontSize: 12,
-        color: Colors.textSecondary,
         marginTop: 4,
         lineHeight: 17,
     },
@@ -659,27 +651,22 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: Colors.borderLight,
         paddingTop: 12,
     },
     tierPrice: {
         fontSize: 20,
         fontWeight: '900',
-        color: Colors.text,
     },
     perMonth: {
         fontSize: 12,
         fontWeight: '400',
-        color: Colors.textLight,
     },
     viewBtn: {
-        backgroundColor: Colors.primaryLight,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: BorderRadius.round,
     },
     viewBtnText: {
-        color: Colors.primary,
         fontSize: 11,
         fontWeight: '800',
         letterSpacing: 0.5,

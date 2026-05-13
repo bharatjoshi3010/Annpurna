@@ -10,8 +10,9 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    useColorScheme,
 } from 'react-native';
-import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
+import { useThemeColors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../config';
@@ -23,6 +24,7 @@ const LoginScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(false);
 
     const { setUser } = useAuth();
+    const C = useThemeColors();
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -41,9 +43,7 @@ const LoginScreen = ({ navigation }: any) => {
             const data = await response.json();
 
             if (response.ok) {
-
                 setUser(data);
-
                 if (role === 'restaurant') {
                     navigation.replace('RestaurantMain');
                 } else {
@@ -63,35 +63,61 @@ const LoginScreen = ({ navigation }: any) => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={{ flex: 1, backgroundColor: C.background }}
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={Typography.h1}>Welcome Back!</Text>
-                    <Text style={styles.subtitle}>Sign in to continue to Annpurna</Text>
+                    <Text style={[Typography.h1, { color: C.text }]}>Welcome Back!</Text>
+                    <Text style={[styles.subtitle, { color: C.textLight }]}>Sign in to continue to Annpurna</Text>
                 </View>
 
                 <View style={styles.form}>
+                    {/* Role toggle */}
                     <View style={styles.roleContainer}>
                         <TouchableOpacity
-                            style={[styles.roleButton, role === 'student' && styles.roleActive]}
+                            style={[
+                                styles.roleButton,
+                                { borderColor: C.border, backgroundColor: C.surface },
+                                role === 'student' && { backgroundColor: C.primary, borderColor: C.primary },
+                            ]}
                             onPress={() => setRole('student')}
                         >
-                            <Text style={role === 'student' ? styles.roleTextActive : styles.roleText}>Consumer</Text>
+                            <Text style={[
+                                styles.roleText,
+                                { color: C.text },
+                                role === 'student' && { color: '#FFFFFF' },
+                            ]}>Consumer</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.roleButton, role === 'restaurant' && styles.roleActive]}
+                            style={[
+                                styles.roleButton,
+                                { borderColor: C.border, backgroundColor: C.surface },
+                                role === 'restaurant' && { backgroundColor: C.primary, borderColor: C.primary },
+                            ]}
                             onPress={() => setRole('restaurant')}
                         >
-                            <Text style={role === 'restaurant' ? styles.roleTextActive : styles.roleText}>Restaurant</Text>
+                            <Text style={[
+                                styles.roleText,
+                                { color: C.text },
+                                role === 'restaurant' && { color: '#FFFFFF' },
+                            ]}>Restaurant</Text>
                         </TouchableOpacity>
                     </View>
 
+                    {/* Email */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
+                        <Text style={[styles.label, { color: C.text }]}>Email Address</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[
+                                styles.input,
+                                {
+                                    backgroundColor: C.inputBg,
+                                    borderColor: C.inputBorder,
+                                    color: C.inputText,
+                                },
+                            ]}
                             placeholder="Enter your email"
+                            placeholderTextColor={C.inputPlaceholder}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -99,11 +125,20 @@ const LoginScreen = ({ navigation }: any) => {
                         />
                     </View>
 
+                    {/* Password — dark input so dots are visible */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
+                        <Text style={[styles.label, { color: C.text }]}>Password</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[
+                                styles.input,
+                                {
+                                    backgroundColor: C.inputBg,
+                                    borderColor: C.inputBorder,
+                                    color: C.inputText,
+                                },
+                            ]}
                             placeholder="Enter your password"
+                            placeholderTextColor={C.inputPlaceholder}
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
@@ -111,19 +146,19 @@ const LoginScreen = ({ navigation }: any) => {
                     </View>
 
                     <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                        <Text style={[styles.forgotPasswordText, { color: C.primary }]}>Forgot Password?</Text>
                     </TouchableOpacity>
 
                     {loading ? (
-                        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.md }} />
+                        <ActivityIndicator size="large" color={C.primary} style={{ marginTop: Spacing.md }} />
                     ) : (
                         <AppButton title="Login" onPress={handleLogin} style={styles.loginButton} />
                     )}
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <Text style={[styles.footerText, { color: C.textLight }]}>Don't have an account? </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-                            <Text style={styles.signupText}>Sign Up</Text>
+                            <Text style={[styles.signupText, { color: C.primary }]}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -133,25 +168,22 @@ const LoginScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
     scrollContent: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: 80, paddingBottom: Spacing.lg },
     header: { marginBottom: Spacing.xl },
-    subtitle: { ...Typography.body, color: Colors.textLight, marginTop: 8 },
+    subtitle: { fontSize: 15, marginTop: 8, lineHeight: 22 },
     form: { flex: 1 },
     roleContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.xl },
-    roleButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
-    roleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-    roleText: { color: Colors.text, fontWeight: '600' },
-    roleTextActive: { color: Colors.white, fontWeight: '600' },
+    roleButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
+    roleText: { fontWeight: '600', fontSize: 14 },
     inputGroup: { marginBottom: Spacing.md },
-    label: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 8, marginLeft: 4 },
-    input: { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
+    input: { height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1 },
     forgotPassword: { alignSelf: 'flex-end', marginBottom: Spacing.lg },
-    forgotPasswordText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
+    forgotPasswordText: { fontWeight: '600', fontSize: 14 },
     loginButton: { marginTop: Spacing.md },
     footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-    footerText: { color: Colors.textLight, fontSize: 14 },
-    signupText: { color: Colors.primary, fontWeight: '700', fontSize: 14 },
+    footerText: { fontSize: 14 },
+    signupText: { fontWeight: '700', fontSize: 14 },
 });
 
 export default LoginScreen;

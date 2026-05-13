@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../styles/theme';
 
 // Import Screens
@@ -27,7 +27,10 @@ import MyStudentsScreen from '../screens/RestaurantOwner/MyStudentsScreen';
 import RestaurantMealHistoryScreen from '../screens/RestaurantOwner/RestaurantMealHistoryScreen';
 import RestaurantAnalyticsScreen from '../screens/RestaurantOwner/RestaurantAnalyticsScreen';
 import SubscriptionHistoryScreen from '../screens/Profile/SubscriptionHistoryScreen';
-import QRScanScreen from '../screens/Home/QRScanScreen';
+// Lazy-load QRScanScreen: react-native-vision-camera v4 uses JSI/Nitro Modules
+// that crash during bundle startup if imported statically. Lazy import defers
+// evaluation until the screen is actually navigated to (native is ready by then).
+const QRScanScreen = React.lazy(() => import('../screens/Home/QRScanScreen'));
 import ExploreRestaurantsScreen from '../screens/Home/ExploreRestaurantsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -162,7 +165,14 @@ const AppNavigator = () => {
                 <Stack.Screen name="RestaurantMealHistory"  component={RestaurantMealHistoryScreen} />
                 <Stack.Screen name="RestaurantAnalytics"     component={RestaurantAnalyticsScreen} />
                 <Stack.Screen name="Support"                 component={SupportScreen} />
-                <Stack.Screen name="QRScan"                  component={QRScanScreen} />
+                <Stack.Screen
+                    name="QRScan"
+                    component={(props: any) => (
+                        <Suspense fallback={null}>
+                            <QRScanScreen {...props} />
+                        </Suspense>
+                    )}
+                />
                 <Stack.Screen name="ExploreRestaurants"      component={ExploreRestaurantsScreen} />
             </Stack.Navigator>
         </NavigationContainer>

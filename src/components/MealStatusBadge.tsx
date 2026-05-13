@@ -16,7 +16,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, useColorScheme } from 'react-native';
+import { useThemeColors } from '../styles/theme';
 
 // ── Meal schedule ─────────────────────────────────────────────────────────────
 const MEALS = [
@@ -110,6 +111,8 @@ const computeState = (): BadgeState => {
 const MealStatusBadge: React.FC = () => {
     const [state, setState] = useState<BadgeState>(computeState);
     const [pulse]           = useState(new Animated.Value(1));
+    const C = useThemeColors();
+    const isDark = C.background === '#0F0E0D';
 
     // Re-compute every 30 seconds
     useEffect(() => {
@@ -136,39 +139,43 @@ const MealStatusBadge: React.FC = () => {
         switch (state.phase) {
             case 'preparing':
                 return {
-                    bg:        '#FFF8E1',
-                    border:    '#FFD54F',
+                    bg:        isDark ? '#291E00' : '#FFF8E1',
+                    border:    isDark ? '#856404' : '#FFD54F',
                     dot:       '#FFC107',
                     label:     `PREPARING  ${state.meal.toUpperCase()}`,
                     sub:       `Booking open · cutoff at ${state.cutoffAt}`,
                     emoji:     state.emoji,
+                    textColor: isDark ? '#FDE68A' : '#795300',
                 };
             case 'serving':
                 return {
-                    bg:        '#E8F5E9',
-                    border:    '#66BB6A',
+                    bg:        isDark ? '#052E16' : '#E8F5E9',
+                    border:    isDark ? '#166534' : '#66BB6A',
                     dot:       '#4CAF50',
                     label:     `NOW SERVING  ${state.meal.toUpperCase()}`,
                     sub:       `Ends at ${state.endsAt} · ${state.minsLeft} min left`,
                     emoji:     state.emoji,
+                    textColor: isDark ? '#4ADE80' : '#2E7D32',
                 };
             case 'endssoon':
                 return {
-                    bg:        '#FBE9E7',
-                    border:    '#EF9A9A',
+                    bg:        isDark ? '#450A0A' : '#FBE9E7',
+                    border:    isDark ? '#991B1B' : '#EF9A9A',
                     dot:       '#F44336',
                     label:     `SERVING ENDS SOON`,
                     sub:       `${state.meal} wraps up at ${state.endsAt} · ${state.minsLeft} min left`,
                     emoji:     state.emoji,
+                    textColor: isDark ? '#F87171' : '#B71C1C',
                 };
             case 'resting':
                 return {
-                    bg:        '#F3F4F6',
-                    border:    '#D1D5DB',
+                    bg:        isDark ? C.surfaceAlt : '#F3F4F6',
+                    border:    isDark ? C.border     : '#D1D5DB',
                     dot:       '#9CA3AF',
                     label:     `RESTAURANT RESTING`,
                     sub:       `${state.nextMeal} service starts at ${state.nextAt}`,
                     emoji:     '😴',
+                    textColor: isDark ? C.textLight : '#374151',
                 };
             default:
                 return null;
@@ -186,11 +193,11 @@ const MealStatusBadge: React.FC = () => {
             <View style={styles.textBlock}>
                 <View style={styles.labelRow}>
                     <Animated.View style={[styles.dot, { backgroundColor: config.dot, opacity: pulse }]} />
-                    <Text style={[styles.label, { color: config.dot === '#4CAF50' ? '#2E7D32' : config.dot === '#F44336' ? '#B71C1C' : config.dot === '#FFC107' ? '#795300' : '#374151' }]}>
+                    <Text style={[styles.label, { color: config.textColor }]}>
                         {config.label}
                     </Text>
                 </View>
-                <Text style={styles.sub}>{config.sub}</Text>
+                <Text style={[styles.sub, { color: C.textSecondary }]}>{config.sub}</Text>
             </View>
         </View>
     );
@@ -230,7 +237,6 @@ const styles = StyleSheet.create({
     },
     sub: {
         fontSize:   12,
-        color:      '#666',
         marginTop:  3,
         lineHeight: 16,
     },

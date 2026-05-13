@@ -4,7 +4,7 @@ import {
     ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Spacing, Typography, BorderRadius } from '../../styles/theme';
+import { Colors, useThemeColors, Spacing, Typography, BorderRadius } from '../../styles/theme';
 import { useAuth } from '../../context/AuthContext';
 import KYCWarning from '../../components/KYCWarning';
 import UserAvatar from '../../components/UserAvatar';
@@ -19,10 +19,11 @@ const MEAL_ORDER = ['Breakfast', 'Lunch', 'Dinner'];
 
 // ─── Compact Menu Display (used in both sections) ─────────────────────────────
 const MenuDisplay = ({ menus, compact = false }: { menus: any[]; compact?: boolean }) => {
+    const C = useThemeColors();
     if (!menus || menus.length === 0) {
         return (
             <View style={menuStyles.emptyRow}>
-                <Text style={menuStyles.emptyText}>No menu set for this week</Text>
+                <Text style={[menuStyles.emptyText, { color: C.textLight }]}>No menu set for this week</Text>
             </View>
         );
     }
@@ -44,19 +45,19 @@ const MenuDisplay = ({ menus, compact = false }: { menus: any[]; compact?: boole
                     <View key={mealType} style={menuStyles.mealBlock}>
                         <View style={menuStyles.mealHeader}>
                             <Text style={menuStyles.mealEmoji}>{MEAL_EMOJI[mealType] || '🍽'}</Text>
-                            <Text style={menuStyles.mealLabel}>{mealType}</Text>
+                            <Text style={[menuStyles.mealLabel, { color: C.textSecondary }]}>{mealType}</Text>
                         </View>
                         <View style={menuStyles.itemsRow}>
                             {items.slice(0, compact ? 3 : 10).map((item: any, i: number) => (
-                                <View key={i} style={menuStyles.chip}>
-                                    <Text style={menuStyles.chipText} numberOfLines={1}>
+                                <View key={i} style={[menuStyles.chip, { backgroundColor: C.primaryLight }]}>
+                                    <Text style={[menuStyles.chipText, { color: C.primaryDark }]} numberOfLines={1}>
                                         {typeof item === 'string' ? item : item.name || '?'}
                                     </Text>
                                 </View>
                             ))}
                             {compact && items.length > 3 && (
-                                <View style={[menuStyles.chip, menuStyles.chipMore]}>
-                                    <Text style={menuStyles.chipText}>+{items.length - 3}</Text>
+                                <View style={[menuStyles.chip, { backgroundColor: C.surfaceAlt }]}>
+                                    <Text style={[menuStyles.chipText, { color: C.textSecondary }]}>+{items.length - 3}</Text>
                                 </View>
                             )}
                         </View>
@@ -70,24 +71,24 @@ const MenuDisplay = ({ menus, compact = false }: { menus: any[]; compact?: boole
 const menuStyles = StyleSheet.create({
     container:  { gap: 10 },
     emptyRow:   { paddingVertical: 12, alignItems: 'center' },
-    emptyText:  { fontSize: 13, color: Colors.textLight, fontStyle: 'italic' },
+    emptyText:  { fontSize: 13, fontStyle: 'italic' },
     mealBlock:  { gap: 6 },
     mealHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     mealEmoji:  { fontSize: 14 },
-    mealLabel:  { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+    mealLabel:  { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
     itemsRow:   { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     chip: {
-        backgroundColor: Colors.primaryLight,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: BorderRadius.round,
     },
-    chipMore: { backgroundColor: Colors.surfaceAlt },
-    chipText: { fontSize: 11, color: Colors.primaryDark, fontWeight: '600' },
+    chipMore: {},
+    chipText: { fontSize: 11, fontWeight: '600' },
 } as any);
 
 // ─── Default Restaurant Card ──────────────────────────────────────────────────
 const DefaultRestaurantCard = ({ restaurantId, navigation }: { restaurantId: string; navigation: any }) => {
+    const C = useThemeColors();
     const [restaurant, setRestaurant] = useState<any>(null);
     const [menus, setMenus]           = useState<any[]>([]);
     const [loading, setLoading]       = useState(true);
@@ -123,8 +124,8 @@ const DefaultRestaurantCard = ({ restaurantId, navigation }: { restaurantId: str
 
     if (loading) {
         return (
-            <View style={drStyles.card}>
-                <ActivityIndicator color={Colors.primary} style={{ paddingVertical: 20 }} />
+            <View style={[drStyles.card, { backgroundColor: C.surface, borderColor: C.primary + '40' }]}>
+                <ActivityIndicator color={C.primary} style={{ paddingVertical: 20 }} />
             </View>
         );
     }
@@ -134,32 +135,32 @@ const DefaultRestaurantCard = ({ restaurantId, navigation }: { restaurantId: str
     const isApproved = restaurant.kycStatus === 'approved';
 
     return (
-        <View style={drStyles.card}>
+        <View style={[drStyles.card, { backgroundColor: C.surface, borderColor: C.primary + '40' }]}>
             {/* Header */}
             <TouchableOpacity style={drStyles.header} onPress={() => setExpanded(e => !e)} activeOpacity={0.8}>
-                <View style={drStyles.iconBox}>
+                <View style={[drStyles.iconBox, { backgroundColor: C.primaryLight }]}>
                     <Text style={drStyles.iconEmoji}>🏪</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={drStyles.name} numberOfLines={1}>{restaurant.restaurantName}</Text>
-                    <Text style={drStyles.address} numberOfLines={1}>{restaurant.address || restaurant.location || ''}</Text>
+                    <Text style={[drStyles.name, { color: C.text }]} numberOfLines={1}>{restaurant.restaurantName}</Text>
+                    <Text style={[drStyles.address, { color: C.textLight }]} numberOfLines={1}>{restaurant.address || restaurant.location || ''}</Text>
                 </View>
-                <View style={[drStyles.kycBadge, { backgroundColor: isApproved ? '#DCFCE7' : '#FEF3C7' }]}>
-                    <Text style={[drStyles.kycText, { color: isApproved ? '#16A34A' : '#D97706' }]}>
+                <View style={[drStyles.kycBadge, { backgroundColor: isApproved ? C.successLight : C.warningLight }]}>
+                    <Text style={[drStyles.kycText, { color: isApproved ? C.success : C.warning }]}>
                         {isApproved ? '✓ Verified' : '⏳ Pending'}
                     </Text>
                 </View>
-                <Text style={drStyles.chevron}>{expanded ? '▲' : '▼'}</Text>
+                <Text style={[drStyles.chevron, { color: C.textLight }]}>{expanded ? '▲' : '▼'}</Text>
             </TouchableOpacity>
 
             {expanded && (
-                <View style={drStyles.menuSection}>
+                <View style={[drStyles.menuSection, { borderTopColor: C.borderLight }]}>
                     <View style={drStyles.menuTitleRow}>
-                        <Text style={drStyles.menuTitle}>Today's Menu · {TODAY}</Text>
+                        <Text style={[drStyles.menuTitle, { color: C.textSecondary }]}>Today's Menu · {TODAY}</Text>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('ExploreRestaurants', { focusId: restaurantId })}
                         >
-                            <Text style={drStyles.viewAll}>View Full Menu →</Text>
+                            <Text style={[drStyles.viewAll, { color: C.primary }]}>View Full Menu →</Text>
                         </TouchableOpacity>
                     </View>
                     <MenuDisplay menus={menus} compact={false} />
@@ -171,10 +172,8 @@ const DefaultRestaurantCard = ({ restaurantId, navigation }: { restaurantId: str
 
 const drStyles = StyleSheet.create({
     card: {
-        backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
         borderWidth: 1.5,
-        borderColor: Colors.primary + '40',
         overflow: 'hidden',
         shadowColor: Colors.primary,
         shadowOffset: { width: 0, height: 3 },
@@ -182,32 +181,27 @@ const drStyles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
     },
-    header: {
-        flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10,
-    },
+    header: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
     iconBox: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: Colors.primaryLight,
         justifyContent: 'center', alignItems: 'center',
     },
     iconEmoji:  { fontSize: 22 },
-    name:       { fontSize: 15, fontWeight: '800', color: Colors.text },
-    address:    { fontSize: 12, color: Colors.textLight, marginTop: 2 },
+    name:       { fontSize: 15, fontWeight: '800' },
+    address:    { fontSize: 12, marginTop: 2 },
     kycBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.round },
     kycText:    { fontSize: 10, fontWeight: '700' },
-    chevron:    { fontSize: 12, color: Colors.textLight, marginLeft: 4 },
-    menuSection: {
-        borderTopWidth: 1, borderTopColor: Colors.borderLight,
-        padding: 14,
-    },
+    chevron:    { fontSize: 12, marginLeft: 4 },
+    menuSection: { borderTopWidth: 1, padding: 14 },
     menuTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-    menuTitle:    { flex: 1, fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
-    viewAll:      { fontSize: 12, color: Colors.primary, fontWeight: '700' },
+    menuTitle:    { flex: 1, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+    viewAll:      { fontSize: 12, fontWeight: '700' },
 } as any);
 
 // ─── Main ProfileScreen ───────────────────────────────────────────────────────
 const ProfileScreen = ({ navigation }: any) => {
     const { user, setUser, logout } = useAuth();
+    const C = useThemeColors();
     const [uploading, setUploading] = useState(false);
 
     const isStudent    = user?.role === 'student';
@@ -270,14 +264,14 @@ const ProfileScreen = ({ navigation }: any) => {
     ];
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: C.background }]} edges={['top']}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
                 <View style={{ paddingHorizontal: Spacing.md }}>
                     <KYCWarning />
                 </View>
 
                 {/* ── Profile card ────────────────────────────────────── */}
-                <View style={styles.profileCard}>
+                <View style={[styles.profileCard, { backgroundColor: C.surface, borderBottomColor: C.border }]}>
                     <View style={styles.avatarWrapper}>
                         <UserAvatar
                             photoUrl={user?.profilePhoto}
@@ -292,12 +286,12 @@ const ProfileScreen = ({ navigation }: any) => {
                                 : <Text style={{ fontSize: 14 }}>📷</Text>}
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.userName}>{displayName}</Text>
-                    <Text style={styles.userEmail}>{displayEmail}</Text>
+                    <Text style={[styles.userName, { color: C.text }]}>{displayName}</Text>
+                    <Text style={[styles.userEmail, { color: C.textLight }]}>{displayEmail}</Text>
 
                     {/* Role pill */}
-                    <View style={[styles.rolePill, { backgroundColor: isStudent ? Colors.primaryLight : '#EDE7F6' }]}>
-                        <Text style={[styles.roleText, { color: isStudent ? Colors.primary : '#6D28D9' }]}>
+                    <View style={[styles.rolePill, { backgroundColor: isStudent ? C.primaryLight : '#EDE7F6' }]}>
+                        <Text style={[styles.roleText, { color: isStudent ? C.primary : '#6D28D9' }]}>
                             {isStudent ? '🎓 Student' : '🏪 Restaurant Owner'}
                         </Text>
                     </View>
@@ -313,7 +307,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 {isStudent && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>MY DEFAULT RESTAURANT</Text>
+                            <Text style={[styles.sectionTitle, { color: C.textLight }]}>MY DEFAULT RESTAURANT</Text>
                         </View>
                         {user?.defaultRestaurantId ? (
                             <DefaultRestaurantCard
@@ -321,11 +315,11 @@ const ProfileScreen = ({ navigation }: any) => {
                                 navigation={navigation}
                             />
                         ) : (
-                            <View style={styles.noRestaurantCard}>
+                            <View style={[styles.noRestaurantCard, { backgroundColor: C.surface, borderColor: C.border }]}>
                                 <Text style={styles.noRestaurantIcon}>🍽️</Text>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.noRestaurantTitle}>No restaurant selected</Text>
-                                    <Text style={styles.noRestaurantSub}>Update your Personal Information to set one</Text>
+                                    <Text style={[styles.noRestaurantTitle, { color: C.text }]}>No restaurant selected</Text>
+                                    <Text style={[styles.noRestaurantSub, { color: C.textLight }]}>Update your Personal Information to set one</Text>
                                 </View>
                             </View>
                         )}
@@ -336,7 +330,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 {isStudent && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>DISCOVER</Text>
+                            <Text style={[styles.sectionTitle, { color: C.textLight }]}>DISCOVER</Text>
                         </View>
                         <TouchableOpacity
                             style={styles.exploreCard}
@@ -360,51 +354,52 @@ const ProfileScreen = ({ navigation }: any) => {
                 {/* ── Account menu ────────────────────────────────────── */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>ACCOUNT</Text>
+                        <Text style={[styles.sectionTitle, { color: C.textLight }]}>ACCOUNT</Text>
                     </View>
-                    <View style={styles.menuCard}>
+                    <View style={[styles.menuCard, { backgroundColor: C.surface, borderColor: C.border }]}>
                         {MENU_OPTIONS.map((item, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={[styles.menuItem, index === MENU_OPTIONS.length - 1 && { borderBottomWidth: 0 }]}
+                                style={[styles.menuItem, { borderBottomColor: C.borderLight }, index === MENU_OPTIONS.length - 1 && { borderBottomWidth: 0 }]}
                                 onPress={() => navigation.navigate(item.route)}
                             >
-                                <View style={styles.menuIconBox}>
+                                <View style={[styles.menuIconBox, { backgroundColor: C.surfaceAlt }]}>
                                     <Text style={{ fontSize: 18 }}>{item.icon}</Text>
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.menuTitle}>{item.title}</Text>
-                                    {item.subtitle && <Text style={styles.menuSub}>{item.subtitle}</Text>}
+                                    <Text style={[styles.menuTitle, { color: C.text }]}>{item.title}</Text>
+                                    {item.subtitle && <Text style={[styles.menuSub, { color: C.primary }]}>{item.subtitle}</Text>}
                                 </View>
-                                <Text style={styles.menuArrow}>›</Text>
+                                <Text style={[styles.menuArrow, { color: C.textLight }]}>›</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
                 </View>
 
                 {/* ── Logout ──────────────────────────────────────────── */}
-                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                    <Text style={styles.logoutText}>🚪 Log Out</Text>
+                <TouchableOpacity
+                    style={[styles.logoutBtn, { backgroundColor: C.errorLight, borderColor: C.error + '60' }]}
+                    onPress={handleLogout}
+                >
+                    <Text style={[styles.logoutText, { color: C.error }]}>🚪 Log Out</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.version}>Annpurna v1.0.0</Text>
+                <Text style={[styles.version, { color: C.textLight }]}>Annpurna v1.0.0</Text>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
+    container: { flex: 1 },
     scroll:    { paddingBottom: 40 },
 
     // Profile card
     profileCard: {
         alignItems: 'center',
-        backgroundColor: Colors.surface,
         paddingVertical: Spacing.xl,
         paddingHorizontal: Spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
     },
     avatarWrapper:  { position: 'relative', marginBottom: Spacing.md },
     cameraBtn: {
@@ -414,8 +409,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center', alignItems: 'center',
         borderWidth: 2, borderColor: '#FFF',
     },
-    userName:      { fontSize: 22, fontWeight: '800', color: Colors.text, marginBottom: 4 },
-    userEmail:     { fontSize: 13, color: Colors.textLight, marginBottom: Spacing.sm },
+    userName:      { fontSize: 22, fontWeight: '800', marginBottom: 4 },
+    userEmail:     { fontSize: 13, marginBottom: Spacing.sm },
     rolePill:      { paddingHorizontal: 14, paddingVertical: 5, borderRadius: BorderRadius.round, marginBottom: Spacing.md },
     roleText:      { fontSize: 13, fontWeight: '700' },
     editPhotoBtn:  { paddingHorizontal: 20, paddingVertical: 8, borderRadius: BorderRadius.round, borderWidth: 1.5, borderColor: Colors.primary },
@@ -424,21 +419,19 @@ const styles = StyleSheet.create({
     // Sections
     section:       { marginTop: Spacing.lg, paddingHorizontal: Spacing.md },
     sectionHeader: { marginBottom: 10 },
-    sectionTitle:  { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, color: Colors.textLight, textTransform: 'uppercase' },
+    sectionTitle:  { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' },
 
     // No restaurant
     noRestaurantCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
-        backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
         padding: 16,
         borderWidth: 1.5,
-        borderColor: Colors.border,
         borderStyle: 'dashed',
     },
     noRestaurantIcon:  { fontSize: 28 },
-    noRestaurantTitle: { fontSize: 14, fontWeight: '700', color: Colors.text },
-    noRestaurantSub:   { fontSize: 12, color: Colors.textLight, marginTop: 2 },
+    noRestaurantTitle: { fontSize: 14, fontWeight: '700' },
+    noRestaurantSub:   { fontSize: 12, marginTop: 2 },
 
     // Explore card
     exploreCard: {
@@ -462,17 +455,17 @@ const styles = StyleSheet.create({
     exploreArrow:  { fontSize: 28, color: 'rgba(255,255,255,0.7)' },
 
     // Account menu
-    menuCard:   { backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
-    menuItem:   { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
-    menuIconBox:{ width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    menuTitle:  { fontSize: 15, fontWeight: '600', color: Colors.text },
-    menuSub:    { fontSize: 12, color: Colors.primary, fontWeight: '600', marginTop: 2 },
-    menuArrow:  { fontSize: 22, color: Colors.textLight },
+    menuCard:   { borderRadius: BorderRadius.lg, borderWidth: 1, overflow: 'hidden' },
+    menuItem:   { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1 },
+    menuIconBox:{ width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    menuTitle:  { fontSize: 15, fontWeight: '600' },
+    menuSub:    { fontSize: 12, fontWeight: '600', marginTop: 2 },
+    menuArrow:  { fontSize: 22 },
 
     // Logout
-    logoutBtn:  { marginHorizontal: Spacing.md, marginTop: Spacing.xl, paddingVertical: 15, alignItems: 'center', borderRadius: BorderRadius.lg, backgroundColor: '#FFF1F0', borderWidth: 1, borderColor: '#FECACA' },
-    logoutText: { color: Colors.error, fontWeight: '700', fontSize: 15 },
-    version:    { textAlign: 'center', color: Colors.textLight, fontSize: 11, marginTop: 16 },
+    logoutBtn:  { marginHorizontal: Spacing.md, marginTop: Spacing.xl, paddingVertical: 15, alignItems: 'center', borderRadius: BorderRadius.lg, borderWidth: 1 },
+    logoutText: { fontWeight: '700', fontSize: 15 },
+    version:    { textAlign: 'center', fontSize: 11, marginTop: 16 },
 } as any);
 
 export default ProfileScreen;

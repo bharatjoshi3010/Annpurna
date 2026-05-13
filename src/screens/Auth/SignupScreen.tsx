@@ -14,16 +14,16 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { API_BASE_URL } from '../../config';
-import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
+import { useThemeColors, Spacing, Typography, BorderRadius, Shadows } from '../../styles/theme';
 import AppButton from '../../components/AppButton';
 import { useAuth } from '../../context/AuthContext';
 
 // ─── Validation helpers ────────────────────────────────────────────────────────
-const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-const isValidPhone = (v: string) => /^[6-9]\d{9}$/.test(v.trim());        // Indian 10-digit
-const isValidYear = (v: string) => /^\d{4}$/.test(v) && +v >= 1900 && +v <= new Date().getFullYear();
+const isValidEmail    = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidPhone    = (v: string) => /^[6-9]\d{9}$/.test(v.trim());
+const isValidYear     = (v: string) => /^\d{4}$/.test(v) && +v >= 1900 && +v <= new Date().getFullYear();
 const isValidCapacity = (v: string) => /^\d+$/.test(v) && +v > 0;
-const isNonEmpty = (v: string) => v.trim().length > 0;
+const isNonEmpty      = (v: string) => v.trim().length > 0;
 const isValidPassword = (v: string) => v.length >= 6;
 
 interface FieldError { [key: string]: string }
@@ -39,87 +39,71 @@ const MAX_FILE_BYTES = 1 * 1024 * 1024; // 1 MB
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const SignupScreen = ({ navigation }: any) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email,           setEmail]           = useState('');
+    const [password,        setPassword]        = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState('student');
-    const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState<FieldError>({});
+    const [role,            setRole]            = useState('student');
+    const [loading,         setLoading]         = useState(false);
+    const [errors,          setErrors]          = useState<FieldError>({});
 
     const { setUser } = useAuth();
+    const C = useThemeColors();
 
     // Common fields
-    const [address, setAddress] = useState('');
+    const [address,     setAddress]     = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
 
     // Student fields
-    const [name, setName] = useState('');
-    const [localGuardianName, setLocalGuardianName] = useState('');
+    const [name,               setName]               = useState('');
+    const [localGuardianName,  setLocalGuardianName]  = useState('');
     const [localGuardianPhone, setLocalGuardianPhone] = useState('');
-    const [hometownAddress, setHometownAddress] = useState('');
-    const [studentIdCard, setStudentIdCard] = useState<DocField>(null);
+    const [hometownAddress,    setHometownAddress]    = useState('');
+    const [studentIdCard,      setStudentIdCard]      = useState<DocField>(null);
 
     // Restaurant fields
-    const [ownerName, setOwnerName] = useState('');
+    const [ownerName,      setOwnerName]      = useState('');
     const [restaurantName, setRestaurantName] = useState('');
-    const [openingYear, setOpeningYear] = useState('');
-    const [maxCapacity, setMaxCapacity] = useState('');
-    const [fssaiCert, setFssaiCert] = useState<DocField>(null);
-    const [regCert, setRegCert] = useState<DocField>(null);
+    const [openingYear,    setOpeningYear]    = useState('');
+    const [maxCapacity,    setMaxCapacity]    = useState('');
+    const [fssaiCert,      setFssaiCert]      = useState<DocField>(null);
+    const [regCert,        setRegCert]        = useState<DocField>(null);
 
     // ── Image picker ──────────────────────────────────────────────────────────
     const pickDocument = async (
         setter: React.Dispatch<React.SetStateAction<DocField>>,
         fieldKey: string,
     ) => {
-        const result = await launchImageLibrary({
-            mediaType: 'photo',
-            quality: 0.85,
-            includeExtra: true,
-        });
-
+        const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.85, includeExtra: true });
         if (result.didCancel || !result.assets?.length) return;
         const asset = result.assets[0];
-
-        if (!asset.uri || !asset.fileSize) {
-            Alert.alert('Error', 'Could not read the selected file.');
-            return;
-        }
+        if (!asset.uri || !asset.fileSize) { Alert.alert('Error', 'Could not read the selected file.'); return; }
         if (asset.fileSize > MAX_FILE_BYTES) {
-            setErrors((prev) => ({ ...prev, [fieldKey]: 'Image must be smaller than 1 MB' }));
+            setErrors(prev => ({ ...prev, [fieldKey]: 'Image must be smaller than 1 MB' }));
             setter(null);
             return;
         }
-
         setter({ uri: asset.uri, name: asset.fileName || 'photo.jpg', type: asset.type || 'image/jpeg', size: asset.fileSize });
-        setErrors((prev) => { const copy = { ...prev }; delete copy[fieldKey]; return copy; });
+        setErrors(prev => { const copy = { ...prev }; delete copy[fieldKey]; return copy; });
     };
 
-    // ── Upload a document to the server, returns the server path ─────────────
+    // ── Upload document ───────────────────────────────────────────────────────
     const uploadDocument = async (doc: NonNullable<DocField>, endpoint: string, fieldName: string): Promise<string> => {
         const form = new FormData();
         form.append(fieldName, { uri: doc.uri, name: doc.name, type: doc.type } as any);
-
-        const res = await fetch(`${API_BASE_URL}/api/upload/${endpoint}`, {
-            method: 'POST',
-            body: form,
-            // Do NOT set Content-Type manually — fetch auto-sets multipart/form-data
-            // with the correct boundary when a FormData body is used.
-        });
+        const res  = await fetch(`${API_BASE_URL}/api/upload/${endpoint}`, { method: 'POST', body: form });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Upload failed');
         return data.image as string;
     };
 
-    // ── Inline field validation ───────────────────────────────────────────────
+    // ── Inline validation ─────────────────────────────────────────────────────
     const validate = (field: string, value: string, otherPassword?: string) => {
         let msg = '';
         switch (field) {
-            case 'email': msg = isValidEmail(value) ? '' : 'Enter a valid email address'; break;
+            case 'email':    msg = isValidEmail(value) ? '' : 'Enter a valid email address'; break;
             case 'password':
                 msg = isValidPassword(value) ? '' : 'Password must be at least 6 characters';
-                // Also re-validate confirmPassword whenever password changes
-                setErrors((prev) => ({
+                setErrors(prev => ({
                     ...prev,
                     password: msg,
                     confirmPassword:
@@ -128,39 +112,38 @@ const SignupScreen = ({ navigation }: any) => {
                             : prev.confirmPassword,
                 }));
                 return;
-            case 'confirmPassword': msg = value === (otherPassword ?? password) ? '' : 'Passwords do not match'; break;
-            case 'phoneNumber': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
-            case 'localGuardianPhone': msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
-            case 'openingYear': msg = isValidYear(value) ? '' : 'Enter a valid year (e.g. 2010)'; break;
-            case 'maxCapacity': msg = isValidCapacity(value) ? '' : 'Capacity must be a positive number'; break;
-            default: msg = isNonEmpty(value) ? '' : 'This field is required';
+            case 'confirmPassword':   msg = value === (otherPassword ?? password) ? '' : 'Passwords do not match'; break;
+            case 'phoneNumber':       msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
+            case 'localGuardianPhone':msg = isValidPhone(value) ? '' : 'Enter a valid 10-digit mobile number'; break;
+            case 'openingYear':       msg = isValidYear(value)     ? '' : 'Enter a valid year (e.g. 2010)'; break;
+            case 'maxCapacity':       msg = isValidCapacity(value)  ? '' : 'Capacity must be a positive number'; break;
+            default:                  msg = isNonEmpty(value) ? '' : 'This field is required';
         }
-        setErrors((prev) => ({ ...prev, [field]: msg }));
+        setErrors(prev => ({ ...prev, [field]: msg }));
     };
 
-    // ── Full form validation before submit ────────────────────────────────────
+    // ── Full form validation ──────────────────────────────────────────────────
     const validateAll = (): boolean => {
         const errs: FieldError = {};
-
-        if (!isValidEmail(email)) errs.email = 'Enter a valid email address';
-        if (!isValidPassword(password)) errs.password = 'Password must be at least 6 characters';
-        if (confirmPassword !== password) errs.confirmPassword = 'Passwords do not match';
-        if (!isValidPhone(phoneNumber)) errs.phoneNumber = 'Enter a valid 10-digit mobile number';
-        if (!isNonEmpty(address)) errs.address = 'This field is required';
+        if (!isValidEmail(email))           errs.email           = 'Enter a valid email address';
+        if (!isValidPassword(password))     errs.password        = 'Password must be at least 6 characters';
+        if (confirmPassword !== password)   errs.confirmPassword = 'Passwords do not match';
+        if (!isValidPhone(phoneNumber))     errs.phoneNumber     = 'Enter a valid 10-digit mobile number';
+        if (!isNonEmpty(address))           errs.address         = 'This field is required';
 
         if (role === 'student') {
-            if (!isNonEmpty(name)) errs.name = 'This field is required';
-            if (!isNonEmpty(localGuardianName)) errs.localGuardianName = 'This field is required';
-            if (!isValidPhone(localGuardianPhone)) errs.localGuardianPhone = 'Enter a valid 10-digit mobile number';
-            if (!isNonEmpty(hometownAddress)) errs.hometownAddress = 'This field is required';
-            if (!studentIdCard) errs.studentIdCard = 'Please upload your student ID card';
+            if (!isNonEmpty(name))               errs.name               = 'This field is required';
+            if (!isNonEmpty(localGuardianName))  errs.localGuardianName  = 'This field is required';
+            if (!isValidPhone(localGuardianPhone))errs.localGuardianPhone = 'Enter a valid 10-digit mobile number';
+            if (!isNonEmpty(hometownAddress))    errs.hometownAddress    = 'This field is required';
+            if (!studentIdCard)                  errs.studentIdCard      = 'Please upload your student ID card';
         } else {
-            if (!isNonEmpty(ownerName)) errs.ownerName = 'This field is required';
-            if (!isNonEmpty(restaurantName)) errs.restaurantName = 'This field is required';
-            if (!isValidYear(openingYear)) errs.openingYear = 'Enter a valid year (e.g. 2010)';
-            if (!isValidCapacity(maxCapacity)) errs.maxCapacity = 'Capacity must be a positive number';
-            if (!fssaiCert) errs.fssaiCert = 'Please upload the FSSAI certificate';
-            if (!regCert) errs.regCert = 'Please upload the registration certificate';
+            if (!isNonEmpty(ownerName))       errs.ownerName      = 'This field is required';
+            if (!isNonEmpty(restaurantName))  errs.restaurantName  = 'This field is required';
+            if (!isValidYear(openingYear))    errs.openingYear     = 'Enter a valid year (e.g. 2010)';
+            if (!isValidCapacity(maxCapacity))errs.maxCapacity     = 'Capacity must be a positive number';
+            if (!fssaiCert)                   errs.fssaiCert       = 'Please upload the FSSAI certificate';
+            if (!regCert)                     errs.regCert         = 'Please upload the registration certificate';
         }
 
         setErrors(errs);
@@ -176,38 +159,34 @@ const SignupScreen = ({ navigation }: any) => {
 
         setLoading(true);
         try {
-            // 1. Upload document(s) first
             let studentIdCardUrl: string | null = null;
-            let fssaiCertUrl: string | null = null;
-            let regCertUrl: string | null = null;
+            let fssaiCertUrl:     string | null = null;
+            let regCertUrl:       string | null = null;
 
-            if (role === 'student' && studentIdCard) {
+            if (role === 'student' && studentIdCard)
                 studentIdCardUrl = await uploadDocument(studentIdCard, 'student-id', 'studentIdCard');
-            }
             if (role === 'restaurant') {
-                if (fssaiCert) fssaiCertUrl = await uploadDocument(fssaiCert, 'fssai-cert', 'fssaiCertificate');
-                if (regCert) regCertUrl = await uploadDocument(regCert, 'registration-cert', 'registrationCertificate');
+                if (fssaiCert) fssaiCertUrl = await uploadDocument(fssaiCert, 'fssai-cert',         'fssaiCertificate');
+                if (regCert)   regCertUrl   = await uploadDocument(regCert,   'registration-cert',  'registrationCertificate');
             }
 
-            // 2. Build registration payload
             const payload: any = { email: email.trim(), password, role, address: address.trim(), phoneNumber: phoneNumber.trim() };
 
             if (role === 'student') {
-                payload.name = name.trim();
-                payload.localGuardianName = localGuardianName.trim();
+                payload.name               = name.trim();
+                payload.localGuardianName  = localGuardianName.trim();
                 payload.localGuardianPhone = localGuardianPhone.trim();
-                payload.hometownAddress = hometownAddress.trim();
+                payload.hometownAddress    = hometownAddress.trim();
                 if (studentIdCardUrl) payload.studentIdCard = studentIdCardUrl;
             } else {
-                payload.ownerName = ownerName.trim();
+                payload.ownerName      = ownerName.trim();
                 payload.restaurantName = restaurantName.trim();
-                payload.openingYear = openingYear;
-                payload.maxCapacity = maxCapacity;
-                if (fssaiCertUrl) payload.fssaiCertificate = fssaiCertUrl;
-                if (regCertUrl) payload.registrationCertificate = regCertUrl;
+                payload.openingYear    = openingYear;
+                payload.maxCapacity    = maxCapacity;
+                if (fssaiCertUrl) payload.fssaiCertificate       = fssaiCertUrl;
+                if (regCertUrl)   payload.registrationCertificate = regCertUrl;
             }
 
-            // 3. Register user
             const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -244,11 +223,19 @@ const SignupScreen = ({ navigation }: any) => {
         } = {},
     ) => (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={[styles.label, { color: C.text }]}>{label}</Text>
             <TextInput
-                style={[styles.input, errors[fieldKey] ? styles.inputError : null]}
+                style={[
+                    styles.input,
+                    {
+                        backgroundColor: C.inputBg,
+                        borderColor: errors[fieldKey] ? C.error : C.inputBorder,
+                        color: C.inputText,
+                        borderWidth: errors[fieldKey] ? 1.5 : 1,
+                    },
+                ]}
                 placeholder={opts.placeholder || `Enter ${label.toLowerCase()}`}
-                placeholderTextColor="#aaa"
+                placeholderTextColor={C.inputPlaceholder}
                 value={value}
                 onChangeText={(v) => { setter(v); validate(fieldKey, v); }}
                 onBlur={() => validate(fieldKey, value)}
@@ -256,7 +243,7 @@ const SignupScreen = ({ navigation }: any) => {
                 secureTextEntry={opts.secureTextEntry}
                 autoCapitalize={opts.autoCapitalize ?? 'sentences'}
             />
-            {!!errors[fieldKey] && <Text style={styles.errorText}>⚠ {errors[fieldKey]}</Text>}
+            {!!errors[fieldKey] && <Text style={[styles.errorText, { color: C.error }]}>⚠ {errors[fieldKey]}</Text>}
         </View>
     );
 
@@ -269,10 +256,16 @@ const SignupScreen = ({ navigation }: any) => {
         hint?: string,
     ) => (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>{label}</Text>
-            {hint && <Text style={styles.hintText}>{hint}</Text>}
+            <Text style={[styles.label, { color: C.text }]}>{label}</Text>
+            {hint && <Text style={[styles.hintText, { color: C.textLight }]}>{hint}</Text>}
             <TouchableOpacity
-                style={[styles.docPickerBtn, errors[fieldKey] ? styles.inputError : null]}
+                style={[
+                    styles.docPickerBtn,
+                    {
+                        backgroundColor: C.inputBg,
+                        borderColor: errors[fieldKey] ? C.error : C.inputBorder,
+                    },
+                ]}
                 onPress={() => pickDocument(setter, fieldKey)}
                 activeOpacity={0.7}
             >
@@ -280,16 +273,16 @@ const SignupScreen = ({ navigation }: any) => {
                     <View style={styles.docRow}>
                         <Image source={{ uri: doc.uri }} style={styles.docThumb} />
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.docName} numberOfLines={1}>{doc.name}</Text>
-                            <Text style={styles.docSize}>{(doc.size / 1024).toFixed(1)} KB</Text>
+                            <Text style={[styles.docName, { color: C.text }]} numberOfLines={1}>{doc.name}</Text>
+                            <Text style={[styles.docSize, { color: C.textLight }]}>{(doc.size / 1024).toFixed(1)} KB</Text>
                         </View>
-                        <Text style={styles.changeText}>Change</Text>
+                        <Text style={[styles.changeText, { color: C.primary }]}>Change</Text>
                     </View>
                 ) : (
-                    <Text style={styles.docPlaceholder}>📎  Tap to upload image (max 1 MB)</Text>
+                    <Text style={[styles.docPlaceholder, { color: C.textLight }]}>📎  Tap to upload image (max 1 MB)</Text>
                 )}
             </TouchableOpacity>
-            {!!errors[fieldKey] && <Text style={styles.errorText}>⚠ {errors[fieldKey]}</Text>}
+            {!!errors[fieldKey] && <Text style={[styles.errorText, { color: C.error }]}>⚠ {errors[fieldKey]}</Text>}
         </View>
     );
 
@@ -297,28 +290,44 @@ const SignupScreen = ({ navigation }: any) => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={{ flex: 1, backgroundColor: C.background }}
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={Typography.h1}>Create Account</Text>
-                    <Text style={styles.subtitle}>Join the meal network today</Text>
+                    <Text style={[Typography.h1, { color: C.text }]}>Create Account</Text>
+                    <Text style={[styles.subtitle, { color: C.textLight }]}>Join the meal network today</Text>
                 </View>
 
                 <View style={styles.form}>
                     {/* Role Selector */}
                     <View style={styles.roleContainer}>
                         <TouchableOpacity
-                            style={[styles.roleButton, role === 'student' && styles.roleActive]}
+                            style={[
+                                styles.roleButton,
+                                { borderColor: C.border, backgroundColor: C.surface },
+                                role === 'student' && { backgroundColor: C.primary, borderColor: C.primary },
+                            ]}
                             onPress={() => setRole('student')}
                         >
-                            <Text style={role === 'student' ? styles.roleTextActive : styles.roleText}>Consumer</Text>
+                            <Text style={[
+                                styles.roleText,
+                                { color: C.text },
+                                role === 'student' && { color: '#FFFFFF' },
+                            ]}>Consumer</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.roleButton, role === 'restaurant' && styles.roleActive]}
+                            style={[
+                                styles.roleButton,
+                                { borderColor: C.border, backgroundColor: C.surface },
+                                role === 'restaurant' && { backgroundColor: C.primary, borderColor: C.primary },
+                            ]}
                             onPress={() => setRole('restaurant')}
                         >
-                            <Text style={role === 'restaurant' ? styles.roleTextActive : styles.roleText}>Restaurant</Text>
+                            <Text style={[
+                                styles.roleText,
+                                { color: C.text },
+                                role === 'restaurant' && { color: '#FFFFFF' },
+                            ]}>Restaurant</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -333,33 +342,39 @@ const SignupScreen = ({ navigation }: any) => {
                         secureTextEntry: true,
                         autoCapitalize: 'none',
                     })}
+
                     {/* Confirm Password */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Confirm Password</Text>
+                        <Text style={[styles.label, { color: C.text }]}>Confirm Password</Text>
                         <TextInput
                             style={[
                                 styles.input,
-                                errors.confirmPassword ? styles.inputError : null,
-                                confirmPassword.length > 0 && !errors.confirmPassword ? styles.inputSuccess : null,
+                                {
+                                    backgroundColor: C.inputBg,
+                                    color: C.inputText,
+                                    borderWidth: errors.confirmPassword ? 1.5
+                                        : confirmPassword.length > 0 && !errors.confirmPassword ? 1.5 : 1,
+                                    borderColor: errors.confirmPassword ? C.error
+                                        : confirmPassword.length > 0 && !errors.confirmPassword ? C.success
+                                        : C.inputBorder,
+                                },
                             ]}
                             placeholder="Re-enter your password"
-                            placeholderTextColor="#aaa"
+                            placeholderTextColor={C.inputPlaceholder}
                             value={confirmPassword}
-                            onChangeText={(v) => {
-                                setConfirmPassword(v);
-                                validate('confirmPassword', v);
-                            }}
+                            onChangeText={(v) => { setConfirmPassword(v); validate('confirmPassword', v); }}
                             onBlur={() => validate('confirmPassword', confirmPassword)}
                             secureTextEntry
                             autoCapitalize="none"
                         />
                         {!!errors.confirmPassword && (
-                            <Text style={styles.errorText}>⚠ {errors.confirmPassword}</Text>
+                            <Text style={[styles.errorText, { color: C.error }]}>⚠ {errors.confirmPassword}</Text>
                         )}
                         {confirmPassword.length > 0 && !errors.confirmPassword && (
-                            <Text style={styles.successText}>✓ Passwords match</Text>
+                            <Text style={[styles.successText, { color: C.success }]}>✓ Passwords match</Text>
                         )}
                     </View>
+
                     {renderField('Phone Number', phoneNumber, setPhoneNumber, 'phoneNumber', {
                         placeholder: '10-digit mobile number',
                         keyboardType: 'phone-pad',
@@ -369,7 +384,7 @@ const SignupScreen = ({ navigation }: any) => {
                         placeholder: 'Enter current address',
                     })}
 
-                    {/* Student-specific fields */}
+                    {/* Role-specific fields */}
                     {role === 'student' ? (
                         <>
                             {renderField('Full Name', name, setName, 'name', { placeholder: 'Enter your full name' })}
@@ -380,13 +395,7 @@ const SignupScreen = ({ navigation }: any) => {
                                 autoCapitalize: 'none',
                             })}
                             {renderField('Hometown Address', hometownAddress, setHometownAddress, 'hometownAddress', { placeholder: 'Permanent address' })}
-                            {renderDocPicker(
-                                'Student ID Card',
-                                studentIdCard,
-                                setStudentIdCard,
-                                'studentIdCard',
-                                'Upload a clear photo of your college/university ID card',
-                            )}
+                            {renderDocPicker('Student ID Card', studentIdCard, setStudentIdCard, 'studentIdCard', 'Upload a clear photo of your college/university ID card')}
                         </>
                     ) : (
                         <>
@@ -402,33 +411,21 @@ const SignupScreen = ({ navigation }: any) => {
                                 keyboardType: 'numeric',
                                 autoCapitalize: 'none',
                             })}
-                            {renderDocPicker(
-                                'FSSAI Certificate',
-                                fssaiCert,
-                                setFssaiCert,
-                                'fssaiCert',
-                                'Upload a photo of your FSSAI food safety certificate',
-                            )}
-                            {renderDocPicker(
-                                'Business Registration Certificate',
-                                regCert,
-                                setRegCert,
-                                'regCert',
-                                'Upload a photo of your official business registration document',
-                            )}
+                            {renderDocPicker('FSSAI Certificate', fssaiCert, setFssaiCert, 'fssaiCert', 'Upload a photo of your FSSAI food safety certificate')}
+                            {renderDocPicker('Business Registration Certificate', regCert, setRegCert, 'regCert', 'Upload a photo of your official business registration document')}
                         </>
                     )}
 
                     {loading ? (
-                        <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: Spacing.md }} />
+                        <ActivityIndicator size="large" color={C.primary} style={{ marginTop: Spacing.md }} />
                     ) : (
                         <AppButton title="Sign Up" onPress={handleSignup} style={styles.signupButton} />
                     )}
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <Text style={[styles.footerText, { color: C.textLight }]}>Already have an account? </Text>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Text style={styles.signupText}>Log In</Text>
+                            <Text style={[styles.signupText, { color: C.primary }]}>Log In</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -438,43 +435,34 @@ const SignupScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
     scrollContent: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingTop: 60, paddingBottom: Spacing.lg },
     header: { marginBottom: Spacing.xl },
-    subtitle: { ...Typography.body, color: Colors.textLight, marginTop: 8 },
+    subtitle: { fontSize: 15, marginTop: 8, lineHeight: 22 },
     form: { flex: 1 },
 
-    // Role toggle
     roleContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.lg },
-    roleButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
-    roleActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-    roleText: { color: Colors.text, fontWeight: '600' },
-    roleTextActive: { color: Colors.white, fontWeight: '600' },
+    roleButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderRadius: BorderRadius.md, alignItems: 'center', marginHorizontal: 4 },
+    roleText: { fontWeight: '600', fontSize: 14 },
 
-    // Input fields
     inputGroup: { marginBottom: Spacing.md },
-    label: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 6, marginLeft: 4 },
-    hintText: { fontSize: 12, color: Colors.textLight, marginBottom: 6, marginLeft: 4 },
-    input: { backgroundColor: Colors.white, height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1, borderColor: Colors.border, color: Colors.text },
-    inputError: { borderColor: Colors.error, borderWidth: 1.5 },
-    inputSuccess: { borderColor: '#22c55e', borderWidth: 1.5 },
-    errorText: { fontSize: 12, color: Colors.error, marginTop: 4, marginLeft: 4 },
-    successText: { fontSize: 12, color: '#22c55e', marginTop: 4, marginLeft: 4, fontWeight: '600' },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 6, marginLeft: 4 },
+    hintText: { fontSize: 12, marginBottom: 6, marginLeft: 4 },
+    input: { height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16 },
+    errorText: { fontSize: 12, marginTop: 4, marginLeft: 4 },
+    successText: { fontSize: 12, marginTop: 4, marginLeft: 4, fontWeight: '600' },
 
-    // Document picker
-    docPickerBtn: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },
-    docPlaceholder: { color: Colors.textLight, fontSize: 14, textAlign: 'center' },
+    docPickerBtn: { borderRadius: BorderRadius.md, borderWidth: 1, borderStyle: 'dashed', padding: 14, minHeight: 60, justifyContent: 'center' },
     docRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     docThumb: { width: 48, height: 48, borderRadius: 6, resizeMode: 'cover' },
-    docName: { fontSize: 13, color: Colors.text, fontWeight: '500' },
-    docSize: { fontSize: 11, color: Colors.textLight, marginTop: 2 },
-    changeText: { fontSize: 12, color: Colors.primary, fontWeight: '600', marginLeft: 4 },
+    docName: { fontSize: 13, fontWeight: '500' },
+    docSize: { fontSize: 11, marginTop: 2 },
+    docPlaceholder: { fontSize: 14, textAlign: 'center' },
+    changeText: { fontSize: 12, fontWeight: '600', marginLeft: 4 },
 
-    // Buttons & footer
     signupButton: { marginTop: Spacing.md },
     footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-    footerText: { color: Colors.textLight, fontSize: 14 },
-    signupText: { color: Colors.primary, fontWeight: '700', fontSize: 14 },
+    footerText: { fontSize: 14 },
+    signupText: { fontWeight: '700', fontSize: 14 },
 });
 
 export default SignupScreen;
