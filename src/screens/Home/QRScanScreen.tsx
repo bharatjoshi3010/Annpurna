@@ -133,8 +133,8 @@ const CameraTab = ({
                 codeScanner={codeScanner}
             />
 
-            {/* Dark overlay with cutout */}
-            <View style={camStyles.overlay}>
+            {/* Dark overlay with cutout — sits above the native camera surface */}
+            <View style={camStyles.overlay} pointerEvents="none">
                 {/* Top dark bar */}
                 <View style={[camStyles.darkBar, { flex: 1 }]} />
 
@@ -161,7 +161,7 @@ const CameraTab = ({
                 </View>
             </View>
 
-            {/* Scanned flash */}
+            {/* Scanned flash — needs touches so no pointerEvents override */}
             {scanned && (
                 <View style={camStyles.scannedOverlay}>
                     <ActivityIndicator size="large" color="#FFF" />
@@ -451,44 +451,51 @@ const QRScanScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Verify Meal</Text>
-                <View style={{ width: 60 }} />
-            </View>
-
-            {/* Tab toggle */}
-            <View style={styles.tabBar}>
-                <TouchableOpacity
-                    style={[styles.tabBtn, activeTab === 'camera' && styles.tabBtnActive]}
-                    onPress={() => { setActiveTab('camera'); setError(''); }}
-                >
-                    <Text style={[styles.tabBtnText, activeTab === 'camera' && styles.tabBtnTextActive]}>
-                        📷 Scan QR
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tabBtn, activeTab === 'manual' && styles.tabBtnActive]}
-                    onPress={() => { setActiveTab('manual'); setError(''); }}
-                >
-                    <Text style={[styles.tabBtnText, activeTab === 'manual' && styles.tabBtnTextActive]}>
-                        ⌨️ Enter Code
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Global error (from camera scan failure) */}
-            {!!error && (
-                <View style={styles.globalError}>
-                    <Text style={styles.globalErrorIcon}>⚠️</Text>
-                    <Text style={styles.globalErrorText}>{error}</Text>
+            {/*
+             * Header + tab bar are in an elevated wrapper so the Android Camera
+             * native surface (which always renders below JS views unless given
+             * explicit elevation/zIndex) cannot bleed over them.
+             */}
+            <View style={styles.topBar}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+                        <Text style={styles.backText}>← Back</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Verify Meal</Text>
+                    <View style={{ width: 60 }} />
                 </View>
-            )}
 
-            {/* Loading overlay */}
+                {/* Tab toggle */}
+                <View style={styles.tabBar}>
+                    <TouchableOpacity
+                        style={[styles.tabBtn, activeTab === 'camera' && styles.tabBtnActive]}
+                        onPress={() => { setActiveTab('camera'); setError(''); }}
+                    >
+                        <Text style={[styles.tabBtnText, activeTab === 'camera' && styles.tabBtnTextActive]}>
+                            📷 Scan QR
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tabBtn, activeTab === 'manual' && styles.tabBtnActive]}
+                        onPress={() => { setActiveTab('manual'); setError(''); }}
+                    >
+                        <Text style={[styles.tabBtnText, activeTab === 'manual' && styles.tabBtnTextActive]}>
+                            ⌨️ Enter Code
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Global error (from camera scan failure) */}
+                {!!error && (
+                    <View style={styles.globalError}>
+                        <Text style={styles.globalErrorIcon}>⚠️</Text>
+                        <Text style={styles.globalErrorText}>{error}</Text>
+                    </View>
+                )}
+            </View>
+
+            {/* Loading overlay — above everything */}
             {loading && (
                 <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color={Colors.primary} />
@@ -496,13 +503,20 @@ const QRScanScreen = ({ navigation }: any) => {
                 </View>
             )}
 
-            {/* Tab content */}
+            {/*
+             * Both tabs are ALWAYS mounted so the camera device doesn't
+             * re-initialise every time the user switches tabs.
+             * The inactive tab is hidden via opacity + pointerEvents.
+             */}
             <View style={{ flex: 1 }}>
-                {activeTab === 'camera' ? (
+                <View style={[{ flex: 1 }, activeTab !== 'camera' && styles.tabHidden]}
+                    pointerEvents={activeTab === 'camera' ? 'auto' : 'none'}>
                     <CameraTab onTokenFound={submitToken} isActive={activeTab === 'camera' && !loading && !success} />
-                ) : (
+                </View>
+                <View style={[StyleSheet.absoluteFill, activeTab !== 'manual' && styles.tabHidden]}
+                    pointerEvents={activeTab === 'manual' ? 'auto' : 'none'}>
                     <ManualTab onSubmit={submitToken} />
-                )}
+                </View>
             </View>
         </SafeAreaView>
     );
@@ -511,6 +525,17 @@ const QRScanScreen = ({ navigation }: any) => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
+
+    /*
+     * topBar sits ABOVE the camera native surface.
+     * On Android, elevation is required (not just zIndex) to guarantee
+     * the view renders above the SurfaceView used by react-native-vision-camera.
+     */
+    topBar: {
+        backgroundColor: Colors.background,
+        zIndex: 10,
+        elevation: 10,        // Android: lifts above the camera SurfaceView
+    },
 
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -550,9 +575,12 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(255,255,255,0.9)',
         justifyContent: 'center', alignItems: 'center',
-        zIndex: 99, gap: 12,
+        zIndex: 99, elevation: 99, gap: 12,
     },
     loadingText: { fontSize: 14, fontWeight: '700', color: Colors.text },
+
+    // Used to hide an always-mounted tab without unmounting it
+    tabHidden: { opacity: 0 },
 } as any);
 
 export default QRScanScreen;
