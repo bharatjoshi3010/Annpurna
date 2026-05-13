@@ -9,17 +9,9 @@ const protect = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
 
-            //    "Bearer abc123"
-
-            //     → ["Bearer", "abc123"]
-
-            //     Takes the token (abc123)
-
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-
             // Role-Based User Fetching
-
             if (decoded.role === 'student') {
                 req.user = await Student.findById(decoded.id).select('-password');
             } else if (decoded.role === 'restaurant') {
@@ -31,16 +23,15 @@ const protect = async (req, res, next) => {
             }
 
             req.user.role = decoded.role;
-            next();
+            return next();
         } catch (error) {
             console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
 
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
-    }
+    // No token present
+    return res.status(401).json({ message: 'Not authorized, no token' });
 };
 
 export { protect };

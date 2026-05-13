@@ -4,8 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, initApiConfig } from '../config';
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
-const TOKEN_KEY = '@annpurna_token';
-const ROLE_KEY = '@annpurna_role';
+const TOKEN_KEY   = '@annpurna_token';
+const ROLE_KEY    = '@annpurna_role';
+const USER_KEY    = '@annpurna_user';   // full user snapshot for offline restore
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AuthContextType = {
@@ -37,27 +38,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const token = await AsyncStorage.getItem(TOKEN_KEY);
                 if (!token) { setIsLoading(false); return; }
 
-                // Validate the stored token against the backend (with timeout so it doesn't hang)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-                
-                const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
+                // Try to validate the stored token against the backend.
+                // Use a short timeout so this never hangs the splash screen.
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s
 
-                if (res.ok) {
-                    const profile = await res.json();
-                    // Re-attach the token so the rest of the app can use it
-                    _setUser({ ...profile, token });
-                } else {
-                    // Token expired / revoked — clear storage
-                    await AsyncStorage.multiRemove([TOKEN_KEY, ROLE_KEY]);
+                    const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (res.ok) {
+                        const profile = await res.json();
+                        const hydratedUser = { ...profile, token };
+                        _setUser(hydratedUser);
+                        // Keep the snapshot fresh for offline restores
+                        await AsyncStorage.setItem(USER_KEY, JSON.stringify(hydratedUser)).catch(() => {});
+                    } else {
+                        // 401 / 403 → token genuinely expired or revoked
+                        await AsyncStorage.multiRemove([TOKEN_KEY, ROLE_KEY, USER_KEY]);
+                    }
+                } catch {
+                    // Network error or timeout — do NOT log the user out.
+                    // Restore from the last cached user snapshot instead.
+                    const cachedUser = await AsyncStorage.getItem(USER_KEY);
+                    if (cachedUser) {
+                        try { _setUser(JSON.parse(cachedUser)); } catch { /* corrupt cache */ }
+                    }
+                    // If no snapshot exists either, fall through leaving user null → Auth screen.
                 }
             } catch {
-                // Network error during restore — leave user as null (will go to Auth)
+                // Unexpected error in storage itself — fail gracefully
             } finally {
                 setIsLoading(false);
             }
@@ -87,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [user?._id]);
 
-    // ── setUser: persists token automatically ─────────────────────────────────
+    // ── setUser: persists token + full snapshot automatically ────────────────
     const setUser = (valueOrUpdater: any | ((prev: any) => any)) => {
         _setUser((prevUser: any) => {
             const newUser =
@@ -98,6 +111,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (newUser?.token) {
                 AsyncStorage.setItem(TOKEN_KEY, newUser.token).catch(console.error);
                 AsyncStorage.setItem(ROLE_KEY, newUser.role || 'student').catch(console.error);
+                // Persist full snapshot so session survives network-less restarts
+                AsyncStorage.setItem(USER_KEY, JSON.stringify(newUser)).catch(console.error);
             }
             return newUser;
         });
@@ -105,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // ── logout: clears everything ─────────────────────────────────────────────
     const logout = async () => {
-        await AsyncStorage.multiRemove([TOKEN_KEY, ROLE_KEY]);
+        await AsyncStorage.multiRemove([TOKEN_KEY, ROLE_KEY, USER_KEY]);
         _setUser(null);
     };
 

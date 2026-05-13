@@ -77,7 +77,15 @@ const RestaurantMenuPanel = ({
                         <Text style={panelStyles.mealLabel}>{mealType}</Text>
                     </View>
 
-                    {Object.entries(grouped[mealType]).map(([day, items]) => (
+                    {Object.entries(grouped[mealType])
+                        .sort(([a], [b]) => {
+                            const ai = DAYS_FULL.indexOf(a);
+                            const bi = DAYS_FULL.indexOf(b);
+                            // Unknown days go to the end; known days sorted Mon-first (shift Sunday to end)
+                            const normalize = (i: number) => i === -1 ? 999 : i === 0 ? 7 : i;
+                            return normalize(ai) - normalize(bi);
+                        })
+                        .map(([day, items]) => (
                         <View key={day} style={panelStyles.dayRow}>
                             {dayFilter === 'All Week' && (
                                 <Text style={[panelStyles.dayLabel, day === TODAY && panelStyles.dayLabelToday]}>
