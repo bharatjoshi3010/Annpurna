@@ -145,9 +145,7 @@ const LoginScreen = ({ navigation }: any) => {
                         />
                     </View>
 
-                    <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={[styles.forgotPasswordText, { color: C.primary }]}>Forgot Password?</Text>
-                    </TouchableOpacity>
+
 
                     {loading ? (
                         <ActivityIndicator size="large" color={C.primary} style={{ marginTop: Spacing.md }} />
@@ -178,8 +176,7 @@ const styles = StyleSheet.create({
     inputGroup: { marginBottom: Spacing.md },
     label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
     input: { height: 54, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: 16, borderWidth: 1 },
-    forgotPassword: { alignSelf: 'flex-end', marginBottom: Spacing.lg },
-    forgotPasswordText: { fontWeight: '600', fontSize: 14 },
+
     loginButton: { marginTop: Spacing.md },
     footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
     footerText: { fontSize: 14 },
